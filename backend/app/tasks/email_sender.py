@@ -7,8 +7,8 @@ from celery import Celery
 from sqlalchemy import select, update
 
 from app.core.config import settings
-from app.db.session import AsyncSessionLocal
-from app.db.models import Campaign, SMTPServer, Contact, CampaignLog
+from app.db.session import AsyncSessionLocal, engine
+from app.db.models import Campaign, SMTPServer, Contact, CampaignLog, User
 from app.core.security import decrypt_smtp_password
 
 # Initialize Celery app
@@ -34,6 +34,8 @@ def wrap_links_with_tracking(html_content: str, log_id: int) -> str:
 
 async def async_send_campaign(campaign_id: int):
     """Executes asynchronous campaign sending, SMTP connections, and tracks deliverability logs."""
+    # Dispose of the globally shared connection pool to ensure a fresh, loop-compliant pool is instantiated for this worker thread/process
+    await engine.dispose()
     async with AsyncSessionLocal() as db:
         # 1. Fetch Campaign with related SMTPServer details
         campaign_query = select(Campaign).where(Campaign.id == campaign_id)

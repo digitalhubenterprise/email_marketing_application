@@ -1,11 +1,12 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../App'
-import { Mail, Lock, AlertCircle, ArrowRight } from 'lucide-react'
+import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const { login } = useAuth()
@@ -42,34 +43,34 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-950 flex items-center justify-center p-6 relative overflow-hidden font-sans">
+    <div className="min-h-screen bg-dark-950 flex items-center justify-center p-4 relative overflow-hidden font-sans">
       {/* Decorative Background Blur Nodes */}
-      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/10 rounded-full filter blur-[100px] animate-pulse" />
-      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/10 rounded-full filter blur-[100px] animate-pulse delay-700" />
+      <div className="absolute top-1/4 left-1/4 w-72 h-72 bg-brand-500/5 rounded-full filter blur-[100px] animate-pulse" />
+      <div className="absolute bottom-1/4 right-1/4 w-72 h-72 bg-indigo-500/5 rounded-full filter blur-[100px] animate-pulse delay-700" />
 
       {/* Main Glass Card container */}
-      <div className="w-full max-w-md glass-panel p-8 rounded-3xl relative z-10 border border-dark-700/50 shadow-2xl">
-        <div className="text-center mb-8">
-          <div className="h-12 w-12 brand-gradient-bg rounded-2xl mx-auto flex items-center justify-center text-white shadow-xl shadow-brand-500/30 font-black text-2xl mb-4">
+      <div className="w-full max-w-sm glass-panel p-6 rounded-2xl relative z-10 border border-dark-700/50 shadow-2xl">
+        <div className="text-center mb-6">
+          <div className="h-10 w-10 brand-gradient-bg rounded-xl mx-auto flex items-center justify-center text-white shadow-lg shadow-brand-500/30 font-black text-xl mb-3">
             S
           </div>
-          <h2 className="text-2xl font-extrabold text-white tracking-tight font-sans">Welcome Back</h2>
-          <p className="text-sm text-dark-400 mt-2">Log in to manage your smart campaigns</p>
+          <h2 className="text-xl font-extrabold text-white tracking-tight font-sans">Welcome Back</h2>
+          <p className="text-[11px] text-dark-400 mt-1">Log in to manage your smart campaigns</p>
         </div>
 
         {error && (
-          <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm flex items-center gap-3 animate-headShake">
-            <AlertCircle size={18} className="shrink-0" />
-            <span>{error}</span>
+          <div className="mb-4.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs flex items-center gap-2 animate-headShake">
+            <AlertCircle size={14} className="shrink-0" />
+            <span className="leading-normal">{error}</span>
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-xs font-semibold text-dark-300 uppercase tracking-wider mb-2">Email Address</label>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="flex flex-col gap-1">
+            <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Email Address</label>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400">
-                <Mail size={16} />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                <Mail size={13} />
               </span>
               <input
                 type="email"
@@ -77,43 +78,50 @@ export default function Login() {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="you@domain.com"
-                className="w-full pl-11 pr-4 py-3.5 bg-dark-900 border border-dark-700/50 rounded-xl text-sm focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-500"
+                className="w-full pl-9 pr-3.5 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
               />
             </div>
           </div>
 
-          <div>
-            <div className="flex justify-between items-center mb-2">
-              <label className="text-xs font-semibold text-dark-300 uppercase tracking-wider">Password</label>
-              <a href="#" className="text-xs text-brand-400 hover:text-brand-300 font-medium">Forgot?</a>
+          <div className="flex flex-col gap-1">
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-bold text-dark-300 uppercase tracking-wider">Password</label>
+              <a href="#" className="text-[10px] text-brand-400 hover:text-brand-300 font-bold">Forgot?</a>
             </div>
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-dark-400">
-                <Lock size={16} />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                <Lock size={13} />
               </span>
               <input
-                type="password"
+                type={showPassword ? "text" : "password"}
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3.5 bg-dark-900 border border-dark-700/50 rounded-xl text-sm focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-500"
+                className="w-full pl-9 pr-10 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white transition-colors"
+              >
+                {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+              </button>
             </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 px-6 brand-gradient-bg text-white font-bold rounded-xl text-sm transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 glow-btn disabled:opacity-50"
+            className="w-full py-3 px-4 brand-gradient-bg text-white font-bold rounded-xl text-xs transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5 glow-btn disabled:opacity-50 mt-1"
           >
             {loading ? "Authenticating..." : "Sign In to Dashboard"}
-            {!loading && <ArrowRight size={16} />}
+            {!loading && <ArrowRight size={13} />}
           </button>
         </form>
 
-        <div className="text-center mt-8 pt-6 border-t border-dark-700/30">
-          <p className="text-xs text-dark-400">
+        <div className="text-center mt-6 pt-4 border-t border-dark-700/30">
+          <p className="text-[11px] text-dark-400">
             Don't have an account yet?{" "}
             <Link to="/register" className="text-brand-400 hover:text-brand-300 font-bold transition-colors">
               Create free account

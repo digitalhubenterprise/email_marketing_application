@@ -36,4 +36,10 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def create_db_tables() -> None:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        # Safe inline migration to add daily_send_limit to smtp_servers if it does not exist
+        try:
+            from sqlalchemy import text
+            await conn.execute(text("ALTER TABLE smtp_servers ADD COLUMN IF NOT EXISTS daily_send_limit INTEGER DEFAULT 500"))
+        except Exception as e:
+            print("DB Migration warning:", e)
 

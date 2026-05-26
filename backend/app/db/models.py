@@ -39,6 +39,7 @@ class SMTPServer(Base):
     security = Column(String, default="TLS")  # SSL, TLS, NONE
     from_name = Column(String, nullable=False)
     from_email = Column(String, nullable=False)
+    daily_send_limit = Column(Integer, default=500)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utc_now_naive)
 

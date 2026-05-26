@@ -9,6 +9,7 @@ import ContactLists from './pages/ContactLists'
 import Templates from './pages/Templates'
 import Campaigns from './pages/Campaigns'
 import Billing from './pages/Billing'
+import Wallet from './pages/Wallet'
 
 // Define AuthContext shape
 interface AuthContextType {
@@ -100,6 +101,7 @@ export default function App() {
           <Route path="templates" element={<Templates />} />
           <Route path="campaigns" element={<Campaigns />} />
           <Route path="billing" element={<Billing />} />
+          <Route path="wallet" element={<Wallet />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />

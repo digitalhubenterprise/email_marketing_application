@@ -64,3 +64,35 @@ async def login(
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
+
+from pydantic import BaseModel
+
+class UpgradeRequest(BaseModel):
+    tier: str
+
+@router.post("/upgrade", response_model=UserResponse)
+async def upgrade_tier(
+    payload: UpgradeRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    valid_tiers = {
+        "free": 1000,
+        "pro": 10000,
+        "business": 50000,
+        "enterprise": 200000
+    }
+    if payload.tier not in valid_tiers:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid subscription tier"
+        )
+    
+    current_user.subscription_tier = payload.tier
+    current_user.quota_limit = valid_tiers[payload.tier]
+    
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+

@@ -82,76 +82,44 @@ export default function Dashboard() {
     {
       title: "Total Emails Dispatched",
       value: stats?.total_emails_sent ?? 0,
-      icon: <Send size={20} className="transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-0.5 group-hover:rotate-[12deg] text-brand-400" />,
-      desc: "Emails successfully sent to dynamic leads",
-      trend: "+14.2% this mo",
-      accentBar: "bg-gradient-to-r from-brand-500 to-indigo-500 shadow-[0_1px_10px_rgba(76,110,245,0.4)]",
-      valueClass: "bg-gradient-to-r from-white via-brand-100 to-brand-300 bg-clip-text text-transparent font-sans tracking-tight",
-      colorClass: "text-brand-400 bg-brand-500/8 border-brand-500/20 group-hover:bg-brand-500/15 group-hover:border-brand-500/40",
-      glowBg: "radial-gradient(140px circle at 90% 10%, rgba(76, 110, 245, 0.16), transparent), radial-gradient(100px circle at 10% 90%, rgba(76, 110, 245, 0.04), transparent)",
-      trendClass: "text-brand-300 bg-brand-500/10 border-brand-500/25 group-hover:border-brand-500/40",
-      indicatorColor: "bg-brand-500 shadow-[0_0_8px_rgba(76,110,245,0.6)]",
-      hoverBorder: "group-hover:border-brand-500/35",
-      hoverShadow: "hover:shadow-[0_15px_35px_-10px_rgba(76,110,245,0.12)]"
+      status: "+14.2% this mo",
+      icon: <Send size={16} className="text-brand-400" />,
+      colorClass: "bg-brand-500/10 border-brand-500/20 text-brand-400",
+      indicatorColor: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]",
+      glowBg: "radial-gradient(100px circle at 15% 50%, rgba(76, 110, 245, 0.12), transparent)"
     },
     {
       title: "Average Open Rate",
       value: `${stats?.avg_open_rate ?? 0}%`,
-      icon: <Eye size={20} className="transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-0.5 text-emerald-400" />,
-      desc: "Tracked pixel read confirmations",
-      trend: "Industry Avg: 15%",
-      accentBar: "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_1px_10px_rgba(16,185,129,0.4)]",
-      valueClass: "bg-gradient-to-r from-white via-emerald-100 to-emerald-300 bg-clip-text text-transparent font-sans tracking-tight",
-      colorClass: "text-emerald-400 bg-emerald-500/8 border-emerald-500/20 group-hover:bg-emerald-500/15 group-hover:border-emerald-500/40",
-      glowBg: "radial-gradient(140px circle at 90% 10%, rgba(16, 185, 129, 0.16), transparent), radial-gradient(100px circle at 10% 90%, rgba(16, 185, 129, 0.04), transparent)",
-      trendClass: "text-emerald-300 bg-emerald-500/10 border-emerald-500/25 group-hover:border-emerald-500/40",
+      status: "Industry Avg: 15%",
+      icon: <Eye size={16} className="text-emerald-400" />,
+      colorClass: "bg-emerald-500/10 border-emerald-500/20 text-emerald-400",
       indicatorColor: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]",
-      hoverBorder: "group-hover:border-emerald-500/35",
-      hoverShadow: "hover:shadow-[0_15px_35px_-10px_rgba(16,185,129,0.12)]"
+      glowBg: "radial-gradient(100px circle at 15% 50%, rgba(16, 185, 129, 0.12), transparent)"
     },
     {
       title: "Average Click Rate",
       value: `${stats?.avg_click_rate ?? 0}%`,
-      icon: <MousePointerClick size={20} className="transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-0.5 group-hover:rotate-[-12deg] text-indigo-400" />,
-      desc: "Link redirect click metrics",
-      trend: "+2.1% spike",
-      accentBar: "bg-gradient-to-r from-indigo-500 to-purple-500 shadow-[0_1px_10px_rgba(99,102,241,0.4)]",
-      valueClass: "bg-gradient-to-r from-white via-indigo-100 to-indigo-300 bg-clip-text text-transparent font-sans tracking-tight",
-      colorClass: "text-indigo-400 bg-indigo-500/8 border-indigo-500/20 group-hover:bg-indigo-500/15 group-hover:border-indigo-500/40",
-      glowBg: "radial-gradient(140px circle at 90% 10%, rgba(99, 102, 241, 0.16), transparent), radial-gradient(100px circle at 10% 90%, rgba(99, 102, 241, 0.04), transparent)",
-      trendClass: "text-indigo-300 bg-indigo-500/10 border-indigo-500/25 group-hover:border-indigo-500/40",
-      indicatorColor: "bg-indigo-500 shadow-[0_0_8px_rgba(99,102,241,0.6)]",
-      hoverBorder: "group-hover:border-indigo-500/35",
-      hoverShadow: "hover:shadow-[0_15px_35px_-10px_rgba(99,102,241,0.12)]"
+      status: "+2.1% spike",
+      icon: <MousePointerClick size={16} className="text-indigo-400" />,
+      colorClass: "bg-indigo-500/10 border-indigo-500/20 text-indigo-400",
+      indicatorColor: "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]",
+      glowBg: "radial-gradient(100px circle at 15% 50%, rgba(99, 102, 241, 0.12), transparent)"
     },
     {
       title: "SMTP Server Nodes",
       value: stats?.smtp_health ? "Connected" : "Inactive",
-      icon: <Server size={20} className={`transition-all duration-500 group-hover:scale-110 group-hover:-translate-y-0.5 ${stats?.smtp_health ? 'text-emerald-400' : 'text-amber-400'}`} />,
-      desc: stats?.smtp_health ? "Active custom SMTP network" : "SMTP Server configurations missing",
-      trend: stats?.smtp_health ? "99.9% SLA" : "Action Required",
-      accentBar: stats?.smtp_health 
-        ? "bg-gradient-to-r from-emerald-500 to-teal-500 shadow-[0_1px_10px_rgba(16,185,129,0.4)]" 
-        : "bg-gradient-to-r from-amber-500 to-orange-500 shadow-[0_1px_10px_rgba(245,158,11,0.4)]",
-      valueClass: stats?.smtp_health 
-        ? "bg-gradient-to-r from-white via-emerald-100 to-emerald-300 bg-clip-text text-transparent font-sans tracking-tight" 
-        : "bg-gradient-to-r from-white via-amber-100 to-amber-300 bg-clip-text text-transparent font-sans tracking-tight",
+      status: stats?.smtp_health ? "99.9% SLA" : "Action Required",
+      icon: <Server size={16} className={stats?.smtp_health ? "text-emerald-400" : "text-amber-400"} />,
       colorClass: stats?.smtp_health 
-        ? "text-emerald-400 bg-emerald-500/8 border-emerald-500/20 group-hover:bg-emerald-500/15 group-hover:border-emerald-500/40" 
-        : "text-amber-400 bg-amber-500/8 border-amber-500/20 group-hover:bg-amber-500/15 group-hover:border-amber-500/40",
-      glowBg: stats?.smtp_health
-        ? "radial-gradient(140px circle at 90% 10%, rgba(16, 185, 129, 0.16), transparent), radial-gradient(100px circle at 10% 90%, rgba(16, 185, 129, 0.04), transparent)"
-        : "radial-gradient(140px circle at 90% 10%, rgba(245, 158, 11, 0.16), transparent), radial-gradient(100px circle at 10% 90%, rgba(245, 158, 11, 0.04), transparent)",
-      trendClass: stats?.smtp_health 
-        ? "text-emerald-300 bg-emerald-500/10 border-emerald-500/25 group-hover:border-emerald-500/40" 
-        : "text-amber-300 bg-amber-500/10 border-amber-500/25 group-hover:border-amber-500/40",
+        ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400" 
+        : "bg-amber-500/10 border-amber-500/20 text-amber-400",
       indicatorColor: stats?.smtp_health
         ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]"
         : "bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.6)] animate-pulse",
-      hoverBorder: stats?.smtp_health ? "group-hover:border-emerald-500/35" : "group-hover:border-amber-500/35",
-      hoverShadow: stats?.smtp_health
-        ? "hover:shadow-[0_15px_35px_-10px_rgba(16,185,129,0.12)]"
-        : "hover:shadow-[0_15px_35px_-10px_rgba(245,158,11,0.12)]"
+      glowBg: stats?.smtp_health
+        ? "radial-gradient(100px circle at 15% 50%, rgba(16, 185, 129, 0.12), transparent)"
+        : "radial-gradient(100px circle at 15% 50%, rgba(245, 158, 11, 0.12), transparent)"
     }
   ];
 
@@ -194,40 +162,56 @@ export default function Dashboard() {
       )}
 
       {/* Grid of Metric Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {cards.map((c, i) => (
           <div 
             key={i} 
-            className={`glass-panel p-5 rounded-2xl border border-dark-750/70 transition-all duration-500 ${c.hoverBorder} ${c.hoverShadow} hover:scale-[1.015] hover:-translate-y-1 relative overflow-hidden group flex flex-col justify-between`}
+            className="flex items-center justify-between p-3.5 rounded-full border border-dark-700/50 bg-[#16182a]/95 hover:bg-[#1a1c32]/95 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 relative overflow-hidden group shadow-lg"
             style={{ backgroundImage: c.glowBg }}
           >
-            {/* Top Accent Gradient Bar with glow */}
-            <div className={`absolute top-0 left-0 right-0 h-[3px] ${c.accentBar} opacity-80 group-hover:opacity-100 transition-all duration-300`} />
-
-            <div>
-              {/* Top Row: Icon Container & Trend Pill */}
-              <div className="flex justify-between items-center mb-4">
-                <div className={`p-2.5 rounded-xl border flex items-center justify-center transition-all duration-300 ${c.colorClass} shadow-md backdrop-blur-md`}>
-                  {c.icon}
-                </div>
-                <span className={`text-[9px] font-bold px-2.5 py-0.5 rounded-full border bg-dark-950/60 backdrop-blur-md transition-all duration-300 ${c.trendClass}`}>
-                  {c.trend}
-                </span>
+            {/* Left side containing Icon and Text details */}
+            <div className="flex items-center relative z-10">
+              {/* Rounded Square Icon Box */}
+              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-transform duration-500 group-hover:scale-105 group-hover:rotate-6 ${c.colorClass}`}>
+                {c.icon}
               </div>
 
-              {/* Value & Label */}
-              <div className="space-y-1.5">
-                <span className="text-[9px] font-extrabold text-dark-400 uppercase tracking-widest block transition-colors duration-300 group-hover:text-dark-300">{c.title}</span>
-                <h3 className="text-3xl font-extrabold tracking-tight select-none">
-                  <span className={c.valueClass}>{c.value}</span>
-                </h3>
+              {/* Text: Title and Value */}
+              <div className="ml-3 flex flex-col justify-center">
+                <span className="text-[9px] font-extrabold text-dark-400 uppercase tracking-widest block transition-colors duration-300 group-hover:text-dark-300">
+                  {c.title}
+                </span>
+                <div className="flex items-center gap-1.5 mt-0.5">
+                  <span className="text-sm font-black text-white tracking-tight select-none">
+                    {c.value}
+                  </span>
+                  <span className={`w-1.5 h-1.5 rounded-full ${c.indicatorColor}`} />
+                  <span className="text-[9px] text-dark-500 font-semibold lowercase tracking-wide group-hover:text-dark-400 transition-colors duration-300">
+                    ({c.status})
+                  </span>
+                </div>
               </div>
             </div>
-            
-            {/* Description at the bottom with a glowing indicator dot */}
-            <div className="flex items-center gap-2 pt-3.5 border-t border-dark-700/20 mt-3.5">
-              <span className={`w-1.5 h-1.5 rounded-full ${c.indicatorColor}`} />
-              <p className="text-[10px] text-dark-500 font-semibold tracking-wide group-hover:text-dark-400 transition-colors duration-300">{c.desc}</p>
+
+            {/* Right side circular refresh/action icon */}
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-dark-900/60 border border-dark-800 hover:border-dark-700 hover:bg-dark-800 text-dark-400 hover:text-white cursor-pointer transition-all duration-300 relative z-10 group-hover:rotate-180 duration-500">
+              <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="12" 
+                height="12" 
+                viewBox="0 0 24 24" 
+                fill="none" 
+                stroke="currentColor" 
+                strokeWidth="2.5" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className="lucide lucide-refresh-cw"
+              >
+                <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <path d="M3 3v5h5" />
+                <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+                <path d="M16 16h5v5" />
+              </svg>
             </div>
           </div>
         ))}

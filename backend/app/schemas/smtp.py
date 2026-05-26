@@ -10,6 +10,8 @@ class SMTPServerBase(BaseModel):
     security: str = Field(default="TLS", description="SSL, TLS, or NONE")
     from_name: str
     from_email: EmailStr
+    daily_send_limit: int = Field(default=500, ge=1)
+    is_active: bool = Field(default=True)
 
 class SMTPServerCreate(SMTPServerBase):
     password: str
@@ -24,6 +26,7 @@ class SMTPServerUpdate(BaseModel):
     from_name: Optional[str] = None
     from_email: Optional[EmailStr] = None
     is_active: Optional[bool] = None
+    daily_send_limit: Optional[int] = None
 
 class SMTPServerResponse(SMTPServerBase):
     id: int

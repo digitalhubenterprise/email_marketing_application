@@ -7,6 +7,7 @@ import {
   FileText, 
   Send, 
   CreditCard, 
+  Wallet,
   LogOut 
 } from 'lucide-react'
 import { useAuth } from '../App'
@@ -21,6 +22,7 @@ export default function Sidebar() {
     { to: "/templates", icon: <FileText size={20} />, label: "Email Templates" },
     { to: "/campaigns", icon: <Send size={20} />, label: "Campaigns" },
     { to: "/billing", icon: <CreditCard size={20} />, label: "Billing & Plans" },
+    { to: "/wallet", icon: <Wallet size={20} />, label: "Wallet" },
   ];
 
   return (

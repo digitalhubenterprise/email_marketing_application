@@ -38,7 +38,9 @@ async def create_smtp_server(
         encrypted_password=encrypted,
         security=smtp_in.security,
         from_name=smtp_in.from_name,
-        from_email=smtp_in.from_email
+        from_email=smtp_in.from_email,
+        daily_send_limit=smtp_in.daily_send_limit,
+        is_active=smtp_in.is_active
     )
     db.add(new_server)
     await db.commit()
