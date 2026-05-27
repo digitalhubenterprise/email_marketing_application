@@ -778,3 +778,44 @@ async def get_audit_trail_logs(
 
     res = await db.execute(q.order_by(AdminAuditLog.created_at.desc()).offset(offset).limit(limit))
     return res.scalars().all()
+
+
+@router.get("/user-logs")
+async def get_user_campaign_logs(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Fetches paginated system-wide campaign logs (User activity dispatches)."""
+    offset = (page - 1) * limit
+    total = (await db.execute(select(func.count(CampaignLog.id)))).scalar() or 0
+
+    res = await db.execute(
+        select(CampaignLog, Campaign.name, User.email)
+        .join(Campaign, CampaignLog.campaign_id == Campaign.id)
+        .join(User, Campaign.user_id == User.id)
+        .order_by(CampaignLog.updated_at.desc())
+        .offset(offset)
+        .limit(limit)
+    )
+    logs = res.all()
+
+    return {
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "logs": [
+            {
+                "id": log.CampaignLog.id,
+                "campaign_name": log.name,
+                "user_email": log.email,
+                "email": log.CampaignLog.email,
+                "status": log.CampaignLog.status,
+                "opened": log.CampaignLog.opened,
+                "clicked": log.CampaignLog.clicked,
+                "error_message": log.CampaignLog.error_message,
+                "updated_at": log.CampaignLog.updated_at
+            } for log in logs
+        ]
+    }
