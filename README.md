@@ -1,62 +1,80 @@
-# SmartCampaign — Premium Email Marketing SaaS (Version 1.0)
+# 🚀 SmartCampaign — Premium Email Marketing SaaS (Version 1.0)
 
-SmartCampaign is an enterprise-grade, high-performance Email Marketing SaaS product designed to support up to 250 active subscribers. It comes equipped with a modern dashboard visualizer, multi-SMTP configuration, CSV list importing, custom templates with jinja replacements, async email broadcasts, and real-time open and click deliverability analytics.
+SmartCampaign is an enterprise-grade, high-performance Email Marketing SaaS platform designed to support robust mass broadcast sequences, drip automations, and CRM segments. Equipped with an interactive glassmorphic dashboard, multi-SMTP load rotation, CSV imports, jinja-style dynamic templates, and pixel-perfect real-time engagement tracking, SmartCampaign is fully hardened for production-ready deployments.
 
 ---
 
 ## 🏗️ Technical Architecture & Stack
 
-1. **Frontend**:
-   - Framework: React.js (Vite + TypeScript)
-   - Styling: Tailwind CSS (with bespoke glassmorphism & glows)
-   - Analytics Engine: Recharts (trends visualizations)
-   - Icons: Lucide React
+### 1. Frontend Console
+- **Framework**: React.js (Vite + TypeScript)
+- **Styling**: Vanilla CSS (Harmonious glassmorphic theme, responsive flex grids, custom glows)
+- **Analytics Visualization**: Recharts (real-time send volume, CTR, and open-rate curves)
+- **Iconography**: Lucide React
+- **Client Storage & Sync**: Persistent SaaS wallet ledger stored inside `localStorage`
 
-2. **Backend**:
-   - Server: FastAPI (Python 3.12, Asyncpg engine)
-   - Database ORM: SQLAlchemy (Asynchronous sessions)
-   - Task Scheduler: Celery background workers
-   - Message Broker & Cache: Redis key-store
-   - Email Engine: Asynchronous SMTP clients via `aiosmtplib`
+### 2. FastAPI Backend Services
+- **API Engine**: FastAPI (Python 3.12, fully async lifespan)
+- **Database ORM**: SQLAlchemy (Asynchronous transaction sessions & connection pools)
+- **Distributed Queue**: Celery background task workers
+- **Message Broker & Cache**: Redis key-value store (secure, password-protected)
+- **Time Zone Sync**: System-wide containers clocks locked to **Dhaka Time (GMT+6)**
+- **Brute-Force Shield**: SlowAPI (per-IP rate limiting applied to auth gateways)
+- **Security Middleware**: Auto-injected security headers (HSTS, nosniff, DENY frames, CSP validation)
 
-3. **Infrastructure**:
-   - Coordination: Docker & Docker Compose
-   - Web Server / Proxy: Nginx reverse-proxypass routing
+### 3. Production Infrastructure
+- **Orchestration**: Docker & Docker Compose
+- **Reverse Proxy**: Nginx (configured with aggressive static caching, TLS 1.3 paths, and Let's Encrypt support)
 
 ---
 
-## ⚡ Quick Start: Running the Platform
+## 🔐 Enterprise-Grade Security Implementation
 
-To spin up the entire local infrastructure (FastAPI API server, PostgreSQL Database, Redis broker, Celery worker, and Nginx serving React) with a single command:
+| Security Control | Implementation Detail | Purpose |
+|------------------|-----------------------|---------|
+| **Brute-Force Shield** | SlowAPI per-IP rate limits: Login (20/min), Register (10/min), Change PW (5/min). | Blocks automated credential stuffing and bot registrations. |
+| **Data Encryption** | AES-256 Fernet symmetric encryption at rest. | Encrypts external custom SMTP credentials before writing to DB. |
+| **JWT Compliance** | Explicit claims enforcement (`exp`, `sub`, `iat`, `iss`). | Blocks forged or modified authentication tokens. |
+| **HTTP Security Headers** | `HSTS`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`. | Mitigates XSS, clickjacking, MIME sniffing, and MITM. |
+| **API Shielding** | Swagger UI (`/api/docs`), openapi JSON, and ReDoc disabled when `ENVIRONMENT=production`. | Prevents bad actors from scanning the backend API schema. |
+| **Strict CORS Gateways** | Explicit domain allowlist (localhost filters automatically disabled in production). | Prevents browser-based cross-origin credential stealing. |
+
+---
+
+## ⏰ Celery Beat Periodic Scheduler Actions
+
+SmartCampaign uses a database-driven background Celery Beat daemon to run mission-critical cron loops:
+
+1. **Scheduled Campaign Dispatch Engine (Every 10 seconds)**:
+   - Queries Postgres for any campaign marked as `"scheduled"` whose target date has arrived (`scheduled_at <= now`).
+   - Automatically transitions status to `"sending"` and spawns worker threads, ensuring scheduled email blasts execute even if servers or workers restart.
+2. **Monthly User Quota Reset (1st of every month at 00:00 UTC)**:
+   - Resets all users' `quota_sent` counters back to `0`, renewing monthly subscription allocations atomically.
+
+---
+
+## ⚡ Quick Start: Running the Platform Locally
+
+To spin up the entire container orchestration (FastAPI API server, PostgreSQL Database, Redis broker, Celery worker, Celery beat daemon, and Nginx hosting React) with a single command:
 
 ```bash
-docker-compose up --build
+# Start all local containers
+docker-compose up -d --build
 ```
 
 ### Access Portals:
 - **Client Panel & Dashboard**: [http://localhost](http://localhost) (Proxy port 80)
-- **FastAPI Documentation (Swagger UI)**: [http://localhost:8000/docs](http://localhost:8000/docs)
+- **FastAPI Documentation (Swagger UI)**: [http://localhost:8000/api/docs](http://localhost:8000/api/docs) (Only available in development environment)
 - **Email Tracking Node**: [http://localhost:8000/api/track](http://localhost:8000/api/track)
 
 ---
 
-## 🔌 Connecting to Supabase (Production Swap)
+## 📊 Live Email Analytics & Campaigns
 
-The database layers are configured dynamically using SQLAlchemy Async. Transitioning from local Docker PostgreSQL to your **Supabase** instance is seamless:
-
-1. Open your `.env` configuration file in the root directory.
-2. Retrieve your connection string from the Supabase Dashboard (`Settings -> Database`). Make sure to select the **Transaction** or **Session** pooler URL and swap the driver from `postgresql://` to `postgresql+asyncpg://` for async compatibility.
-3. Replace the `DATABASE_URL` value:
-   ```env
-   # Example Supabase Async Connection URL:
-   DATABASE_URL=postgresql+asyncpg://postgres:[your-password]@[your-supabase-reference].supabase.co:5432/postgres
-   ```
-4. Restart your docker containers. FastAPI will automatically initialize all required relational database tables in your Supabase schema upon system startup!
-
----
-
-## 📊 Live Email Analytics Features
-
-- **Open Tracking**: When campaigns are sent, a transparent `1x1.gif` pixel is dynamically appended to the bottom of the HTML email body. When external mail clients render the mail, the browser requests the endpoint `/api/track/open/{log_id}`, instantly logging delivery reads.
-- **Click Tracking**: All HTML links are parsed dynamically in the worker threads using regular expression mapping. They are rewritten to route through the tracking endpoint `/api/track/click/{log_id}?url={target_url}`, recording engagement before redirecting subscribers to their destinations.
-- **Simulated Stripe Upgrades**: Visit the `Billing & Plans` tab to mock Stripe checkout gateways. Click checkout to trigger instant account upgrades and scale sending quotas.
+- **Blast Campaigns Wizard**: Select SMTP routing profiles, contact lists, templates, and configure:
+  - **Schedule Time**: Precise delivery dates (automatically parsed to naive UTC to prevent timezone offset warnings).
+  - **Auto-Resend Hours**: Define drip reminders or resends for un-engaged lists.
+  - **Sending Mode**: Toggle between **Auto (automated Celery dispatch)** and **Manual (requires trigger)**.
+- **Open Tracking**: Appends a transparent `1x1.gif` pixel before the `</body>` tag of HTML emails. Mail clients request `/api/track/open/{log_id}`, atomically logging reads.
+- **Click Tracking**: HTML links are parsed in Celery threads and rewritten to route through `/api/track/click/{log_id}?url={target_url}`, logging engagement before safe redirecting.
+- **SaaS Credit Wallet**: Fund mock accounts in the `Billing Wallet` page using Binance Pay / USDT, upgrade plans, and deduct balance persistently via the `/api/auth/upgrade` database gateway.

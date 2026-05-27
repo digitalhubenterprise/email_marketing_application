@@ -11,6 +11,16 @@ import Campaigns from './pages/Campaigns'
 import Billing from './pages/Billing'
 import Wallet from './pages/Wallet'
 
+// Administrative Portal pages imports
+import AdminLayout from './components/AdminLayout'
+import AdminLogin from './pages/AdminLogin'
+import AdminDashboard from './pages/AdminDashboard'
+import AdminUsers from './pages/AdminUsers'
+import AdminBilling from './pages/AdminBilling'
+import AdminSettings from './pages/AdminSettings'
+import AdminAudits from './pages/AdminAudits'
+import AdminRegister from './pages/AdminRegister'
+
 // Define AuthContext shape
 interface AuthContextType {
   token: string | null;
@@ -102,6 +112,17 @@ export default function App() {
           <Route path="campaigns" element={<Campaigns />} />
           <Route path="billing" element={<Billing />} />
           <Route path="wallet" element={<Wallet />} />
+        </Route>
+
+        {/* Super Admin Center Protected Routes */}
+        <Route path="/admin/login" element={<AdminLogin />} />
+        <Route path="/admin/register" element={<AdminRegister />} />
+        <Route path="/admin" element={<AdminLayout />}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<AdminUsers />} />
+          <Route path="billing" element={<AdminBilling />} />
+          <Route path="settings" element={<AdminSettings />} />
+          <Route path="audits" element={<AdminAudits />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/" />} />

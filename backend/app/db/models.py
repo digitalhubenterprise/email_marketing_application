@@ -130,3 +130,53 @@ class CampaignLog(Base):
 
     campaign = relationship("Campaign", back_populates="logs")
     contact = relationship("Contact", back_populates="campaign_logs")
+
+
+class AdminUser(Base):
+    __tablename__ = "admin_users"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True, nullable=False)
+    hashed_password = Column(String, nullable=False)
+    role = Column(String, default="support")  # master_admin, billing_admin, support, moderator
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+
+class AdminAuditLog(Base):
+    __tablename__ = "admin_audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    admin_email = Column(String, nullable=False)
+    action_type = Column(String, nullable=False)  # suspend_user, plan_change, manually_paid, etc.
+    target_entity = Column(String, nullable=True)  # email, payment_id, etc.
+    details = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+
+class SystemConfig(Base):
+    __tablename__ = "system_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    site_name = Column(String, default="SmartCampaign")
+    logo_url = Column(String, nullable=True)
+    support_email = Column(String, default="support@smartcampaign.today")
+    maintenance_mode = Column(Boolean, default=False)
+    global_send_rate_limit = Column(Integer, default=1000)  # max sends per hour per user
+    default_from_email = Column(String, default="noreply@smartcampaign.today")
+    created_at = Column(DateTime, default=utc_now_naive)
+
+
+class PaymentLog(Base):
+    __tablename__ = "payment_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    user_email = Column(String, nullable=False)
+    amount = Column(Integer, nullable=False)  # flat BDT or USD amount
+    currency = Column(String, default="USD")  # USD, BDT
+    plan_tier = Column(String, nullable=False)
+    gateway = Column(String, default="bKash")  # bKash, Stripe, Bank Transfer
+    status = Column(String, default="pending")  # paid, pending, failed, refunded
+    notes = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)

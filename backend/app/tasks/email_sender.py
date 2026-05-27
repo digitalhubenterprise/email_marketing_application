@@ -129,6 +129,14 @@ async def async_send_campaign(campaign_id: int) -> None:
 
         # 6. Send to each contact
         for contact in contacts:
+            # Dynamic check for emergency force-cancel from admin
+            try:
+                await db.refresh(campaign)
+                if campaign.status != "sending":
+                    break
+            except Exception:
+                pass
+
             log = CampaignLog(
                 campaign_id=campaign.id,
                 contact_id=contact.id,

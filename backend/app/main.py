@@ -11,7 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
 from app.db.session import create_db_tables
-from app.api import auth, smtp, contacts, templates, campaigns, tracker
+from app.api import auth, smtp, contacts, templates, campaigns, tracker, admin
 
 # ─── Environment detection ───────────────────────────────────────────
 IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
@@ -74,6 +74,40 @@ app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
+# ─── Maintenance Mode Middleware ─────────────────────────────────────
+
+@app.middleware("http")
+async def check_maintenance_mode(request: Request, call_next) -> Response:
+    """Interceptors all public client requests when maintenance mode is active."""
+    path = request.url.path
+    is_bypass = (
+        path == "/"
+        or path == "/api/health"
+        or path.startswith("/api/admin")
+        or path.startswith("/api/track")
+        or path == f"{settings.API_V1_STR}/auth/login"
+    )
+    if not is_bypass:
+        from app.db.session import AsyncSessionLocal
+        from app.db.models import SystemConfig
+        from sqlalchemy.future import select
+        async with AsyncSessionLocal() as db:
+            try:
+                res = await db.execute(select(SystemConfig.maintenance_mode).where(SystemConfig.id == 1))
+                maintenance_mode = res.scalar() or False
+                if maintenance_mode:
+                    return JSONResponse(
+                        status_code=503,
+                        content={
+                            "detail": "System is currently undergoing scheduled maintenance. Please try again shortly.",
+                            "maintenance": True
+                        }
+                    )
+            except Exception:
+                pass
+
+    return await call_next(request)
+
 # ─── Security Headers + Request ID middleware ─────────────────────────
 
 @app.middleware("http")
@@ -112,6 +146,7 @@ app.include_router(contacts.router,  prefix=f"{settings.API_V1_STR}/contacts",  
 app.include_router(templates.router, prefix=f"{settings.API_V1_STR}/templates", tags=["Email Templates"])
 app.include_router(campaigns.router, prefix=f"{settings.API_V1_STR}/campaigns", tags=["Campaigns"])
 app.include_router(tracker.router,   prefix="/api/track",                        tags=["Email Tracking"])
+app.include_router(admin.router,     prefix="/api/admin",                        tags=["Super Admin"])
 
 
 # ─── Root & Health ────────────────────────────────────────────────────
