@@ -14,12 +14,24 @@ export default function Register() {
   const { login } = useAuth()
   const navigate = useNavigate()
 
+  const validatePasswordStrength = (pw: string): string | null => {
+    if (pw.length < 8) return "Password must be at least 8 characters.";
+    if (!/[A-Z]/.test(pw)) return "Password must contain at least one uppercase letter.";
+    if (!/[a-z]/.test(pw)) return "Password must contain at least one lowercase letter.";
+    if (!/\d/.test(pw)) return "Password must contain at least one digit.";
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(pw)) return "Password must contain at least one special character.";
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
+    const pwError = validatePasswordStrength(password);
+    if (pwError) { setError(pwError); return; }
+
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("Passwords do not match.");
       return;
     }
 
@@ -114,7 +126,7 @@ export default function Register() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
+                placeholder="Min. 8 chars, A-Z, 0-9, symbol"
                 className="w-full pl-9 pr-10 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
               />
               <button
@@ -125,6 +137,23 @@ export default function Register() {
                 {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
               </button>
             </div>
+            {/* Live password strength hints */}
+            {password.length > 0 && (
+              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 mt-1">
+                {[
+                  { label: "8+ characters", ok: password.length >= 8 },
+                  { label: "Uppercase letter", ok: /[A-Z]/.test(password) },
+                  { label: "Lowercase letter", ok: /[a-z]/.test(password) },
+                  { label: "Number (0–9)", ok: /\d/.test(password) },
+                  { label: "Special char (!@#...)", ok: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/~`]/.test(password) },
+                ].map(({ label, ok }) => (
+                  <span key={label} className={`flex items-center gap-1 text-[9px] font-semibold ${ok ? "text-emerald-400" : "text-dark-500"}`}>
+                    <span className={`w-1 h-1 rounded-full ${ok ? "bg-emerald-400" : "bg-dark-600"}`} />
+                    {label}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-1">

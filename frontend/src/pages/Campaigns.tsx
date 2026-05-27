@@ -32,6 +32,9 @@ interface Campaign {
   sent_count: number;
   open_count: number;
   click_count: number;
+  scheduled_at?: string;
+  auto_resend_hours?: number;
+  sending_mode?: string;
   created_at: string;
 }
 
@@ -49,6 +52,9 @@ export default function Campaigns() {
   const [selectedSmtp, setSelectedSmtp] = useState("");
   const [selectedList, setSelectedList] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState("");
+  const [scheduledAt, setScheduledAt] = useState("");
+  const [autoResendHours, setAutoResendHours] = useState(0);
+  const [sendingMode, setSendingMode] = useState("auto");
   
   const [showWizard, setShowWizard] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -145,7 +151,10 @@ export default function Campaigns() {
           subject,
           smtp_server_id: Number(selectedSmtp),
           contact_list_id: Number(selectedList),
-          content_html: tmpl.content_html
+          content_html: tmpl.content_html,
+          scheduled_at: scheduledAt ? new Date(scheduledAt).toISOString() : null,
+          auto_resend_hours: Number(autoResendHours) || 0,
+          sending_mode: sendingMode
         })
       });
 
@@ -155,6 +164,9 @@ export default function Campaigns() {
         setSelectedSmtp("");
         setSelectedList("");
         setSelectedTemplate("");
+        setScheduledAt("");
+        setAutoResendHours(0);
+        setSendingMode("auto");
         setShowWizard(false);
         await fetchData();
       } else {
@@ -343,6 +355,61 @@ export default function Campaigns() {
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1">
+                  <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider flex items-center gap-1">
+                    <Clock size={11} className="text-brand-400 shrink-0" />
+                    Schedule Time
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={scheduledAt}
+                    onChange={e => setScheduledAt(e.target.value)}
+                    className="w-full px-3 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white transition-all duration-200 cursor-pointer"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider flex items-center gap-1">
+                    <RefreshCw size={11} className="text-brand-400 shrink-0" />
+                    Auto-Resend Every
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      min={0}
+                      value={autoResendHours === 0 ? "" : autoResendHours}
+                      onChange={e => setAutoResendHours(Number(e.target.value))}
+                      placeholder="e.g. 24 hours"
+                      className="w-full pl-3 pr-10 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white transition-all duration-200"
+                    />
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 text-[9px] font-bold">
+                      hrs
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider flex items-center gap-1">
+                    <Activity size={11} className="text-brand-400 shrink-0" />
+                    Sending Mode
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={sendingMode}
+                      onChange={e => setSendingMode(e.target.value)}
+                      className="w-full pl-3.5 pr-8 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white appearance-none cursor-pointer transition-all duration-200"
+                    >
+                      <option value="auto">Auto (celery worker)</option>
+                      <option value="manual">Manual (click send)</option>
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-dark-500 text-[8px]">
+                      ▼
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="submit"
                 disabled={submitting || !name || !subject || !selectedSmtp || !selectedList || !selectedTemplate}
@@ -394,6 +461,15 @@ export default function Campaigns() {
                             <ChevronRight size={10} className="text-dark-500 shrink-0" />
                           </div>
                           <span className="text-[9px] text-dark-400 font-medium block truncate max-w-[200px]">{c.subject}</span>
+                          <div className="flex flex-wrap items-center gap-1 mt-1">
+                            <span className="text-[7.5px] bg-dark-950/80 text-brand-400 px-1 py-0.5 rounded border border-dark-800 uppercase font-extrabold tracking-wide">{c.sending_mode || 'auto'} mode</span>
+                            {c.auto_resend_hours !== undefined && c.auto_resend_hours > 0 && (
+                              <span className="text-[7.5px] bg-dark-950/80 text-indigo-400 px-1 py-0.5 rounded border border-dark-800 font-extrabold">every {c.auto_resend_hours}h</span>
+                            )}
+                            {c.scheduled_at && (
+                              <span className="text-[7.5px] bg-dark-950/80 text-amber-400 px-1 py-0.5 rounded border border-dark-800 font-extrabold">Sched: {new Date(c.scheduled_at.endsWith('Z') ? c.scheduled_at : c.scheduled_at + 'Z').toLocaleString()}</span>
+                            )}
+                          </div>
                         </td>
                         <td className="py-2.5 font-mono">{c.total_recipients}</td>
                         <td className="py-2.5 text-brand-400 font-bold font-mono">{c.sent_count} / {c.total_recipients}</td>

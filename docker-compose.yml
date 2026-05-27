@@ -9,6 +9,7 @@ services:
       POSTGRES_DB: smartcampaign
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password123
+      TZ: Asia/Dhaka
     ports:
       - "5432:5432"
     volumes:
@@ -39,6 +40,7 @@ services:
       - ACCESS_TOKEN_EXPIRE_MINUTES=1440
       - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
       - TRACKING_BASE_URL=http://localhost:8000
+      - TZ=Asia/Dhaka
     depends_on:
       - db
       - redis
@@ -57,6 +59,26 @@ services:
       - REDIS_URL=redis://redis:6379/0
       - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
       - TRACKING_BASE_URL=http://localhost:8000
+      - TZ=Asia/Dhaka
+    depends_on:
+      - db
+      - redis
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartcampaign_beat
+    restart: always
+    command: celery -A app.tasks.email_sender.celery beat --loglevel=info
+    volumes:
+      - ./backend:/code
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
+      - REDIS_URL=redis://redis:6379/0
+      - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
+      - TRACKING_BASE_URL=http://localhost:8000
+      - TZ=Asia/Dhaka
     depends_on:
       - db
       - redis
@@ -69,6 +91,8 @@ services:
     restart: always
     ports:
       - "80:80"
+    environment:
+      - TZ=Asia/Dhaka
     depends_on:
       - backend
 

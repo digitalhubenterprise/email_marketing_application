@@ -12,67 +12,94 @@ from app.api.deps import get_current_user
 
 router = APIRouter()
 
+# Max SMTP servers per user (enterprise guard)
+MAX_SMTP_SERVERS_FREE = 1
+MAX_SMTP_SERVERS_PAID = 20
+
+
 @router.get("", response_model=List[SMTPServerResponse])
 async def list_smtp_servers(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
-        select(SMTPServer).where(SMTPServer.user_id == current_user.id)
+        select(SMTPServer).where(SMTPServer.user_id == current_user.id).order_by(SMTPServer.id.desc())
     )
     return result.scalars().all()
+
 
 @router.post("", response_model=SMTPServerResponse, status_code=status.HTTP_201_CREATED)
 async def create_smtp_server(
     smtp_in: SMTPServerCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
+    # Enforce tier-based SMTP server limits
+    count_result = await db.execute(
+        select(SMTPServer).where(SMTPServer.user_id == current_user.id)
+    )
+    existing_count = len(count_result.scalars().all())
+
+    if current_user.subscription_tier == "free" and existing_count >= MAX_SMTP_SERVERS_FREE:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Free plan allows only 1 SMTP server. Upgrade to Pro or higher to add more.",
+        )
+    if existing_count >= MAX_SMTP_SERVERS_PAID:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Maximum of {MAX_SMTP_SERVERS_PAID} SMTP servers per account reached.",
+        )
+
     encrypted = encrypt_smtp_password(smtp_in.password)
     new_server = SMTPServer(
         user_id=current_user.id,
-        name=smtp_in.name,
-        host=smtp_in.host,
+        name=smtp_in.name.strip(),
+        host=smtp_in.host.strip().lower(),
         port=smtp_in.port,
-        username=smtp_in.username,
+        username=smtp_in.username.strip(),
         encrypted_password=encrypted,
-        security=smtp_in.security,
-        from_name=smtp_in.from_name,
-        from_email=smtp_in.from_email,
+        security=smtp_in.security.upper(),
+        from_name=smtp_in.from_name.strip(),
+        from_email=smtp_in.from_email.strip().lower(),
         daily_send_limit=smtp_in.daily_send_limit,
-        is_active=smtp_in.is_active
+        is_active=smtp_in.is_active,
     )
     db.add(new_server)
     await db.commit()
     await db.refresh(new_server)
     return new_server
 
+
 @router.delete("/{server_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_smtp_server(
     server_id: int,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     result = await db.execute(
         select(SMTPServer).where(
             SMTPServer.id == server_id,
-            SMTPServer.user_id == current_user.id
+            SMTPServer.user_id == current_user.id,
         )
     )
     server = result.scalars().first()
     if not server:
-        raise HTTPException(status_code=404, detail="SMTP server not found")
-    
+        raise HTTPException(status_code=404, detail="SMTP server not found.")
+
     await db.delete(server)
     await db.commit()
-    return
+
 
 @router.post("/test-connection")
 async def test_smtp_connection(
     req: SMTPTestRequest,
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),  # Requires auth — prevents abuse
 ):
-    """Establishes an active SMTP socket connection using aiosmtplib to verify credentials."""
+    """
+    Tests SMTP socket connectivity and credential authentication.
+    Requires a valid JWT session — endpoint cannot be abused anonymously.
+    """
     use_tls = req.security.upper() == "SSL"
     start_tls = req.security.upper() == "TLS"
 
@@ -81,23 +108,22 @@ async def test_smtp_connection(
             hostname=req.host,
             port=req.port,
             use_tls=use_tls,
-            timeout=10
+            timeout=10,
         )
-        
         await smtp_client.connect()
-        
+
         if start_tls:
             await smtp_client.starttls()
-            
+
         if req.username and req.password:
             await smtp_client.login(req.username, req.password)
-            
+
         await smtp_client.quit()
-        return {"success": True, "message": "Successfully connected and authenticated!"}
-        
+        return {"success": True, "message": "Successfully connected and authenticated to SMTP server!"}
+
     except aiosmtplib.SMTPAuthenticationError:
-        return {"success": False, "message": "Authentication failed. Check your username/password."}
+        return {"success": False, "message": "Authentication failed — check your username and password."}
     except aiosmtplib.SMTPConnectError:
-        return {"success": False, "message": "Failed to connect to the SMTP server. Check Host and Port."}
+        return {"success": False, "message": "Could not connect — check Host and Port settings."}
     except Exception as e:
         return {"success": False, "message": f"Connection error: {str(e)}"}

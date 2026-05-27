@@ -105,6 +105,8 @@ class Campaign(Base):
     open_count = Column(Integer, default=0)
     click_count = Column(Integer, default=0)
     scheduled_at = Column(DateTime, nullable=True)
+    auto_resend_hours = Column(Integer, nullable=True, default=0)
+    sending_mode = Column(String, default="auto") # auto, manual
     created_at = Column(DateTime, default=utc_now_naive)
 
     user = relationship("User", back_populates="campaigns")

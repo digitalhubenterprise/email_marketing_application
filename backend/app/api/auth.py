@@ -1,98 +1,161 @@
 from datetime import timedelta
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel, field_validator
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.db.session import get_db
 from app.db.models import User
-from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.security import (
+    get_password_hash,
+    verify_password,
+    create_access_token,
+    validate_password_strength,
+)
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.api.deps import get_current_user
 
 router = APIRouter()
 
+# Rate limiter — uses client IP address as the key
+limiter = Limiter(key_func=get_remote_address)
+
+
+# ─── Schemas ──────────────────────────────────────────────────────────
+
+class UpgradeRequest(BaseModel):
+    tier: str
+
+    @field_validator("tier")
+    @classmethod
+    def tier_must_be_valid(cls, v: str) -> str:
+        allowed = {"free", "pro", "business", "enterprise"}
+        if v.lower() not in allowed:
+            raise ValueError(f"Invalid tier. Must be one of: {', '.join(sorted(allowed))}")
+        return v.lower()
+
+
+class ChangePasswordRequest(BaseModel):
+    current_password: str
+    new_password: str
+
+
+# ─── Register ─────────────────────────────────────────────────────────
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-async def register(user_in: UserCreate, db: AsyncSession = Depends(get_db)):
-    # Check if email is already taken
+@limiter.limit("10/minute")          # Max 10 registration attempts per minute per IP
+async def register(request: Request, user_in: UserCreate, db: AsyncSession = Depends(get_db)):
+    # Validate password strength
+    is_strong, pw_error = validate_password_strength(user_in.password)
+    if not is_strong:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=pw_error)
+
+    # Check for existing email
     result = await db.execute(select(User).where(User.email == user_in.email))
-    existing_user = result.scalars().first()
-    if existing_user:
+    if result.scalars().first():
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="The user with this email already exists in the system."
+            status_code=status.HTTP_409_CONFLICT,
+            detail="An account with this email address already exists.",
         )
-    
-    # Hash password and save new User
-    hashed_password = get_password_hash(user_in.password)
+
     new_user = User(
         email=user_in.email,
-        hashed_password=hashed_password,
+        hashed_password=get_password_hash(user_in.password),
         subscription_tier="free",
         quota_limit=1000,
-        quota_sent=0
+        quota_sent=0,
     )
     db.add(new_user)
-    await db.flush() # Flushes to get ID before committing
+    await db.flush()
     await db.commit()
     await db.refresh(new_user)
     return new_user
 
+
+# ─── Login ────────────────────────────────────────────────────────────
+
 @router.post("/login", response_model=Token)
+@limiter.limit("20/minute")          # Max 20 login attempts per minute per IP
 async def login(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
-    # Retrieve user
     result = await db.execute(select(User).where(User.email == form_data.username))
     user = result.scalars().first()
+
+    # Constant-time comparison prevents timing attacks
     if not user or not verify_password(form_data.password, user.hashed_password):
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Incorrect email or password"
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
         )
+
     if not user.is_active:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Inactive user"
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Account has been disabled. Please contact support.",
         )
-    
-    # Generate JWT
-    access_token = create_access_token(subject=user.id)
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    return {"access_token": create_access_token(subject=user.id), "token_type": "bearer"}
+
+
+# ─── Current User ─────────────────────────────────────────────────────
 
 @router.get("/me", response_model=UserResponse)
 async def get_me(current_user: User = Depends(get_current_user)):
     return current_user
 
-from pydantic import BaseModel
 
-class UpgradeRequest(BaseModel):
-    tier: str
+# ─── Change Password ──────────────────────────────────────────────────
+
+@router.post("/change-password", status_code=status.HTTP_200_OK)
+@limiter.limit("5/minute")           # Max 5 password change attempts per minute
+async def change_password(
+    request: Request,
+    payload: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Allows an authenticated user to change their own password."""
+    if not verify_password(payload.current_password, current_user.hashed_password):
+        raise HTTPException(status_code=400, detail="Current password is incorrect.")
+
+    is_strong, pw_error = validate_password_strength(payload.new_password)
+    if not is_strong:
+        raise HTTPException(status_code=422, detail=pw_error)
+
+    if payload.current_password == payload.new_password:
+        raise HTTPException(status_code=400, detail="New password must differ from the current one.")
+
+    current_user.hashed_password = get_password_hash(payload.new_password)
+    db.add(current_user)
+    await db.commit()
+    return {"message": "Password updated successfully."}
+
+
+# ─── Subscription Upgrade ─────────────────────────────────────────────
 
 @router.post("/upgrade", response_model=UserResponse)
 async def upgrade_tier(
     payload: UpgradeRequest,
     current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
 ):
+    """Upgrades or changes the authenticated user's subscription tier and quota."""
     valid_tiers = {
         "free": 1000,
         "pro": 10000,
         "business": 50000,
-        "enterprise": 200000
+        "enterprise": 200000,
     }
-    if payload.tier not in valid_tiers:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invalid subscription tier"
-        )
-    
     current_user.subscription_tier = payload.tier
     current_user.quota_limit = valid_tiers[payload.tier]
-    
     db.add(current_user)
     await db.commit()
     await db.refresh(current_user)
     return current_user
-

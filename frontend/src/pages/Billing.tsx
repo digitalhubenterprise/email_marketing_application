@@ -261,7 +261,13 @@ export default function Billing() {
                   <button
                     type="button"
                     disabled={isCurrent || loading}
-                    onClick={() => setShowSimModal(p.tierCode)}
+                    onClick={() => {
+                      setShowSimModal(p.tierCode);
+                      setCheckoutStatus("idle");
+                      setPayMethod("wallet");
+                      setProcessingProgress(0);
+                      setProcessingLog("");
+                    }}
                     className={`w-full py-2 px-4 text-xs font-bold rounded-lg transition-all text-center flex items-center justify-center gap-1.5
                       ${isCurrent 
                         ? 'bg-dark-950 text-dark-400 border border-dark-800 cursor-default' 
@@ -458,7 +464,7 @@ export default function Billing() {
                           setShowSimModal(null);
                           navigate("/wallet");
                         }}
-                        className="flex-1 py-2 bg-amber-500 hover:bg-amber-655 text-dark-950 text-xs font-bold rounded-lg shadow-md transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5"
+                        className="flex-1 py-2 bg-amber-500 hover:bg-amber-600 text-dark-950 text-xs font-bold rounded-lg shadow-md transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5"
                       >
                         <span>Top Up Wallet</span>
                         <ArrowRight size={12} />

@@ -9,6 +9,8 @@ class CampaignBase(BaseModel):
     smtp_server_id: Optional[int] = None
     contact_list_id: Optional[int] = None
     scheduled_at: Optional[datetime] = None
+    auto_resend_hours: Optional[int] = 0
+    sending_mode: Optional[str] = "auto" # auto, manual
 
 class CampaignCreate(CampaignBase):
     pass

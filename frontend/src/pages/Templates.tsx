@@ -32,9 +32,6 @@ export default function Templates() {
       if (res.ok) {
         const data = await res.json();
         setTemplates(data);
-        if (data.length > 0 && !previewTemplate && !showCreator) {
-          setPreviewTemplate(data[0]);
-        }
       }
     } catch (err) {
       console.error(err);
@@ -84,7 +81,7 @@ export default function Templates() {
         const updated = templates.filter(t => t.id !== id);
         setTemplates(updated);
         if (previewTemplate?.id === id) {
-          setPreviewTemplate(updated.length > 0 ? updated[0] : null);
+          setPreviewTemplate(null);
         }
       }
     } catch (err) {
