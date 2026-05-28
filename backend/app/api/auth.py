@@ -8,7 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.db.session import get_db
-from app.db.models import User
+from app.db.models import User, SystemConfig
 from app.core.security import (
     get_password_hash,
     verify_password,
@@ -65,13 +65,25 @@ async def register(request: Request, user_in: UserCreate, db: AsyncSession = Dep
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
         subscription_tier="free",
-        quota_limit=1000,
+        quota_limit=5000,
         quota_sent=0,
     )
     db.add(new_user)
     await db.flush()
     await db.commit()
     await db.refresh(new_user)
+
+    # Queue system Welcome Email task
+    try:
+        from app.tasks.email_sender import send_system_email_task
+        send_system_email_task.delay(
+            recipient_email=new_user.email,
+            subject="Welcome to our platform!",
+            html_body=f"<h1>Welcome to SmartCampaign!</h1><p>Your marketing workspace is ready. You are on the Free tier with {new_user.quota_limit:,} monthly email sends included.</p>"
+        )
+    except Exception as e:
+        print(f"Error queuing registration welcome email: {e}")
+
     return new_user
 
 
@@ -148,10 +160,10 @@ async def upgrade_tier(
 ):
     """Upgrades or changes the authenticated user's subscription tier and quota."""
     valid_tiers = {
-        "free": 1000,
-        "pro": 10000,
-        "business": 50000,
-        "enterprise": 200000,
+        "free": 5000,
+        "pro": 50000,
+        "business": 200000,
+        "enterprise": 999999999,
     }
     current_user.subscription_tier = payload.tier
     current_user.quota_limit = valid_tiers[payload.tier]
@@ -159,3 +171,34 @@ async def upgrade_tier(
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
+
+@router.get("/config")
+async def get_public_config(db: AsyncSession = Depends(get_db)):
+    """Exposes public platform configurations for standard branding and announcement broadcasts."""
+    res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = res.scalars().first()
+    if not config:
+        return {
+            "site_name": "SmartCampaign",
+            "logo_url": None,
+            "support_email": "support@smartcampaign.today",
+            "announcement_active": False,
+            "announcement_message": None,
+            "maintenance_mode": False,
+            "seo_meta_title": "SmartCampaign - Modern SaaS Email Marketing Platform",
+            "seo_meta_description": "Create, personalize, monitor, and scale email marketing campaigns dynamically.",
+            "seo_meta_keywords": "email marketing, smtp, celery, dispatch, saas"
+        }
+    return {
+        "site_name": config.site_name,
+        "logo_url": config.logo_url,
+        "support_email": config.support_email,
+        "announcement_active": config.announcement_active,
+        "announcement_message": config.announcement_message,
+        "maintenance_mode": config.maintenance_mode,
+        "seo_meta_title": config.seo_meta_title,
+        "seo_meta_description": config.seo_meta_description,
+        "seo_meta_keywords": config.seo_meta_keywords
+    }
+

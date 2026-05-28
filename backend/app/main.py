@@ -85,7 +85,7 @@ async def check_maintenance_mode(request: Request, call_next) -> Response:
         or path == "/api/health"
         or path.startswith("/api/admin")
         or path.startswith("/api/track")
-        or path == f"{settings.API_V1_STR}/auth/login"
+        or path == f"{settings.API_V1_STR}/auth/config"
     )
     if not is_bypass:
         from app.db.session import AsyncSessionLocal

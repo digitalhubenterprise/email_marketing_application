@@ -9,7 +9,7 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
+  const { login, appConfig } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,10 +51,16 @@ export default function Login() {
       {/* Main Glass Card container */}
       <div className="w-full max-w-sm glass-panel p-6 rounded-2xl relative z-10 border border-dark-700/50 shadow-2xl">
         <div className="text-center mb-6">
-          <div className="h-10 w-10 brand-gradient-bg rounded-xl mx-auto flex items-center justify-center text-white shadow-lg shadow-brand-500/30 font-black text-xl mb-3">
-            S
-          </div>
-          <h2 className="text-xl font-extrabold text-white tracking-tight font-sans">Welcome Back</h2>
+          {appConfig?.logo_url ? (
+            <img src={appConfig.logo_url} alt={appConfig.site_name} className="h-10 mx-auto object-contain mb-3" />
+          ) : (
+            <div className="h-10 w-10 brand-gradient-bg rounded-xl mx-auto flex items-center justify-center text-white shadow-lg shadow-brand-500/30 font-black text-xl mb-3">
+              {appConfig?.site_name?.substring(0, 1) || "S"}
+            </div>
+          )}
+          <h2 className="text-xl font-extrabold text-white tracking-tight font-sans">
+            Welcome to {appConfig?.site_name || "SmartCampaign"}
+          </h2>
           <p className="text-[11px] text-dark-400 mt-1">Log in to manage your smart campaigns</p>
         </div>
 

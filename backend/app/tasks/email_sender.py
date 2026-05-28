@@ -1,17 +1,17 @@
 import asyncio
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from urllib.parse import quote_plus
 import aiosmtplib
 from celery import Celery
 from celery.schedules import crontab
-from sqlalchemy import select, update
+from sqlalchemy import select, update, func
 
 from app.core.config import settings
 from app.db.session import AsyncSessionLocal, engine
-from app.db.models import Campaign, SMTPServer, Contact, CampaignLog, User
+from app.db.models import Campaign, SMTPServer, Contact, CampaignLog, User, SystemConfig
 from app.core.security import decrypt_smtp_password
 
 # Initialize Celery broker
@@ -127,6 +127,14 @@ async def async_send_campaign(campaign_id: int) -> None:
             await db.commit()
             return
 
+        # Fetch global hourly rate limit
+        sys_config_res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
+        sys_config = sys_config_res.scalars().first()
+        global_rate_limit = sys_config.global_send_rate_limit if sys_config else 1000
+
+        # Track processed count in this run to minimize DB checks
+        processed_in_run = 0
+
         # 6. Send to each contact
         for contact in contacts:
             # Dynamic check for emergency force-cancel from admin
@@ -136,6 +144,28 @@ async def async_send_campaign(campaign_id: int) -> None:
                     break
             except Exception:
                 pass
+
+            # Global hourly rate limit throttle guard (check on startup and every 10 sends)
+            if processed_in_run == 0 or processed_in_run % 10 == 0:
+                one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+                sent_in_last_hour_res = await db.execute(
+                    select(func.count(CampaignLog.id))
+                    .join(Campaign, CampaignLog.campaign_id == Campaign.id)
+                    .where(
+                        Campaign.user_id == campaign.user_id,
+                        CampaignLog.status == "sent",
+                        CampaignLog.updated_at >= one_hour_ago
+                    )
+                )
+                sent_in_last_hour = sent_in_last_hour_res.scalar() or 0
+                if sent_in_last_hour >= global_rate_limit:
+                    # Exceeded hourly rate limit! Reschedule campaign to run again in 5 minutes
+                    campaign.status = "scheduled"
+                    campaign.scheduled_at = datetime.utcnow() + timedelta(minutes=5)
+                    await db.commit()
+                    break
+
+            processed_in_run += 1
 
             log = CampaignLog(
                 campaign_id=campaign.id,
@@ -281,3 +311,72 @@ def check_scheduled_campaigns_task() -> None:
         asyncio.run(async_check_scheduled_campaigns())
     except Exception as exc:
         print(f"Error executing scheduled campaigns check: {exc}")
+
+
+@celery.task(name="app.tasks.email_sender.send_system_email_task")
+def send_system_email_task(recipient_email: str, subject: str, html_body: str) -> None:
+    """
+    Background task to dispatch system emails (welcome, OTP, password reset, alerts)
+    using the platform-configured System SMTP settings from SystemConfig.
+    Falls back to console logging if no system SMTP is configured.
+    """
+    async def run():
+        async with AsyncSessionLocal() as db:
+            res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
+            config = res.scalars().first()
+
+            if not config:
+                print(f"[SYSTEM EMAIL] No system config found. Skipping email to {recipient_email}.")
+                return
+
+            # Use system SMTP if configured and enabled
+            if config.system_smtp_enabled and config.system_smtp_host and config.system_smtp_username:
+                host = config.system_smtp_host
+                port = config.system_smtp_port or 587
+                username = config.system_smtp_username
+                password = decrypt_smtp_password(config.system_smtp_encrypted_password or "")
+                security = (config.system_smtp_security or "TLS").upper()
+                from_name = config.system_smtp_from_name or config.site_name or "SmartCampaign"
+                from_email = config.system_smtp_from_email or config.default_from_email or "noreply@smartcampaign.today"
+
+                try:
+                    msg = MIMEMultipart("alternative")
+                    msg["Subject"] = subject
+                    msg["From"] = f"{from_name} <{from_email}>"
+                    msg["To"] = recipient_email
+                    msg.attach(MIMEText(html_body, "html", "utf-8"))
+
+                    use_tls = security == "TLS"
+                    use_ssl = security == "SSL"
+
+                    smtp_client = aiosmtplib.SMTP(
+                        hostname=host,
+                        port=port,
+                        use_tls=use_ssl,
+                        start_tls=use_tls,
+                        timeout=30,
+                    )
+                    await smtp_client.connect()
+                    await smtp_client.login(username, password)
+                    await smtp_client.send_message(msg)
+                    await smtp_client.quit()
+
+                    print(f"[SYSTEM EMAIL SENT] To: {recipient_email} | Subject: {subject} | From: {from_email}")
+
+                except Exception as smtp_err:
+                    print(f"[SYSTEM EMAIL ERROR] Failed to send to {recipient_email}: {smtp_err}")
+
+            else:
+                # Fallback: log to console when no system SMTP is configured
+                from_email = config.default_from_email if config else "noreply@smartcampaign.today"
+                site_name = config.site_name if config else "SmartCampaign"
+                print(f"[SYSTEM EMAIL LOG] Site: {site_name} | From: {from_email} | To: {recipient_email}")
+                print(f"[SYSTEM EMAIL LOG] Subject: {subject}")
+                print(f"[SYSTEM EMAIL LOG] NOTE: Configure System SMTP in Admin Settings to enable real delivery.")
+
+    try:
+        asyncio.run(run())
+    except Exception as exc:
+        print(f"Error executing system email task: {exc}")
+
+

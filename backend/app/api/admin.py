@@ -31,7 +31,7 @@ from app.schemas.admin import (
     AdminAuditLogResponse,
     AdminDashboardStats
 )
-from app.core.security import get_password_hash, verify_password, create_access_token
+from app.core.security import get_password_hash, verify_password, create_access_token, encrypt_smtp_password
 from app.api.admin_deps import get_current_admin
 from app.tasks.email_sender import celery
 
@@ -214,6 +214,7 @@ async def get_users_list(
     search: Optional[str] = Query(None),
     tier: Optional[str] = Query(None),
     status: Optional[str] = Query(None),
+    sort_date: Optional[str] = Query("desc"),
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(get_current_admin)
 ):
@@ -230,7 +231,8 @@ async def get_users_list(
         q = q.where(User.is_active == is_act)
 
     total = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar() or 0
-    res = await db.execute(q.order_by(User.created_at.desc()).offset(offset).limit(limit))
+    order_clause = User.created_at.desc() if sort_date == "desc" else User.created_at.asc()
+    res = await db.execute(q.order_by(order_clause).offset(offset).limit(limit))
     users = res.scalars().all()
 
     return {
@@ -279,6 +281,15 @@ async def get_user_details(
     )
     payments = payment_res.scalars().all()
 
+    # Get campaigns list
+    campaigns_res = await db.execute(
+        select(Campaign)
+        .where(Campaign.user_id == user_id)
+        .order_by(Campaign.created_at.desc())
+        .limit(10)
+    )
+    campaigns = campaigns_res.scalars().all()
+
     return {
         "id": user.id,
         "email": user.email,
@@ -303,6 +314,17 @@ async def get_user_details(
                 "notes": p.notes,
                 "created_at": p.created_at
             } for p in payments
+        ],
+        "campaigns": [
+            {
+                "id": c.id,
+                "name": c.name,
+                "subject": c.subject,
+                "status": c.status,
+                "total_recipients": c.total_recipients,
+                "sent_count": c.sent_count,
+                "created_at": c.created_at
+            } for c in campaigns
         ]
     }
 
@@ -463,6 +485,85 @@ async def extend_user_quota(
     return {"message": f"SMTP quota expanded successfully for {user.email}."}
 
 
+@router.post("/users/{user_id}/reset-password")
+async def reset_user_password(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Resets the password on behalf of the user, generating a secure random temporary password."""
+    import secrets
+    import string
+    
+    res = await db.execute(select(User).where(User.id == user_id))
+    user = res.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User account not found.")
+        
+    alphabet = string.ascii_letters + string.digits
+    temp_pass = ''.join(secrets.choice(alphabet) for i in range(12))
+    
+    user.hashed_password = get_password_hash(temp_pass)
+    
+    await log_audit(
+        db,
+        admin_email=admin.email,
+        action_type="reset_user_password",
+        target_entity=user.email,
+        details=f"Admin reset password for user {user.email}. Temporary password generated."
+    )
+    await db.commit()
+    
+    # Queue system Password Reset Email task
+    try:
+        from app.tasks.email_sender import send_system_email_task
+        send_system_email_task.delay(
+            recipient_email=user.email,
+            subject="Your Account Password Has Been Reset",
+            html_body=f"<h1>Password Reset Notification</h1><p>Your password has been reset by an administrator.</p><p>Your temporary password is: <strong>{temp_pass}</strong></p><p>Please log in and update your password immediately for security reasons.</p>"
+        )
+    except Exception as e:
+        print(f"Error queuing password reset notification: {e}")
+
+    return {
+        "success": True,
+        "email": user.email,
+        "temp_password": temp_pass,
+        "message": f"Password reset successfully for {user.email}."
+    }
+
+
+@router.post("/users/{user_id}/impersonate")
+async def impersonate_user(
+    user_id: int,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Generates a secure user JWT access token on behalf of the customer for administrative debugging."""
+    res = await db.execute(select(User).where(User.id == user_id))
+    user = res.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User account not found.")
+        
+    # Generate customer access token
+    access_token = create_access_token(subject=user.id)
+    
+    await log_audit(
+        db,
+        admin_email=admin.email,
+        action_type="impersonate_user",
+        target_entity=user.email,
+        details=f"Admin impersonated user {user.email} for support and debug diagnostics."
+    )
+    await db.commit()
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "email": user.email
+    }
+
+
 # ─── Subscription & Billing Cash Desk ───────────────────────────────
 
 @router.get("/payments", response_model=List[PaymentLogResponse])
@@ -547,13 +648,13 @@ async def mark_payment_paid(
     payment.status = "paid"
 
     # Dynamic quota allocation based on transaction requested plan_tier
-    quota_limit = 1000
+    quota_limit = 5000
     if payment.plan_tier.lower() == "pro":
-        quota_limit = 10000
-    elif payment.plan_tier.lower() == "business":
         quota_limit = 50000
+    elif payment.plan_tier.lower() == "business":
+        quota_limit = 200000
     elif payment.plan_tier.lower() == "enterprise":
-        quota_limit = 100000
+        quota_limit = 999999999
 
     # Locate user and update credentials
     user_res = await db.execute(select(User).where(User.email == payment.user_email))
@@ -595,7 +696,7 @@ async def mark_payment_refunded(
     user = user_res.scalars().first()
     if user:
         user.subscription_tier = "free"
-        user.quota_limit = 1000
+        user.quota_limit = 5000
 
     await log_audit(
         db,
@@ -627,11 +728,19 @@ async def update_system_settings(
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(get_current_admin)
 ):
-    """Updates branding config and throughput throttles."""
+    """Updates branding config and throughput throttles. Encrypts system SMTP password if provided."""
     res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
     config = res.scalars().first()
 
-    for field, val in config_in.model_dump(exclude_unset=True).items():
+    update_data = config_in.model_dump(exclude_unset=True)
+
+    # Intercept plaintext SMTP password — encrypt before storing
+    if "system_smtp_password" in update_data:
+        raw_password = update_data.pop("system_smtp_password")
+        if raw_password:  # Only encrypt and update if non-empty
+            update_data["system_smtp_encrypted_password"] = encrypt_smtp_password(raw_password)
+
+    for field, val in update_data.items():
         setattr(config, field, val)
 
     await log_audit(
@@ -684,6 +793,11 @@ async def get_system_campaigns(
     offset = (page - 1) * limit
     total = (await db.execute(select(func.count(Campaign.id)))).scalar() or 0
 
+    # Query queue counts
+    queued = (await db.execute(select(func.count(Campaign.id)).where(Campaign.status == "scheduled"))).scalar() or 0
+    processing = (await db.execute(select(func.count(Campaign.id)).where(Campaign.status == "sending"))).scalar() or 0
+    done = (await db.execute(select(func.count(Campaign.id)).where(Campaign.status.in_(["sent", "failed"])))).scalar() or 0
+
     res = await db.execute(
         select(Campaign, User.email)
         .join(User, Campaign.user_id == User.id)
@@ -697,6 +811,11 @@ async def get_system_campaigns(
         "total": total,
         "page": page,
         "limit": limit,
+        "queue_status": {
+            "queued": queued,
+            "processing": processing,
+            "done": done
+        },
         "campaigns": [
             {
                 "id": c.Campaign.id,
@@ -708,6 +827,8 @@ async def get_system_campaigns(
                 "sent_count": c.Campaign.sent_count,
                 "open_count": c.Campaign.open_count,
                 "click_count": c.Campaign.click_count,
+                "is_spam": c.Campaign.is_spam,
+                "spam_note": c.Campaign.spam_note,
                 "created_at": c.Campaign.created_at
             } for c in campaigns
         ]
@@ -754,6 +875,43 @@ async def force_cancel_campaign(
     await db.commit()
 
     return {"message": "Emergency force-cancel dispatched. Dispatch queue terminated."}
+
+
+@router.post("/campaigns/{campaign_id}/spam")
+async def flag_campaign_spam(
+    campaign_id: int,
+    note: str = Query(..., min_length=1),
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """
+    Flag campaign as spam, add abuse handling note, change status to failed, and trigger Celery task purging.
+    """
+    res = await db.execute(select(Campaign).where(Campaign.id == campaign_id))
+    campaign = res.scalars().first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+
+    campaign.is_spam = True
+    campaign.spam_note = note
+    campaign.status = "failed"  # Emergency stop sending
+
+    # Revoke Celery tasks
+    try:
+        celery.control.purge()
+    except Exception:
+        pass
+
+    await log_audit(
+        db,
+        admin_email=admin.email,
+        action_type="flag_campaign_spam",
+        target_entity=str(campaign_id),
+        details=f"Campaign '{campaign.name}' (ID: {campaign_id}) flagged as SPAM. Note: {note}"
+    )
+    await db.commit()
+
+    return {"message": "Campaign flagged as spam and emergency stopped."}
 
 
 # ─── Immutable Audit Logs grid ────────────────────────────────────────

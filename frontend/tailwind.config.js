@@ -39,7 +39,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Outfit', 'Inter', 'sans-serif'],
+        sans: ['Inter', 'Outfit', 'sans-serif'],
       },
       spacing: {
         '0.5': '0.125rem',

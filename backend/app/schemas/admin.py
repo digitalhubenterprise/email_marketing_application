@@ -31,7 +31,33 @@ class SystemConfigResponse(BaseModel):
     maintenance_mode: bool
     global_send_rate_limit: int
     default_from_email: str
+    announcement_active: bool = False
+    announcement_message: Optional[str] = None
+    seo_meta_title: Optional[str] = None
+    seo_meta_description: Optional[str] = None
+    seo_meta_keywords: Optional[str] = None
+    default_from_name: Optional[str] = None
+    smtp_max_retries: Optional[int] = None
+    email_verification_required: Optional[bool] = None
+    min_password_length: Optional[int] = None
+    max_login_attempts: Optional[int] = None
+    session_expiry_hours: Optional[int] = None
+    telegram_bot_token: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
+    telegram_notifications_enabled: Optional[bool] = None
+    two_factor_email_enabled: Optional[bool] = None
+    two_factor_telegram_enabled: Optional[bool] = None
+    two_factor_mandatory_for_admins: Optional[bool] = None
     created_at: Optional[datetime] = None
+
+    # System SMTP fields (password excluded for security)
+    system_smtp_host: Optional[str] = None
+    system_smtp_port: Optional[int] = None
+    system_smtp_username: Optional[str] = None
+    system_smtp_security: Optional[str] = None
+    system_smtp_from_name: Optional[str] = None
+    system_smtp_from_email: Optional[str] = None
+    system_smtp_enabled: Optional[bool] = None
 
     class Config:
         from_attributes = True
@@ -42,6 +68,32 @@ class SystemConfigUpdate(BaseModel):
     support_email: Optional[str] = None
     global_send_rate_limit: Optional[int] = None
     default_from_email: Optional[str] = None
+    announcement_active: Optional[bool] = None
+    announcement_message: Optional[str] = None
+    seo_meta_title: Optional[str] = None
+    seo_meta_description: Optional[str] = None
+    seo_meta_keywords: Optional[str] = None
+    default_from_name: Optional[str] = None
+    smtp_max_retries: Optional[int] = None
+    email_verification_required: Optional[bool] = None
+    min_password_length: Optional[int] = None
+    max_login_attempts: Optional[int] = None
+    session_expiry_hours: Optional[int] = None
+    telegram_bot_token: Optional[str] = None
+    telegram_chat_id: Optional[str] = None
+    telegram_notifications_enabled: Optional[bool] = None
+    two_factor_email_enabled: Optional[bool] = None
+    two_factor_telegram_enabled: Optional[bool] = None
+    two_factor_mandatory_for_admins: Optional[bool] = None
+    # System SMTP fields (plaintext password accepted and encrypted before storing)
+    system_smtp_host: Optional[str] = None
+    system_smtp_port: Optional[int] = None
+    system_smtp_username: Optional[str] = None
+    system_smtp_password: Optional[str] = None  # plaintext — encrypted on save
+    system_smtp_security: Optional[str] = None
+    system_smtp_from_name: Optional[str] = None
+    system_smtp_from_email: Optional[str] = None
+    system_smtp_enabled: Optional[bool] = None
 
 class PaymentLogBase(BaseModel):
     user_email: EmailStr

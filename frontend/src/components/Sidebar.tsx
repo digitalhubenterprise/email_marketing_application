@@ -13,7 +13,7 @@ import {
 import { useAuth } from '../App'
 
 export default function Sidebar() {
-  const { logout, user } = useAuth();
+  const { logout, user, appConfig } = useAuth();
 
   const navItems = [
     { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
@@ -29,11 +29,17 @@ export default function Sidebar() {
     <aside className="w-64 bg-dark-800 border-r border-dark-700/50 flex flex-col h-screen fixed left-0 top-0">
       {/* Platform Title Logo */}
       <div className="py-3.5 px-4 border-b border-dark-700/50 flex items-center gap-2.5">
-        <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
-          S
-        </div>
+        {appConfig?.logo_url ? (
+          <img src={appConfig.logo_url} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
+        ) : (
+          <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
+            {appConfig?.site_name?.substring(0, 1) || "S"}
+          </div>
+        )}
         <div>
-          <h1 className="font-bold text-sm text-white font-sans tracking-wide">SmartCampaign</h1>
+          <h1 className="font-bold text-sm text-white font-sans tracking-wide truncate max-w-[140px]">
+            {appConfig?.site_name || "SmartCampaign"}
+          </h1>
           <span className="text-[10px] text-brand-400 font-bold tracking-wider uppercase">SaaS V1.0</span>
         </div>
       </div>

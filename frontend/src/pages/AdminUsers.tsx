@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import {
   Search,
-  Filter,
   UserCheck,
   UserMinus,
   Trash2,
@@ -10,11 +9,8 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   Mail,
-  Server,
-  Activity,
   ChevronLeft,
   ChevronRight,
-  RefreshCw,
   X
 } from 'lucide-react'
 
@@ -36,13 +32,14 @@ export default function AdminUsers() {
   const [search, setSearch] = useState('');
   const [tier, setTier] = useState('');
   const [status, setStatus] = useState('');
+  const [sortDate, setSortDate] = useState('desc');
   const [loading, setLoading] = useState(true);
 
-  // Selected user detail
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailTab, setDetailTab] = useState<'campaigns' | 'payments'>('campaigns');
+  const [drawerTab, setDrawerTab] = useState<'details' | 'logs' | 'actions'>('details');
 
-  // Modals / Action states
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [overrideTier, setOverrideTier] = useState('pro');
   const [overrideQuota, setOverrideQuota] = useState(10000);
@@ -51,6 +48,10 @@ export default function AdminUsers() {
   const [extendAmount, setExtendAmount] = useState(5000);
 
   const [showDeleteModal, setShowDeleteModal] = useState(false);
+  
+  const [showResetModal, setShowResetModal] = useState(false);
+  const [tempPassword, setTempPassword] = useState('');
+  const [tempUserEmail, setTempUserEmail] = useState('');
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -63,6 +64,7 @@ export default function AdminUsers() {
       if (search) params.append('search', search);
       if (tier) params.append('tier', tier);
       if (status) params.append('status', status);
+      if (sortDate) params.append('sort_date', sortDate);
 
       const res = await fetch(`/api/admin/users?${params.toString()}`, {
         headers: { "Authorization": `Bearer ${token}` }
@@ -81,7 +83,7 @@ export default function AdminUsers() {
 
   useEffect(() => {
     fetchUsers();
-  }, [page, tier, status]);
+  }, [page, tier, status, sortDate]);
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -89,8 +91,46 @@ export default function AdminUsers() {
     fetchUsers();
   };
 
+  const handleResetPassword = async (userId: number) => {
+    if (!confirm("Reset user password and generate a secure temporary password?")) return;
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/reset-password`, {
+        method: 'POST',
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setTempPassword(data.temp_password);
+        setTempUserEmail(data.email);
+        setShowResetModal(true);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleImpersonate = async (userId: number) => {
+    if (!confirm("Impersonate customer session? An audit log entry will be recorded.")) return;
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch(`/api/admin/users/${userId}/impersonate`, {
+        method: 'POST',
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        localStorage.setItem("token", data.access_token);
+        window.open("/", "_blank");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   const handleUserClick = async (userId: number) => {
     setDetailsLoading(true);
+    setDrawerTab('details');
     const token = localStorage.getItem("admin_token");
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
@@ -228,8 +268,6 @@ export default function AdminUsers() {
 
   const handleExportCSV = () => {
     if (users.length === 0) return;
-    
-    // Prepare headers and lines
     const headers = ["ID", "Email Address", "Subscription Tier", "Active Status", "Quota Limit", "Quota Sent", "Joined Date"];
     const rows = users.map(u => [
       u.id,
@@ -240,10 +278,7 @@ export default function AdminUsers() {
       u.quota_sent,
       new Date(u.created_at).toLocaleDateString()
     ]);
-
-    const csvContent = "data:text/csv;charset=utf-8," 
-      + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-    
+    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
@@ -256,32 +291,16 @@ export default function AdminUsers() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="space-y-6 animate-fadeIn">
-      {/* Top action header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-extrabold text-white tracking-tight">CRM Users Management</h2>
-          <p className="text-xs text-dark-400 mt-0.5">Control subscriptions, manual activation bypass, suspensions, and data compliance.</p>
-        </div>
-
-        <button
-          onClick={handleExportCSV}
-          className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs font-bold text-emerald-400 hover:text-white hover:bg-emerald-500/20 transition-all"
-        >
-          <FileSpreadsheet size={13} />
-          Export to CSV
-        </button>
-      </div>
-
+    <div className="space-y-2 animate-fadeIn text-slate-800">
       {/* Directory Filter Cockpit */}
-      <div className="glass-panel rounded-2xl p-5 border border-dark-800/40 grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end -mt-3">
         {/* Search */}
         <form onSubmit={handleSearchSubmit} className="md:col-span-2">
-          <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-widest mb-1.5">
+          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
             Search Users Email
           </label>
           <div className="relative">
-            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-dark-500">
+            <span className="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
               <Search size={14} />
             </span>
             <input
@@ -289,14 +308,14 @@ export default function AdminUsers() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Filter by customer email address..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-dark-900/60 border border-dark-750/30 text-white text-xs placeholder-dark-500 focus:outline-none focus:border-brand-500 transition-all font-semibold"
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-800 text-xs placeholder-slate-400 focus:outline-none focus:border-brand-500 font-semibold"
             />
           </div>
         </form>
 
         {/* Tier */}
         <div>
-          <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-widest mb-1.5">
+          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
             Subscription Tier
           </label>
           <select
@@ -305,7 +324,7 @@ export default function AdminUsers() {
               setTier(e.target.value);
               setPage(1);
             }}
-            className="w-full px-3 py-2 rounded-xl bg-dark-900/60 border border-dark-750/30 text-white text-xs focus:outline-none focus:border-brand-500 transition-all font-semibold"
+            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
           >
             <option value="">All Tiers</option>
             <option value="free">Free Tier</option>
@@ -317,7 +336,7 @@ export default function AdminUsers() {
 
         {/* Status */}
         <div>
-          <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-widest mb-1.5">
+          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
             Client Status
           </label>
           <select
@@ -326,251 +345,410 @@ export default function AdminUsers() {
               setStatus(e.target.value);
               setPage(1);
             }}
-            className="w-full px-3 py-2 rounded-xl bg-dark-900/60 border border-dark-750/30 text-white text-xs focus:outline-none focus:border-brand-500 transition-all font-semibold"
+            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
           >
             <option value="">All Status</option>
             <option value="active">Active Tiers</option>
             <option value="suspended">Suspended Profiles</option>
           </select>
         </div>
+
+        {/* Date Sorting */}
+        <div>
+          <label className="block text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1.5">
+            Sort Joined Date
+          </label>
+          <select
+            value={sortDate}
+            onChange={(e) => {
+              setSortDate(e.target.value);
+              setPage(1);
+            }}
+            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200/80 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+          >
+            <option value="desc">Newest Joined</option>
+            <option value="asc">Oldest Joined</option>
+          </select>
+        </div>
+
+        {/* Export Button */}
+        <div className="flex justify-end h-full items-end pb-0.5">
+          <button
+            onClick={handleExportCSV}
+            className="w-full flex items-center justify-center gap-2 px-3.5 py-2 bg-emerald-50 border border-emerald-250 rounded-xl text-xs font-bold text-emerald-600 hover:bg-emerald-100 transition-all shadow-[0_2px_12px_rgba(0,0,0,0.015)] h-[36px]"
+          >
+            <FileSpreadsheet size={13} />
+            Export to CSV
+          </button>
+        </div>
       </div>
 
-      {/* Database Directory Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Table List (2/3 width) */}
-        <div className="glass-panel rounded-2xl border border-dark-800/40 lg:col-span-2 overflow-hidden flex flex-col justify-between min-h-[450px]">
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-dark-800/40 text-[10px] font-extrabold text-dark-400 uppercase tracking-wider bg-dark-900/20">
-                  <th className="py-3 px-4">User Identity</th>
-                  <th className="py-3 px-4">Joined At</th>
-                  <th className="py-3 px-4">Tier</th>
-                  <th className="py-3 px-4">Status</th>
-                  <th className="py-3 px-4 text-right">Quota Capacity</th>
+      {/* Directory Content - Full Width Table */}
+      <div className="bg-white rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] overflow-hidden flex flex-col justify-between min-h-[450px]">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="border-b border-slate-200/50 text-[10px] font-extrabold text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                <th className="py-3 px-4">User Identity</th>
+                <th className="py-3 px-4">Joined At</th>
+                <th className="py-3 px-4">Tier</th>
+                <th className="py-3 px-4">Status</th>
+                <th className="py-3 px-4 text-right">Quota Capacity</th>
+              </tr>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto" />
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto" />
+              ) : users.length === 0 ? (
+                <tr>
+                  <td colSpan={5} className="py-12 text-center text-xs text-slate-400 font-bold">
+                    No customer profiles matched standard queries.
+                  </td>
+                </tr>
+              ) : (
+                users.map((u) => (
+                  <tr
+                    key={u.id}
+                    onClick={() => handleUserClick(u.id)}
+                    className={`border-b border-slate-100 text-xs font-semibold text-slate-700 cursor-pointer hover:bg-slate-50/50 transition-colors duration-150 ${selectedUser?.id === u.id ? 'bg-brand-50/50 border-l-2 border-l-brand-500' : ''}`}
+                  >
+                    <td className="py-3.5 px-4 font-extrabold text-slate-950 max-w-[200px] truncate">{u.email}</td>
+                    <td className="py-3.5 px-4 text-slate-700 font-bold">{new Date(u.created_at).toLocaleDateString()}</td>
+                    <td className="py-3.5 px-4">
+                      <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${
+                        u.subscription_tier === 'free' ? 'bg-slate-100 text-slate-700 border-slate-350' : 'bg-brand-50 text-brand-700 border-brand-200'
+                      }`}>
+                        {u.subscription_tier}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-4">
+                      {u.is_active ? (
+                        <span className="text-[9px] font-black uppercase text-emerald-800 bg-emerald-50 border border-emerald-250 px-1.5 py-0.5 rounded">Active</span>
+                      ) : (
+                        <span className="text-[9px] font-black uppercase text-rose-800 bg-rose-50 border border-rose-250 px-1.5 py-0.5 rounded">Suspended</span>
+                      )}
+                    </td>
+                    <td className="py-3.5 px-4 text-right font-mono text-[11px] text-slate-900 font-bold">
+                      {u.quota_sent} / <span className="text-slate-950 font-black">{u.quota_limit}</span>
                     </td>
                   </tr>
-                ) : users.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="py-12 text-center text-xs text-dark-500 font-semibold">
-                      No customer profiles matched standard queries.
-                    </td>
-                  </tr>
-                ) : (
-                  users.map((u) => (
-                    <tr
-                      key={u.id}
-                      onClick={() => handleUserClick(u.id)}
-                      className={`border-b border-dark-800/30 text-xs font-semibold text-dark-200 cursor-pointer hover:bg-dark-800/35 transition-colors duration-150 ${selectedUser?.id === u.id ? 'bg-brand-500/5 border-l-2 border-l-brand-500' : ''}`}
-                    >
-                      <td className="py-3.5 px-4 font-bold text-white max-w-[200px] truncate">{u.email}</td>
-                      <td className="py-3.5 px-4 text-dark-400">{new Date(u.created_at).toLocaleDateString()}</td>
-                      <td className="py-3.5 px-4">
-                        <span className={`text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded border ${
-                          u.subscription_tier === 'free' ? 'bg-dark-800 text-dark-400 border-dark-700/50' : 'bg-brand-500/10 text-brand-400 border-brand-500/20'
-                        }`}>
-                          {u.subscription_tier}
-                        </span>
-                      </td>
-                      <td className="py-3.5 px-4">
-                        {u.is_active ? (
-                          <span className="text-[9px] font-black uppercase text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-1.5 py-0.5 rounded">Active</span>
-                        ) : (
-                          <span className="text-[9px] font-black uppercase text-rose-400 bg-rose-500/10 border border-rose-500/20 px-1.5 py-0.5 rounded">Suspended</span>
-                        )}
-                      </td>
-                      <td className="py-3.5 px-4 text-right font-mono text-[11px] text-dark-300">
-                        {u.quota_sent} / <span className="text-white font-extrabold">{u.quota_limit}</span>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Pagination */}
-          <div className="p-4 border-t border-dark-800/40 flex items-center justify-between text-xs bg-dark-900/10">
-            <span className="text-dark-400">Showing <span className="font-extrabold text-white">{users.length}</span> of <span className="font-extrabold text-white">{total}</span> records</span>
-
-            <div className="flex items-center gap-1.5">
-              <button
-                disabled={page <= 1}
-                onClick={() => setPage(p => p - 1)}
-                className="p-1 rounded bg-dark-800 border border-dark-700/40 text-dark-400 hover:text-white disabled:opacity-50"
-              >
-                <ChevronLeft size={14} />
-              </button>
-              <span className="font-bold text-white px-2 py-0.5 bg-dark-750 rounded border border-dark-700/60">
-                Page {page} of {totalPages || 1}
-              </span>
-              <button
-                disabled={page >= totalPages}
-                onClick={() => setPage(p => p + 1)}
-                className="p-1 rounded bg-dark-800 border border-dark-700/40 text-dark-400 hover:text-white disabled:opacity-50"
-              >
-                <ChevronRight size={14} />
-              </button>
-            </div>
-          </div>
+                ))
+              )}
+            </tbody>
+          </table>
         </div>
 
-        {/* Selected Customer Panel (1/3 width) */}
-        <div className="glass-panel rounded-2xl p-6 border border-dark-800/40 flex flex-col min-h-[450px]">
-          {detailsLoading ? (
-            <div className="flex-1 flex flex-col items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500" />
-              <p className="text-[10px] text-dark-400 mt-2 font-semibold">Gathering client stats...</p>
-            </div>
-          ) : !selectedUser ? (
-            <div className="flex-1 flex flex-col items-center justify-center text-center text-dark-500 space-y-2 py-10">
-              <Sliders size={28} className="text-dark-600 animate-pulse" />
-              <h4 className="font-bold text-xs text-dark-400">No profile selected</h4>
-              <p className="text-[10px] text-dark-500 max-w-[200px]">Click any user in the directory table to open administrative actions.</p>
-            </div>
-          ) : (
-            <div className="space-y-6 flex-1 flex flex-col justify-between">
-              {/* Profile Card Header */}
-              <div className="space-y-3">
-                <div className="flex items-start justify-between border-b border-dark-800/40 pb-3">
-                  <div className="truncate pr-2">
-                    <h3 className="font-black text-sm text-white truncate">{selectedUser.email}</h3>
-                    <span className="text-[9px] text-dark-500 font-semibold block mt-0.5">ID Ref: {selectedUser.id}</span>
-                  </div>
-                  <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border ${
-                    selectedUser.is_active ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border-rose-500/20'
-                  }`}>
-                    {selectedUser.is_active ? 'Active' : 'Suspended'}
-                  </span>
-                </div>
+        {/* Pagination */}
+        <div className="p-4 border-t border-slate-200/50 flex items-center justify-between text-xs bg-slate-50/50">
+          <span className="text-slate-700 font-bold">Showing <span className="font-black text-slate-950">{users.length}</span> of <span className="font-black text-slate-950">{total}</span> records</span>
 
-                {/* Sub Stats counts */}
-                <div className="grid grid-cols-3 gap-2 text-center">
-                  <div className="bg-dark-900/40 p-2 border border-dark-800/40 rounded-xl">
-                    <span className="block text-[9px] font-bold text-dark-400 uppercase tracking-wide">SMTP Nodes</span>
-                    <span className="text-xs font-black text-white">{selectedUser.stats.smtp_count}</span>
-                  </div>
-                  <div className="bg-dark-900/40 p-2 border border-dark-800/40 rounded-xl">
-                    <span className="block text-[9px] font-bold text-dark-400 uppercase tracking-wide">Contacts</span>
-                    <span className="text-xs font-black text-white">{selectedUser.stats.lists_count}</span>
-                  </div>
-                  <div className="bg-dark-900/40 p-2 border border-dark-800/40 rounded-xl">
-                    <span className="block text-[9px] font-bold text-dark-400 uppercase tracking-wide">Campaigns</span>
-                    <span className="text-xs font-black text-white">{selectedUser.stats.campaigns_count}</span>
-                  </div>
-                </div>
-
-                {/* Quota Gauge */}
-                <div className="bg-dark-900/20 p-3.5 border border-dark-800/40 rounded-xl space-y-1.5">
-                  <div className="flex items-center justify-between text-[10px] font-bold text-dark-400">
-                    <span>Monthly Dispatch Vol:</span>
-                    <span className="text-white font-mono">{selectedUser.quota_sent} / {selectedUser.quota_limit}</span>
-                  </div>
-                  <div className="w-full h-1.5 bg-dark-800 rounded-full overflow-hidden border border-dark-700/20">
-                    <div className="h-full bg-brand-500" style={{ width: `${Math.min((selectedUser.quota_sent / selectedUser.quota_limit) * 100, 100)}%` }} />
-                  </div>
-                </div>
-              </div>
-
-              {/* Administrative Actions Trigger Cockpit */}
-              <div className="space-y-2 border-t border-dark-800/40 pt-4">
-                <h4 className="text-[10px] font-black text-dark-400 uppercase tracking-wider mb-2">Administrative Actions</h4>
-
-                {/* Toggle Suspensions */}
-                {selectedUser.is_active ? (
-                  <button
-                    onClick={() => handleSuspend(selectedUser.id)}
-                    className="w-full flex items-center justify-between px-3 py-2 bg-rose-500/5 hover:bg-rose-500/10 border border-rose-500/20 hover:border-rose-500/40 rounded-xl text-rose-400 text-xs font-bold transition-all duration-300"
-                  >
-                    <span className="flex items-center gap-2"><UserMinus size={14} /> Suspend User Account</span>
-                    <span className="text-[9px] uppercase tracking-wider font-extrabold bg-rose-500/10 px-1.5 py-0.2 border border-rose-500/20 rounded">Ban</span>
-                  </button>
-                ) : (
-                  <div className="space-y-2">
-                    <button
-                      onClick={() => handleUnsuspend(selectedUser.id)}
-                      className="w-full flex items-center justify-between px-3 py-2 bg-emerald-500/5 hover:bg-emerald-500/10 border border-emerald-500/20 hover:border-emerald-500/40 rounded-xl text-emerald-400 text-xs font-bold transition-all duration-300"
-                    >
-                      <span className="flex items-center gap-2"><UserCheck size={14} /> Lift Account Suspension</span>
-                      <span className="text-[9px] uppercase tracking-wider font-extrabold bg-emerald-500/10 px-1.5 py-0.2 border border-emerald-500/20 rounded">Unban</span>
-                    </button>
-
-                    <button
-                      onClick={() => handleBypassActivation(selectedUser.id)}
-                      className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-dark-800 hover:bg-dark-750 border border-dark-700/40 rounded-xl text-white text-xs font-bold transition-all"
-                    >
-                      Bypass Email Verification
-                    </button>
-                  </div>
-                )}
-
-                {/* Override Limit */}
-                <button
-                  onClick={() => {
-                    setOverrideTier(selectedUser.subscription_tier);
-                    setOverrideQuota(selectedUser.quota_limit);
-                    setShowOverrideModal(true);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-dark-800/60 hover:bg-dark-750 border border-dark-700/40 rounded-xl text-white text-xs font-bold transition-all duration-300"
-                >
-                  <Sliders size={14} className="text-brand-400" />
-                  Override Plan Limits & Tier
-                </button>
-
-                {/* Extend Quotas */}
-                <button
-                  onClick={() => setShowExtendModal(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-dark-800/60 hover:bg-dark-750 border border-dark-700/40 rounded-xl text-white text-xs font-bold transition-all duration-300"
-                >
-                  <PlusCircle size={14} className="text-indigo-400" />
-                  Extend Emails Sending Quota
-                </button>
-
-                {/* GDPR Delete */}
-                <button
-                  onClick={() => setShowDeleteModal(true)}
-                  className="w-full flex items-center gap-2 px-3 py-2 bg-rose-500/10 hover:bg-rose-500/25 border border-rose-500/20 rounded-xl text-rose-400 text-xs font-bold transition-all"
-                >
-                  <Trash2 size={14} />
-                  GDPR Hard-Delete Profile
-                </button>
-              </div>
-            </div>
-          )}
+          <div className="flex items-center gap-1.5">
+            <button
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+              className="p-1 rounded bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-50"
+            >
+              <ChevronLeft size={14} />
+            </button>
+            <span className="font-bold text-slate-900 px-2 py-0.5 bg-white rounded border border-slate-200">
+              Page {page} of {totalPages || 1}
+            </span>
+            <button
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => p + 1)}
+              className="p-1 rounded bg-white border border-slate-200 text-slate-500 hover:text-slate-900 hover:bg-slate-50 disabled:opacity-50"
+            >
+              <ChevronRight size={14} />
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Drawer Panel */}
+      {(selectedUser || detailsLoading) && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed -top-8 -right-8 -bottom-8 -left-8 bg-slate-900/40 backdrop-blur-[2px] z-[42] animate-fadeIn" 
+            onClick={() => {
+              if (!detailsLoading) setSelectedUser(null);
+            }} 
+          />
+          
+          {/* Drawer container */}
+          <div className="fixed -top-8 -right-8 -bottom-8 w-full md:w-3/4 bg-white shadow-2xl z-[45] border-l border-slate-200 flex flex-col justify-between p-6 animate-slideInRight text-slate-800">
+            {/* Close Button */}
+            <button 
+              onClick={() => setSelectedUser(null)} 
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-655 p-1.5 rounded-lg hover:bg-slate-50 transition-all"
+            >
+              <X size={18} />
+            </button>
+
+            {detailsLoading ? (
+              <div className="flex-1 flex flex-col items-center justify-center">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500" />
+                <p className="text-[10px] text-slate-400 mt-2 font-semibold animate-pulse">Gathering client stats...</p>
+              </div>
+            ) : selectedUser ? (
+              <div className="flex-1 flex flex-col h-full justify-between overflow-y-auto pr-1">
+                {/* Profile Card Header */}
+                <div className="space-y-4">
+                  <div className="flex items-start justify-between border-b border-slate-100 pb-3 mt-2 pr-8">
+                    <div className="truncate pr-2">
+                      <h3 className="font-black text-sm text-slate-950 truncate" title={selectedUser.email}>{selectedUser.email}</h3>
+                      <span className="text-[9px] text-slate-400 font-semibold block mt-0.5">ID Ref: {selectedUser.id}</span>
+                    </div>
+                    <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded border shrink-0 ${
+                      selectedUser.is_active ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-rose-50 text-rose-600 border-rose-100'
+                    }`}>
+                      {selectedUser.is_active ? 'Active' : 'Suspended'}
+                    </span>
+                  </div>
+
+                  {/* Horizontal Interactive Sliding Menu */}
+                  <div className="flex border-b border-slate-200 mt-2 mb-4 gap-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
+                    <button
+                      onClick={() => setDrawerTab('details')}
+                      className={`pb-2 transition-all relative ${
+                        drawerTab === 'details' ? 'text-brand-600 border-b-2 border-brand-500 font-extrabold' : 'hover:text-slate-700'
+                      }`}
+                    >
+                      Details
+                    </button>
+                    <button
+                      onClick={() => setDrawerTab('logs')}
+                      className={`pb-2 transition-all relative ${
+                        drawerTab === 'logs' ? 'text-brand-600 border-b-2 border-brand-500 font-extrabold' : 'hover:text-slate-700'
+                      }`}
+                    >
+                      Logs
+                    </button>
+                    <button
+                      onClick={() => setDrawerTab('actions')}
+                      className={`pb-2 transition-all relative ${
+                        drawerTab === 'actions' ? 'text-brand-600 border-b-2 border-brand-500 font-extrabold' : 'hover:text-slate-700'
+                      }`}
+                    >
+                      Administrative Actions
+                    </button>
+                  </div>
+
+                  {/* Tab Body Contents */}
+                  <div className="flex-1">
+                    {drawerTab === 'details' && (
+                      <div className="space-y-5 py-2 animate-fadeIn">
+                        {/* Sub Stats counts */}
+                        <div className="grid grid-cols-3 gap-2 text-center">
+                          <div className="bg-slate-50 p-2 border border-slate-200/60 rounded-xl">
+                            <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">SMTP Nodes</span>
+                            <span className="text-xs font-black text-slate-900">{selectedUser.stats.smtp_count}</span>
+                          </div>
+                          <div className="bg-slate-50 p-2 border border-slate-200/60 rounded-xl">
+                            <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">Contacts</span>
+                            <span className="text-xs font-black text-slate-900">{selectedUser.stats.lists_count}</span>
+                          </div>
+                          <div className="bg-slate-50 p-2 border border-slate-200/60 rounded-xl">
+                            <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">Campaigns</span>
+                            <span className="text-xs font-black text-slate-900">{selectedUser.stats.campaigns_count}</span>
+                          </div>
+                        </div>
+
+                        {/* Quota Gauge */}
+                        <div className="bg-slate-50/50 p-3.5 border border-slate-150 rounded-xl space-y-1.5">
+                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-500">
+                            <span>Monthly Dispatch Vol:</span>
+                            <span className="text-slate-900 font-mono font-extrabold">{selectedUser.quota_sent} / {selectedUser.quota_limit}</span>
+                          </div>
+                          <div className="w-full h-1.5 bg-slate-200 rounded-full overflow-hidden border border-slate-300/10">
+                            <div className="h-full bg-brand-500" style={{ width: `${Math.min((selectedUser.quota_sent / selectedUser.quota_limit) * 100, 100)}%` }} />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {drawerTab === 'logs' && (
+                      <div className="space-y-4 py-2 animate-fadeIn">
+                        {/* mini tabs Campaigns vs Payments */}
+                        <div className="bg-slate-100 p-0.5 rounded-lg flex gap-1 mb-2.5">
+                          <button
+                            onClick={() => setDetailTab('campaigns')}
+                            className={`flex-1 py-1 text-[10px] font-bold uppercase rounded-md transition-all ${
+                              detailTab === 'campaigns' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-450 hover:text-slate-750'
+                            }`}
+                          >
+                            Campaigns
+                          </button>
+                          <button
+                            onClick={() => setDetailTab('payments')}
+                            className={`flex-1 py-1 text-[10px] font-bold uppercase rounded-md transition-all ${
+                              detailTab === 'payments' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-450 hover:text-slate-755'
+                            }`}
+                          >
+                            Payments History
+                          </button>
+                        </div>
+
+                        <div className="max-h-[350px] overflow-y-auto space-y-1.5 pr-0.5">
+                          {detailTab === 'campaigns' ? (
+                            !selectedUser.campaigns || selectedUser.campaigns.length === 0 ? (
+                              <p className="text-[10px] text-slate-400 font-semibold py-4 text-center">No campaigns launched yet.</p>
+                            ) : (
+                              selectedUser.campaigns.map((c: any) => (
+                                <div key={c.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/50 text-[11px] font-semibold text-slate-700">
+                                  <div className="truncate pr-2 max-w-[280px]">
+                                    <span className="block font-black text-slate-900 truncate" title={c.name}>{c.name}</span>
+                                    <span className="text-[9px] text-slate-450">{new Date(c.created_at).toLocaleDateString()} · {c.sent_count}/{c.total_recipients}</span>
+                                  </div>
+                                  <span className={`text-[8.5px] uppercase font-black px-1.5 py-0.2 rounded border shrink-0 ${
+                                    c.status === 'sent' ? 'bg-emerald-50 text-emerald-600 border-emerald-150' : 'bg-amber-50 text-amber-600 border-amber-150'
+                                  }`}>
+                                    {c.status}
+                                  </span>
+                                </div>
+                              ))
+                            )
+                          ) : (
+                            !selectedUser.payments || selectedUser.payments.length === 0 ? (
+                              <p className="text-[10px] text-slate-400 font-semibold py-4 text-center">No payment transactions recorded.</p>
+                            ) : (
+                              selectedUser.payments.map((p: any) => (
+                                <div key={p.id} className="flex items-center justify-between p-2.5 rounded-xl bg-slate-50 border border-slate-200/50 text-[11px] font-semibold text-slate-700">
+                                  <div className="truncate pr-2">
+                                    <span className="block font-black text-slate-900">${p.amount} · <span className="uppercase text-[8.5px] text-brand-600 font-black">{p.gateway}</span></span>
+                                    <span className="text-[9px] text-slate-455">{new Date(p.created_at).toLocaleDateString()} · {p.plan_tier}</span>
+                                  </div>
+                                  <span className={`text-[8.5px] uppercase font-black px-1.5 py-0.2 rounded border shrink-0 ${
+                                    p.status === 'paid' ? 'bg-emerald-50 text-emerald-600 border-emerald-150' : 'bg-amber-50 text-amber-600 border-amber-150'
+                                  }`}>
+                                    {p.status}
+                                  </span>
+                                </div>
+                              ))
+                            )
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {drawerTab === 'actions' && (
+                      <div className="space-y-3 py-2 animate-fadeIn">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Administrative Actions</h4>
+
+                        {/* Toggle Suspensions */}
+                        {selectedUser.is_active ? (
+                          <button
+                            onClick={() => handleSuspend(selectedUser.id)}
+                            className="w-full flex items-center justify-between px-3 py-2 bg-rose-50 hover:bg-rose-100/70 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold transition-all duration-200"
+                          >
+                            <span className="flex items-center gap-2"><UserMinus size={14} /> Suspend User Account</span>
+                            <span className="text-[9px] uppercase tracking-wider font-extrabold bg-rose-200/20 px-1.5 py-0.2 border border-rose-200 rounded">Ban</span>
+                          </button>
+                        ) : (
+                          <div className="space-y-2">
+                            <button
+                              onClick={() => handleUnsuspend(selectedUser.id)}
+                              className="w-full flex items-center justify-between px-3 py-2 bg-emerald-50 hover:bg-emerald-100/70 border border-emerald-200 rounded-xl text-emerald-600 text-xs font-bold transition-all duration-200"
+                            >
+                              <span className="flex items-center gap-2"><UserCheck size={14} /> Lift Account Suspension</span>
+                              <span className="text-[9px] uppercase tracking-wider font-extrabold bg-emerald-200/20 px-1.5 py-0.2 border border-emerald-200 rounded">Unban</span>
+                            </button>
+
+                            <button
+                              onClick={() => handleBypassActivation(selectedUser.id)}
+                              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition-all"
+                            >
+                              Bypass Email Verification
+                            </button>
+                          </div>
+                        )}
+
+                        {/* Reset Password */}
+                        <button
+                          onClick={() => handleResetPassword(selectedUser.id)}
+                          className="w-full flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition-all duration-200"
+                        >
+                          <Mail size={14} className="text-amber-500" />
+                          Reset User Password (On Behalf)
+                        </button>
+
+                        {/* Impersonate Session */}
+                        <button
+                          onClick={() => handleImpersonate(selectedUser.id)}
+                          className="w-full flex items-center gap-2 px-3 py-2 bg-brand-50 hover:bg-brand-100 border border-brand-200 rounded-xl text-brand-700 text-xs font-bold transition-all duration-200"
+                        >
+                          <Sliders size={14} className="text-brand-500 animate-pulse" />
+                          Impersonate Session (Log In)
+                        </button>
+
+                        {/* Override Limit */}
+                        <button
+                          onClick={() => {
+                            setOverrideTier(selectedUser.subscription_tier);
+                            setOverrideQuota(selectedUser.quota_limit);
+                            setShowOverrideModal(true);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition-all duration-200"
+                        >
+                          <Sliders size={14} className="text-brand-500" />
+                          Override Plan Limits & Tier
+                        </button>
+
+                        {/* Extend Quotas */}
+                        <button
+                          onClick={() => setShowExtendModal(true)}
+                          className="w-full flex items-center gap-2 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-slate-200 rounded-xl text-slate-700 text-xs font-bold transition-all duration-200"
+                        >
+                          <PlusCircle size={14} className="text-indigo-500" />
+                          Extend Emails Sending Quota
+                        </button>
+
+                        {/* GDPR Delete */}
+                        <button
+                          onClick={() => setShowDeleteModal(true)}
+                          className="w-full flex items-center gap-2 px-3 py-2 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-xl text-rose-600 text-xs font-bold transition-all"
+                        >
+                          <Trash2 size={14} />
+                          GDPR Hard-Delete Profile
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </div>
+        </>
+      )}
 
       {/* OVERRIDE PLAN MODAL */}
       {showOverrideModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md rounded-2xl overflow-hidden border border-dark-800/50 relative animate-scaleUp">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-slate-200 shadow-2xl relative animate-scaleUp text-slate-800">
             <div className="absolute top-0 left-0 w-full h-[3px] bg-brand-500" />
-            <div className="p-6 border-b border-dark-800/40 flex items-center justify-between bg-dark-900/30">
-              <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
-                <Sliders size={16} className="text-brand-400" />
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <Sliders size={16} className="text-brand-500" />
                 Override Subscription limits
               </h3>
-              <button onClick={() => setShowOverrideModal(false)} className="text-dark-400 hover:text-white">
+              <button onClick={() => setShowOverrideModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleOverrideSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                   Select Subscription Tier
                 </label>
                 <select
                   value={overrideTier}
                   onChange={(e) => setOverrideTier(e.target.value)}
-                  className="w-full px-3 py-2.5 rounded-xl bg-dark-900 border border-dark-750/30 text-white text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
                 >
                   <option value="free">free</option>
                   <option value="pro">pro</option>
@@ -580,7 +758,7 @@ export default function AdminUsers() {
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                   Monthly Emails Sending Limit
                 </label>
                 <input
@@ -588,7 +766,7 @@ export default function AdminUsers() {
                   required
                   value={overrideQuota}
                   onChange={(e) => setOverrideQuota(parseInt(e.target.value))}
-                  className="w-full px-3 py-2.5 rounded-xl bg-dark-900 border border-dark-750/30 text-white text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
                 />
               </div>
 
@@ -596,13 +774,13 @@ export default function AdminUsers() {
                 <button
                   type="button"
                   onClick={() => setShowOverrideModal(false)}
-                  className="flex-1 py-2.5 border border-dark-700/40 rounded-xl text-xs font-bold text-dark-400 hover:text-white"
+                  className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
                 >
                   Cancel Override
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 brand-gradient-bg rounded-xl text-xs font-bold text-white shadow-lg shadow-brand-500/10"
+                  className="flex-1 py-2.5 brand-gradient-bg text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-500/10"
                 >
                   Commit Updates
                 </button>
@@ -614,22 +792,22 @@ export default function AdminUsers() {
 
       {/* EXTEND QUOTA MODAL */}
       {showExtendModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md rounded-2xl overflow-hidden border border-dark-800/50 relative animate-scaleUp">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-slate-200 shadow-2xl relative animate-scaleUp text-slate-800">
             <div className="absolute top-0 left-0 w-full h-[3px] bg-indigo-500" />
-            <div className="p-6 border-b border-dark-800/40 flex items-center justify-between bg-dark-900/30">
-              <h3 className="font-extrabold text-sm text-white flex items-center gap-2">
-                <PlusCircle size={16} className="text-indigo-400" />
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <PlusCircle size={16} className="text-indigo-500" />
                 Extend Customer Quota
               </h3>
-              <button onClick={() => setShowExtendModal(false)} className="text-dark-400 hover:text-white">
+              <button onClick={() => setShowExtendModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
 
             <form onSubmit={handleExtendSubmit} className="p-6 space-y-4">
               <div>
-                <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-widest mb-1.5">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                   Quota Expansion volume (+ emails)
                 </label>
                 <input
@@ -637,22 +815,22 @@ export default function AdminUsers() {
                   required
                   value={extendAmount}
                   onChange={(e) => setExtendAmount(parseInt(e.target.value))}
-                  className="w-full px-3 py-2.5 rounded-xl bg-dark-900 border border-dark-750/30 text-white text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
                 />
-                <span className="text-[9px] text-dark-500 font-semibold block mt-1">This will be added directly on top of their current capacity limits.</span>
+                <span className="text-[9px] text-slate-400 font-semibold block mt-1">This will be added directly on top of their current capacity limits.</span>
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button
                   type="button"
                   onClick={() => setShowExtendModal(false)}
-                  className="flex-1 py-2.5 border border-dark-700/40 rounded-xl text-xs font-bold text-dark-400 hover:text-white"
+                  className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
                 >
                   Cancel Extension
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white shadow-lg"
+                  className="flex-1 py-2.5 bg-indigo-600 rounded-xl text-xs font-bold text-white shadow-lg shadow-indigo-500/10"
                 >
                   Extend Quota
                 </button>
@@ -664,29 +842,29 @@ export default function AdminUsers() {
 
       {/* GDPR DELETE CONFIRMATION MODAL */}
       {showDeleteModal && selectedUser && (
-        <div className="fixed inset-0 bg-black/85 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-md rounded-2xl overflow-hidden border border-rose-500/35 relative animate-scaleUp">
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-rose-200 shadow-2xl relative animate-scaleUp text-slate-800">
             <div className="absolute top-0 left-0 w-full h-[3px] bg-rose-500" />
-            <div className="p-6 border-b border-dark-800/40 flex items-center justify-between bg-rose-500/5">
-              <h3 className="font-extrabold text-sm text-rose-400 flex items-center gap-2">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-rose-50">
+              <h3 className="font-extrabold text-sm text-rose-600 flex items-center gap-2">
                 <AlertTriangle size={16} />
                 GDPR Hard-Delete Confirmation
               </h3>
-              <button onClick={() => setShowDeleteModal(false)} className="text-dark-400 hover:text-white">
+              <button onClick={() => setShowDeleteModal(false)} className="text-slate-400 hover:text-slate-600">
                 <X size={16} />
               </button>
             </div>
 
             <div className="p-6 space-y-4">
-              <p className="text-xs text-dark-300 font-semibold leading-relaxed">
-                Warning! You are about to perform a <span className="text-rose-400 font-extrabold">GDPR Hard Delete</span> for user:
+              <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                Warning! You are about to perform a <span className="text-rose-600 font-extrabold">GDPR Hard Delete</span> for user:
                 <br />
-                <span className="text-white font-extrabold font-mono block mt-1.5 p-2 bg-dark-900 rounded border border-dark-800/50 truncate">
+                <span className="text-slate-800 font-extrabold font-mono block mt-1.5 p-2 bg-slate-50 rounded border border-slate-200 truncate">
                   {selectedUser.email}
                 </span>
               </p>
 
-              <div className="p-3 bg-rose-500/5 border border-rose-500/10 rounded-xl text-[10px] text-rose-400 font-semibold space-y-1.5">
+              <div className="p-3 bg-rose-50 border border-rose-100 rounded-xl text-[10px] text-rose-600 font-semibold space-y-1.5">
                 <p>This action is irreversible and will permanently delete:</p>
                 <ul className="list-disc pl-4 space-y-0.5">
                   <li>User profile details and login credentials</li>
@@ -701,7 +879,7 @@ export default function AdminUsers() {
                 <button
                   type="button"
                   onClick={() => setShowDeleteModal(false)}
-                  className="flex-1 py-2.5 border border-dark-700/40 rounded-xl text-xs font-bold text-dark-400 hover:text-white"
+                  className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
                 >
                   Abort Action
                 </button>
@@ -712,6 +890,60 @@ export default function AdminUsers() {
                   Confirm Hard-Delete
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* PASSWORD RESET CONFIRMATION MODAL */}
+      {showResetModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-slate-200 shadow-2xl relative animate-scaleUp text-slate-800">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-amber-500" />
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <Mail size={16} className="text-amber-500" />
+                Temporary Password Generated
+              </h3>
+              <button onClick={() => setShowResetModal(false)} className="text-slate-400 hover:text-slate-600">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                A new temporary password has been successfully generated for user:
+                <span className="block font-black text-slate-900 font-mono mt-1.5 p-2 bg-slate-50 border border-slate-200 rounded truncate select-all">
+                  {tempUserEmail}
+                </span>
+              </p>
+
+              <div className="p-3.5 bg-amber-50 border border-amber-100 rounded-xl space-y-2">
+                <span className="block text-[10px] font-black text-amber-800 uppercase tracking-wider">Secure Temporary Password:</span>
+                <div className="flex items-center justify-between bg-white border border-amber-200 p-2.5 rounded-lg">
+                  <span className="font-mono text-sm font-black text-slate-900 select-all">{tempPassword}</span>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(tempPassword);
+                      alert("Temporary password copied to clipboard!");
+                    }}
+                    className="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-[10px] font-bold transition-all"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              <p className="text-[10px] text-slate-500 font-semibold leading-relaxed">
+                <span className="text-amber-600 font-bold">Important:</span> Copy this temporary password and share it securely with the user. The user will be required to change their password once they log back in.
+              </p>
+
+              <button
+                onClick={() => setShowResetModal(false)}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all"
+              >
+                Close Window
+              </button>
             </div>
           </div>
         </div>

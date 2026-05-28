@@ -74,6 +74,81 @@ async def create_db_tables() -> None:
     except Exception as e:
         print(f"DB migration warning 3 (non-fatal): {e}")
 
+    try:
+        async with engine.begin() as conn:
+            from sqlalchemy import text
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS seo_meta_title VARCHAR DEFAULT 'SmartCampaign - Modern SaaS Email Marketing Platform'")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS seo_meta_description VARCHAR DEFAULT 'Create, personalize, monitor, and scale email marketing campaigns dynamically.'")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS seo_meta_keywords VARCHAR DEFAULT 'email marketing, smtp, celery, dispatch, saas'")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS default_from_name VARCHAR DEFAULT 'SmartCampaign Operations'")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS smtp_max_retries INTEGER DEFAULT 3")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS email_verification_required BOOLEAN DEFAULT false")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS min_password_length INTEGER DEFAULT 8")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS max_login_attempts INTEGER DEFAULT 5")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS session_expiry_hours INTEGER DEFAULT 24")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS telegram_bot_token VARCHAR DEFAULT ''")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS telegram_chat_id VARCHAR DEFAULT ''")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS telegram_notifications_enabled BOOLEAN DEFAULT false")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS two_factor_email_enabled BOOLEAN DEFAULT false")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS two_factor_telegram_enabled BOOLEAN DEFAULT false")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS two_factor_mandatory_for_admins BOOLEAN DEFAULT false")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_host VARCHAR")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_port INTEGER DEFAULT 587")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_username VARCHAR")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_encrypted_password VARCHAR")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_security VARCHAR DEFAULT 'TLS'")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_from_name VARCHAR")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_from_email VARCHAR")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_enabled BOOLEAN DEFAULT false")
+            )
+    except Exception as e:
+        print(f"DB migration warning 4 (non-fatal): {e}")
+
     # Create rules to protect admin_audit_logs from deletion or updates (append-only)
     try:
         async with engine.begin() as conn:
@@ -103,8 +178,8 @@ async def create_db_tables() -> None:
             if not config_check.first():
                 await conn.execute(
                     text(
-                        "INSERT INTO system_configs (id, site_name, support_email, maintenance_mode, global_send_rate_limit, default_from_email) "
-                        "VALUES (1, 'SmartCampaign', 'support@smartcampaign.today', false, 1000, 'noreply@smartcampaign.today')"
+                        "INSERT INTO system_configs (id, site_name, support_email, maintenance_mode, global_send_rate_limit, default_from_email, seo_meta_title, seo_meta_description, seo_meta_keywords, default_from_name, smtp_max_retries, email_verification_required, min_password_length, max_login_attempts, session_expiry_hours, telegram_bot_token, telegram_chat_id, telegram_notifications_enabled, two_factor_email_enabled, two_factor_telegram_enabled, two_factor_mandatory_for_admins) "
+                        "VALUES (1, 'SmartCampaign', 'support@smartcampaign.today', false, 1000, 'noreply@smartcampaign.today', 'SmartCampaign - Modern SaaS Email Marketing Platform', 'Create, personalize, monitor, and scale email marketing campaigns dynamically.', 'email marketing, smtp, celery, dispatch, saas', 'SmartCampaign Operations', 3, false, 8, 5, 24, '', '', false, false, false, false)"
                     )
                 )
     except Exception as e:

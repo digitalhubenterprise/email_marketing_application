@@ -107,6 +107,8 @@ class Campaign(Base):
     scheduled_at = Column(DateTime, nullable=True)
     auto_resend_hours = Column(Integer, nullable=True, default=0)
     sending_mode = Column(String, default="auto") # auto, manual
+    is_spam = Column(Boolean, default=False)
+    spam_note = Column(String, nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
 
     user = relationship("User", back_populates="campaigns")
@@ -164,6 +166,32 @@ class SystemConfig(Base):
     maintenance_mode = Column(Boolean, default=False)
     global_send_rate_limit = Column(Integer, default=1000)  # max sends per hour per user
     default_from_email = Column(String, default="noreply@smartcampaign.today")
+    announcement_active = Column(Boolean, default=False)
+    announcement_message = Column(String, nullable=True)
+    seo_meta_title = Column(String, default="SmartCampaign - Modern SaaS Email Marketing Platform")
+    seo_meta_description = Column(String, default="Create, personalize, monitor, and scale email marketing campaigns dynamically.")
+    seo_meta_keywords = Column(String, default="email marketing, smtp, celery, dispatch, saas")
+    default_from_name = Column(String, default="SmartCampaign operations")
+    smtp_max_retries = Column(Integer, default=3)
+    email_verification_required = Column(Boolean, default=False)
+    min_password_length = Column(Integer, default=8)
+    max_login_attempts = Column(Integer, default=5)
+    session_expiry_hours = Column(Integer, default=24)
+    telegram_bot_token = Column(String, default="")
+    telegram_chat_id = Column(String, default="")
+    telegram_notifications_enabled = Column(Boolean, default=False)
+    two_factor_email_enabled = Column(Boolean, default=False)
+    two_factor_telegram_enabled = Column(Boolean, default=False)
+    two_factor_mandatory_for_admins = Column(Boolean, default=False)
+    # System SMTP — used for alerts, OTP, welcome/reset emails
+    system_smtp_host = Column(String, nullable=True)
+    system_smtp_port = Column(Integer, default=587)
+    system_smtp_username = Column(String, nullable=True)
+    system_smtp_encrypted_password = Column(String, nullable=True)
+    system_smtp_security = Column(String, default="TLS")  # TLS, SSL, NONE
+    system_smtp_from_name = Column(String, nullable=True)
+    system_smtp_from_email = Column(String, nullable=True)
+    system_smtp_enabled = Column(Boolean, default=False)
     created_at = Column(DateTime, default=utc_now_naive)
 
 
