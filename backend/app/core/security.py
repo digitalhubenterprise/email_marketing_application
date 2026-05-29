@@ -86,9 +86,10 @@ def get_password_hash(password: str) -> str:
 
 def create_access_token(
     subject: Union[str, Any],
+    role: str = "user",
     expires_delta: Optional[timedelta] = None
 ) -> str:
-    """Creates a signed JWT access token with expiry and issued-at timestamps."""
+    """Creates a signed JWT access token with role, expiry, and issued-at timestamps."""
     now = datetime.now(timezone.utc)
     if expires_delta:
         expire = now + expires_delta
@@ -97,6 +98,7 @@ def create_access_token(
 
     to_encode = {
         "sub": str(subject),
+        "role": role,
         "exp": expire,
         "iat": now,          # Issued-at claim — enables token age checks
         "iss": "smartcampaign-api",  # Issuer claim

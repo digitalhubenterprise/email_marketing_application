@@ -30,7 +30,8 @@ async def get_current_user(
             options={"require": ["exp", "sub", "iat"]}  # Enforce required claims
         )
         user_id_str: str = payload.get("sub")
-        if user_id_str is None:
+        role: str = payload.get("role")
+        if user_id_str is None or role != "user":
             raise credentials_exception
         token_data = TokenData(user_id=int(user_id_str))
     except (jwt.ExpiredSignatureError):

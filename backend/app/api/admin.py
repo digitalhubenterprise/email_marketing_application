@@ -31,6 +31,7 @@ from app.schemas.admin import (
     AdminAuditLogResponse,
     AdminDashboardStats
 )
+from app.core.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token, encrypt_smtp_password
 from app.api.admin_deps import get_current_admin
 from app.tasks.email_sender import celery
@@ -70,7 +71,7 @@ async def register_admin(
     Token-protected admin sign-up gateway.
     Requires 'invite_token' query parameter or 'X-Admin-Registration-Secret' header matching our secure key.
     """
-    secret = "supersecretadmininvitekey2026"
+    secret = settings.ADMIN_REGISTRATION_SECRET
     provided_token = invite_token or x_invite_token
     if provided_token != secret:
         raise HTTPException(
@@ -142,7 +143,7 @@ async def login_admin(
     )
     await db.commit()
 
-    token = create_access_token(subject=admin.id)
+    token = create_access_token(subject=admin.id, role="admin")
     return {"access_token": token, "token_type": "bearer"}
 
 

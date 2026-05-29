@@ -36,6 +36,12 @@ class Settings(BaseSettings):
         alias="TRACKING_BASE_URL"
     )
 
+    # Admin Registration Secret
+    ADMIN_REGISTRATION_SECRET: str = Field(
+        default="supersecretadmininvitekey2026",
+        alias="ADMIN_REGISTRATION_SECRET"
+    )
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"

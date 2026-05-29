@@ -55,87 +55,99 @@ export default function AdminBilling() {
   const [bdtMonth, setBdtMonth] = useState(0);
 
   // Subscription Tab States
-  const [plans, setPlans] = useState([
-    {
-      tier: 'free',
-      name: 'Starter',
-      price: 499,
-      quota: 5000,
-      smtpLimit: 1,
-      validity: '30 Days',
-      throttle: '60s update interval',
-      features: [
-        'Contacts: 1,000',
-        'Sends/mo: 5,000',
-        'SMTP nodes: 1',
-        'Team seats: 1',
-        'Campaign create + send',
-        'CSV import',
-        '5 starter templates',
-        'Basic analytics',
-        'Unsubscribe handling'
-      ]
-    },
-    {
-      tier: 'pro',
-      name: 'Standard',
-      price: 1199,
-      quota: 50000,
-      smtpLimit: 3,
-      validity: '30 Days',
-      throttle: '45s update interval',
-      features: [
-        'Contacts: 10,000',
-        'Sends/mo: 50,000',
-        'SMTP nodes: 3',
-        'Team seats: 3',
-        'All Starter features',
-        'Scheduled sending',
-        '20+ templates',
-        'Advanced analytics',
-        'Mobile preview',
-        'Duplicate campaign'
-      ]
-    },
-    {
-      tier: 'business',
-      name: 'Premium',
-      price: 2499,
-      quota: 200000,
-      smtpLimit: 5,
-      validity: '30 Days',
-      throttle: '30s update interval',
-      features: [
-        'Contacts: 50,000',
-        'Sends/mo: 200,000',
-        'SMTP nodes: 5',
-        'Team seats: 10',
-        'All Standard features',
-        'A/B subject testing',
-        'Custom unsubscribe page',
-        'Campaign export (PDF)'
-      ]
-    },
-    {
-      tier: 'enterprise',
-      name: 'Enterprise',
-      price: 5999,
-      quota: 999999999,
-      smtpLimit: 999999,
-      validity: '30 Days',
-      throttle: '15s update interval',
-      features: [
-        'Contacts: Unlimited',
-        'Sends/mo: Unlimited',
-        'SMTP nodes: Unlimited',
-        'Team seats: Unlimited',
-        'All Premium features',
-        'Full API access',
-        'Multi-client manage',
-        'Custom invoice'
-      ]
+  const [plans, setPlans] = useState<any[]>(() => {
+    const saved = localStorage.getItem("admin_subscription_plans");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
     }
-  ]);
+    return [
+      {
+        tier: 'free',
+        name: 'Starter',
+        price: 499,
+        quota: 5000,
+        smtpLimit: 1,
+        validity: '30 Days',
+        throttle: '60s update interval',
+        features: [
+          'Contacts: 1,000',
+          'Sends/mo: 5,000',
+          'SMTP nodes: 1',
+          'Team seats: 1',
+          'Campaign create + send',
+          'CSV import',
+          '5 starter templates',
+          'Basic analytics',
+          'Unsubscribe handling'
+        ]
+      },
+      {
+        tier: 'pro',
+        name: 'Standard',
+        price: 1199,
+        quota: 50000,
+        smtpLimit: 3,
+        validity: '30 Days',
+        throttle: '45s update interval',
+        features: [
+          'Contacts: 10,000',
+          'Sends/mo: 50,000',
+          'SMTP nodes: 3',
+          'Team seats: 3',
+          'All Starter features',
+          'Scheduled sending',
+          '20+ templates',
+          'Advanced analytics',
+          'Mobile preview',
+          'Duplicate campaign'
+        ]
+      },
+      {
+        tier: 'business',
+        name: 'Premium',
+        price: 2499,
+        quota: 200000,
+        smtpLimit: 5,
+        validity: '30 Days',
+        throttle: '30s update interval',
+        features: [
+          'Contacts: 50,000',
+          'Sends/mo: 200,000',
+          'SMTP nodes: 5',
+          'Team seats: 10',
+          'All Standard features',
+          'A/B subject testing',
+          'Custom unsubscribe page',
+          'Campaign export (PDF)'
+        ]
+      },
+      {
+        tier: 'enterprise',
+        name: 'Enterprise',
+        price: 5999,
+        quota: 999999999,
+        smtpLimit: 999999,
+        validity: '30 Days',
+        throttle: '15s update interval',
+        features: [
+          'Contacts: Unlimited',
+          'Sends/mo: Unlimited',
+          'SMTP nodes: Unlimited',
+          'Team seats: Unlimited',
+          'All Premium features',
+          'Full API access',
+          'Multi-client manage',
+          'Custom invoice'
+        ]
+      }
+    ];
+  });
+
+  useEffect(() => {
+    localStorage.setItem("admin_subscription_plans", JSON.stringify(plans));
+  }, [plans]);
 
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
@@ -145,6 +157,17 @@ export default function AdminBilling() {
   const [editContacts, setEditContacts] = useState('');
   const [editTeamSeats, setEditTeamSeats] = useState('');
   const [editFeaturesText, setEditFeaturesText] = useState('');
+
+  // Create Package States
+  const [showCreatePackageModal, setShowCreatePackageModal] = useState(false);
+  const [newPlanTier, setNewPlanTier] = useState('');
+  const [newPlanName, setNewPlanName] = useState('');
+  const [newPlanPrice, setNewPlanPrice] = useState(1499);
+  const [newPlanQuota, setNewPlanQuota] = useState(100000);
+  const [newPlanSmtpLimit, setNewPlanSmtpLimit] = useState(10);
+  const [newPlanContacts, setNewPlanContacts] = useState('25,000');
+  const [newPlanTeamSeats, setNewPlanTeamSeats] = useState('5');
+  const [newPlanFeaturesText, setNewPlanFeaturesText] = useState('Custom campaign scheduler\nDedicated delivery routes');
 
   const fetchPayments = async () => {
     setLoading(true);
@@ -292,6 +315,67 @@ export default function AdminBilling() {
     setSelectedPlan(null);
   };
 
+  const handleCreatePackageSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newPlanTier || !newPlanName) {
+      alert("Please fill in the package tier and name.");
+      return;
+    }
+    
+    // Check for duplicate tier
+    const duplicate = plans.some(p => p.tier.toLowerCase() === newPlanTier.trim().toLowerCase());
+    if (duplicate) {
+      alert(`A package with tier code '${newPlanTier}' already exists.`);
+      return;
+    }
+
+    const customFeaturesArray = newPlanFeaturesText
+      .split('\n')
+      .map(line => line.trim())
+      .filter(line => line.length > 0);
+
+    const features = [
+      `Contacts: ${newPlanContacts}`,
+      `Sends/mo: ${newPlanQuota === 999999999 ? 'Unlimited' : newPlanQuota.toLocaleString()}`,
+      `SMTP nodes: ${newPlanSmtpLimit === 999999 ? 'Unlimited' : newPlanSmtpLimit}`,
+      `Team seats: ${newPlanTeamSeats}`,
+      ...customFeaturesArray
+    ];
+
+    const newPlan = {
+      tier: newPlanTier.trim().toLowerCase(),
+      name: newPlanName.trim(),
+      price: newPlanPrice,
+      quota: newPlanQuota,
+      smtpLimit: newPlanSmtpLimit,
+      validity: '30 Days',
+      throttle: '30s update interval',
+      features
+    };
+
+    setPlans([...plans, newPlan]);
+    setShowCreatePackageModal(false);
+    
+    // Reset fields
+    setNewPlanTier('');
+    setNewPlanName('');
+    setNewPlanPrice(1499);
+    setNewPlanQuota(100000);
+    setNewPlanSmtpLimit(10);
+    setNewPlanContacts('25,000');
+    setNewPlanTeamSeats('5');
+    setNewPlanFeaturesText('Custom campaign scheduler\nDedicated delivery routes');
+    
+    alert(`Package '${newPlanName}' successfully added to subscription catalog!`);
+  };
+
+  const handleDeletePlan = (tier: string, name: string) => {
+    if (!confirm(`Are you sure you want to completely remove the subscription plan '${name}' from catalogs?`)) return;
+    const updated = plans.filter(p => p.tier !== tier);
+    setPlans(updated);
+    alert(`Plan '${name}' has been successfully removed.`);
+  };
+
   return (
     <div className="space-y-6 animate-fadeIn text-slate-800">
       
@@ -327,6 +411,16 @@ export default function AdminBilling() {
           >
             <Plus size={14} />
             Record Offline Transfer
+          </button>
+        )}
+
+        {activeTab === 'subscription' && (
+          <button
+            onClick={() => setShowCreatePackageModal(true)}
+            className="flex items-center gap-2 px-3.5 py-2 brand-gradient-bg rounded-xl text-xs font-bold text-white hover:opacity-95 shadow-md shadow-brand-500/10 transition-all self-end md:self-auto"
+          >
+            <Plus size={14} />
+            Create Package
           </button>
         )}
       </div>
@@ -638,7 +732,7 @@ export default function AdminBilling() {
                       Everything you need for this tier:
                     </span>
                     <ul className="space-y-2.5">
-                      {p.features.map((feature, idx) => (
+                      {p.features.map((feature: string, idx: number) => (
                         <li key={idx} className="flex items-start gap-2.5 text-[11px] font-bold text-slate-600">
                           <span className="h-4 w-4 bg-emerald-50 border border-emerald-250 rounded-full flex items-center justify-center text-emerald-600 text-[10px] mt-0.5 flex-shrink-0 font-extrabold">
                             ✓
@@ -650,34 +744,42 @@ export default function AdminBilling() {
                   </div>
                 </div>
 
-                {/* Edit Parameters Trigger */}
-                <button
-                  onClick={() => {
-                    setSelectedPlan(p);
-                    setEditName(p.name);
-                    setEditPrice(p.price);
-                    setEditQuota(p.quota);
-                    setEditSmtpLimit(p.smtpLimit);
-                    
-                    const contactsLine = p.features.find(f => f.startsWith('Contacts:')) || 'Contacts: 1,000';
-                    setEditContacts(contactsLine.replace('Contacts:', '').trim());
+                <div className="flex gap-2 mt-6">
+                  <button
+                    onClick={() => {
+                      setSelectedPlan(p);
+                      setEditName(p.name);
+                      setEditPrice(p.price);
+                      setEditQuota(p.quota);
+                      setEditSmtpLimit(p.smtpLimit);
+                      
+                      const contactsLine = p.features.find((f: string) => f.startsWith('Contacts:')) || 'Contacts: 1,000';
+                      setEditContacts(contactsLine.replace('Contacts:', '').trim());
 
-                    const teamSeatsLine = p.features.find(f => f.startsWith('Team seats:')) || 'Team seats: 1';
-                    setEditTeamSeats(teamSeatsLine.replace('Team seats:', '').trim());
+                      const teamSeatsLine = p.features.find((f: string) => f.startsWith('Team seats:')) || 'Team seats: 1';
+                      setEditTeamSeats(teamSeatsLine.replace('Team seats:', '').trim());
 
-                    const customFeatures = p.features.filter(f => 
-                      !f.startsWith('Contacts:') && 
-                      !f.startsWith('Sends/mo:') && 
-                      !f.startsWith('SMTP nodes:') && 
-                      !f.startsWith('Team seats:')
-                    );
-                    setEditFeaturesText(customFeatures.join('\n'));
-                  }}
-                  className="w-full mt-6 py-2 px-3 bg-slate-50 border border-slate-200 text-slate-700 hover:text-white hover:bg-brand-500 hover:border-brand-500 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm group-hover:bg-slate-100"
-                >
-                  <Sliders size={12} />
-                  Adjust Parameters
-                </button>
+                      const customFeatures = p.features.filter((f: string) => 
+                        !f.startsWith('Contacts:') && 
+                        !f.startsWith('Sends/mo:') && 
+                        !f.startsWith('SMTP nodes:') && 
+                        !f.startsWith('Team seats:')
+                      );
+                      setEditFeaturesText(customFeatures.join('\n'));
+                    }}
+                    className="flex-1 py-2 px-3 bg-slate-50 border border-slate-200 text-slate-700 hover:text-white hover:bg-brand-500 hover:border-brand-500 rounded-xl text-xs font-bold tracking-wide transition-all duration-200 flex items-center justify-center gap-1.5 shadow-sm group-hover:bg-slate-100 font-sans"
+                  >
+                    <Sliders size={12} />
+                    Adjust Parameters
+                  </button>
+                  <button
+                    onClick={() => handleDeletePlan(p.tier, p.name)}
+                    className="py-2 px-3 bg-slate-50 border border-slate-200 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-all duration-200 flex items-center justify-center"
+                    title="Remove Package"
+                  >
+                    <X size={13} className="stroke-[3]" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -945,6 +1047,155 @@ export default function AdminBilling() {
                   className="flex-1 py-2.5 brand-gradient-bg text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-500/10"
                 >
                   Commit Catalog Updates
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE PACKAGE PARAMETERS MODAL */}
+      {showCreatePackageModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-slate-200 shadow-2xl relative animate-scaleUp text-slate-800">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-brand-500" />
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <Sliders size={16} className="text-brand-500" />
+                Create New Subscription Package
+              </h3>
+              <button onClick={() => setShowCreatePackageModal(false)} className="text-slate-400 hover:text-slate-650">
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleCreatePackageSubmit} className="p-6 space-y-3.5 max-h-[500px] overflow-y-auto">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                    Unique Tier Code
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newPlanTier}
+                    onChange={(e) => setNewPlanTier(e.target.value)}
+                    placeholder="e.g. growth, custom"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                    Plan Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newPlanName}
+                    onChange={(e) => setNewPlanName(e.target.value)}
+                    placeholder="e.g. Growth Node"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                    Monthly Price ($)
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={newPlanPrice}
+                    onChange={(e) => setNewPlanPrice(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                    Allowed Sends Limit
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={newPlanQuota}
+                    onChange={(e) => setNewPlanQuota(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                    SMTP Servers Cap
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={newPlanSmtpLimit}
+                    onChange={(e) => setNewPlanSmtpLimit(parseInt(e.target.value))}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                    Contacts Cap
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newPlanContacts}
+                    onChange={(e) => setNewPlanContacts(e.target.value)}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                  Team Seats Cap
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newPlanTeamSeats}
+                  onChange={(e) => setNewPlanTeamSeats(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">
+                  Custom Marketing Features (one per line)
+                </label>
+                <textarea
+                  rows={4}
+                  required
+                  value={newPlanFeaturesText}
+                  onChange={(e) => setNewPlanFeaturesText(e.target.value)}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm resize-none"
+                  placeholder="Custom campaign scheduler&#10;Dedicated delivery routes"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowCreatePackageModal(false)}
+                  className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50 font-sans"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 brand-gradient-bg text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-500/10 font-sans"
+                >
+                  Create Package
                 </button>
               </div>
             </form>

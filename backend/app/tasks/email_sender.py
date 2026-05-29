@@ -346,14 +346,14 @@ def send_system_email_task(recipient_email: str, subject: str, html_body: str) -
                     msg["To"] = recipient_email
                     msg.attach(MIMEText(html_body, "html", "utf-8"))
 
-                    use_tls = security == "TLS"
                     use_ssl = security == "SSL"
+                    start_tls = security == "TLS"
 
                     smtp_client = aiosmtplib.SMTP(
                         hostname=host,
                         port=port,
                         use_tls=use_ssl,
-                        start_tls=use_tls,
+                        start_tls=start_tls,
                         timeout=30,
                     )
                     await smtp_client.connect()

@@ -29,7 +29,8 @@ async def get_current_admin(
             options={"require": ["exp", "sub", "iat"]}
         )
         admin_id_str: str = payload.get("sub")
-        if admin_id_str is None:
+        role: str = payload.get("role")
+        if admin_id_str is None or role != "admin":
             raise credentials_exception
         admin_id = int(admin_id_str)
     except jwt.ExpiredSignatureError:
