@@ -95,7 +95,7 @@ async def register_admin(
     )
     db.add(new_admin)
     await db.flush()
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     await db.refresh(new_admin)
 
     # Log audit event
@@ -141,7 +141,7 @@ async def login_admin(
         target_entity=admin.email,
         details="Admin logged in successfully."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
 
     token = create_access_token(subject=admin.id, role="admin")
     return {"access_token": token, "token_type": "bearer"}
@@ -350,7 +350,7 @@ async def bypass_email_verification(
         target_entity=user.email,
         details="User account force-activated manually bypassing verification."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     return {"message": f"User {user.email} successfully activated."}
 
 
@@ -374,7 +374,7 @@ async def suspend_user(
         target_entity=user.email,
         details="User account suspended."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     return {"message": f"User {user.email} successfully suspended."}
 
 
@@ -398,7 +398,7 @@ async def unsuspend_user(
         target_entity=user.email,
         details="User account suspension lifted."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     return {"message": f"User {user.email} successfully unsuspended."}
 
 
@@ -425,7 +425,7 @@ async def delete_user(
         target_entity=user_email,
         details=f"GDPR Hard-Delete completed. Purged all SMTP configs, contacts, campaigns, and logs."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     return {"message": f"User {user_email} and all nested databases deleted completely."}
 
 
@@ -457,7 +457,7 @@ async def override_user_plan(
         target_entity=user.email,
         details=f"Tier overridden from {old_tier} ({old_quota}) to {tier} ({quota_limit})."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     return {"message": f"Successfully updated subscription parameters for {user.email}."}
 
 
@@ -482,7 +482,7 @@ async def extend_user_quota(
         target_entity=user.email,
         details=f"Extended SMTP quota limits by adding +{quota_add} emails capacity."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     return {"message": f"SMTP quota expanded successfully for {user.email}."}
 
 
@@ -513,7 +513,7 @@ async def reset_user_password(
         target_entity=user.email,
         details=f"Admin reset password for user {user.email}. Temporary password generated."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     
     # Queue system Password Reset Email task
     try:
@@ -556,7 +556,7 @@ async def impersonate_user(
         target_entity=user.email,
         details=f"Admin impersonated user {user.email} for support and debug diagnostics."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     
     return {
         "access_token": access_token,
@@ -763,7 +763,7 @@ async def mark_payment_refunded(
         target_entity=str(payment_id),
         details=f"Refund recorded. Downgraded user '{payment.user_email}' to free tiers."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
 
     return {"message": f"Payment {payment_id} successfully refunded and user limits downgraded."}
 
@@ -808,7 +808,7 @@ async def update_system_settings(
         target_entity="system_configs",
         details="Platform settings updated."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
     await db.refresh(config)
     return config
 
@@ -833,7 +833,7 @@ async def toggle_maintenance_mode(
         target_entity="maintenance_mode",
         details=f"Global maintenance mode {state} by administrator."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
 
     return {"message": f"Global maintenance mode has been {state}."}
 
@@ -876,19 +876,19 @@ async def get_system_campaigns(
         },
         "campaigns": [
             {
-                "id": c.Campaign.id,
-                "user_email": c.email,
-                "name": c.Campaign.name,
-                "subject": c.Campaign.subject,
-                "status": c.Campaign.status,
-                "total_recipients": c.Campaign.total_recipients,
-                "sent_count": c.Campaign.sent_count,
-                "open_count": c.Campaign.open_count,
-                "click_count": c.Campaign.click_count,
-                "is_spam": c.Campaign.is_spam,
-                "spam_note": c.Campaign.spam_note,
-                "created_at": c.Campaign.created_at
-            } for c in campaigns
+                "id": campaign.id,
+                "user_email": email,
+                "name": campaign.name,
+                "subject": campaign.subject,
+                "status": campaign.status,
+                "total_recipients": campaign.total_recipients,
+                "sent_count": campaign.sent_count,
+                "open_count": campaign.open_count,
+                "click_count": campaign.click_count,
+                "is_spam": campaign.is_spam,
+                "spam_note": campaign.spam_note,
+                "created_at": campaign.created_at
+            } for campaign, email in campaigns
         ]
     }
 
@@ -930,7 +930,7 @@ async def force_cancel_campaign(
         target_entity=str(campaign_id),
         details=f"Emergency halt triggered. Campaign '{campaign.name}' (ID: {campaign_id}) status shifted to failed."
     )
-    # await db.commit()  # removed duplicate, commit after audit
+    await db.commit()  # commit transaction
 
     return {"message": "Emergency force-cancel dispatched. Dispatch queue terminated."}
 
@@ -967,7 +967,7 @@ async def flag_campaign_spam(
         target_entity=str(campaign_id),
         details=f"Campaign '{campaign.name}' (ID: {campaign_id}) flagged as SPAM. Note: {note}"
     )
-    # await db.commit()  # removed duplicate, comment for clarity
+    await db.commit()  # commit transaction
 
     return {"message": "Campaign flagged as spam and emergency stopped."}
 
@@ -1140,7 +1140,7 @@ async def test_system_smtp(
             target_entity=recipient_email,
             details="System SMTP test passed successfully. Delivered test email."
         )
-        # await db.commit()  # removed duplicate, commit after audit
+        await db.commit()  # commit transaction
 
         return {"success": True, "logs": logs}
 
@@ -1155,7 +1155,7 @@ async def test_system_smtp(
             target_entity=recipient_email,
             details=f"System SMTP test failed. Error: {error_msg[:120]}"
         )
-        # await db.commit()  # removed duplicate, commit after audit
+        await db.commit()  # commit transaction
 
         try:
             await smtp_client.quit()

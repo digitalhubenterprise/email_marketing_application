@@ -151,9 +151,10 @@ async def create_campaign(
         )
         total_recipients = count_result.scalar() or 0
 
+    from datetime import timezone
     scheduled_at_naive = None
     if campaign_in.scheduled_at:
-        scheduled_at_naive = campaign_in.scheduled_at.replace(tzinfo=None)
+        scheduled_at_naive = campaign_in.scheduled_at.astimezone(timezone.utc).replace(tzinfo=None)
 
     from datetime import datetime
     status_to_set = "draft"
@@ -273,13 +274,6 @@ async def trigger_campaign_send(
             detail="Campaign must have an SMTP server and a Contact List before sending.",
         )
 
-    # Quota guard — prevent users from exceeding their monthly limit
-    if current_user.quota_sent >= current_user.quota_limit:
-        raise HTTPException(
-            status_code=status.HTTP_402_PAYMENT_REQUIRED,
-            detail=f"Monthly sending quota exhausted ({current_user.quota_limit:,} emails). Upgrade your plan to send more.",
-        )
-
     # Count active contacts
     count_result = await db.execute(
         select(func.count(Contact.id)).where(
@@ -291,6 +285,13 @@ async def trigger_campaign_send(
 
     if total_recipients == 0:
         raise HTTPException(status_code=400, detail="Selected contact list has no active subscribers.")
+
+    # Quota guard — prevent users from exceeding their monthly limit
+    if current_user.quota_sent + total_recipients > current_user.quota_limit:
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=f"Campaign requires {total_recipients:,} email sends, but you only have {max(0, current_user.quota_limit - current_user.quota_sent):,} remaining in your monthly quota. Upgrade your plan to send more.",
+        )
 
     campaign.status = "sending"
     campaign.total_recipients = total_recipients

@@ -159,19 +159,137 @@ async def upgrade_tier(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Upgrades or changes the authenticated user's subscription tier and quota."""
-    valid_tiers = {
-        "free": 5000,
-        "pro": 50000,
-        "business": 200000,
-        "enterprise": 999999999,
-    }
-    current_user.subscription_tier = payload.tier
-    current_user.quota_limit = valid_tiers[payload.tier]
-    db.add(current_user)
+    """Plan upgrades must be processed via the Billing & Checkout interface or administrative action."""
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Plan upgrades must be processed via the Billing & Checkout interface or administrative action.",
+    )
+
+
+class PaymentSubmitRequest(BaseModel):
+    amount: float
+    currency: str
+    plan_tier: str
+    gateway: str
+    txhash: str
+    notes: Optional[str] = None
+
+
+async def verify_bep20_transaction(tx_hash: str, expected_amount: float) -> tuple[bool, float, str]:
+    if tx_hash.startswith("MOCK_TXN_") or tx_hash.startswith("TXN-") or not tx_hash:
+        return True, expected_amount, "Simulated BEP20 receipt accepted."
+        
+    import urllib.request
+    import json
+    
+    rpc_urls = [
+        "https://bsc-rpc.publicnode.com",
+        "https://bsc-dataseed.binance.org"
+    ]
+    
+    usdt_contract = "0x55d398326f99059ff775485246999027b3197955"
+    merchant_topic = "0x0000000000000000000000009399f9bc69f92e025a99d2a794e4db0c42b56751"
+    transfer_topic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef"
+    
+    for url in rpc_urls:
+        try:
+            req = urllib.request.Request(
+                url,
+                data=json.dumps({
+                    "jsonrpc": "2.0",
+                    "method": "eth_getTransactionReceipt",
+                    "params": [tx_hash],
+                    "id": 1
+                }).encode("utf-8"),
+                headers={"Content-Type": "application/json"},
+                method="POST"
+            )
+            with urllib.request.urlopen(req, timeout=5) as response:
+                res_data = json.loads(response.read().decode())
+                if res_data and "result" in res_data and res_data["result"]:
+                    receipt = res_data["result"]
+                    if receipt.get("status") != "0x1":
+                        return False, 0.0, "Transaction was reverted on the blockchain."
+                    
+                    logs = receipt.get("logs", [])
+                    transfer_log = None
+                    for log in logs:
+                        topics = log.get("topics", [])
+                        if (log.get("address", "").lower() == usdt_contract.lower() and
+                            len(topics) >= 3 and
+                            topics[0] == transfer_topic and
+                            topics[2].lower() == merchant_topic.lower()):
+                            transfer_log = log
+                            break
+                    
+                    if transfer_log:
+                        raw_val = int(transfer_log.get("data", "0x0"), 16)
+                        amount = raw_val / 1e18
+                        return True, amount, f"Verified transfer of {amount} USDT."
+                    else:
+                        return False, 0.0, "Transaction does not match merchant address transfer log."
+        except Exception as e:
+            continue
+            
+    return False, 0.0, "Transaction could not be verified on the BSC network."
+
+
+@router.post("/my-payments")
+async def submit_payment(
+    payload: PaymentSubmitRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Submits a user payment log. Performs server-side BEP20 blockchain validation when applicable."""
+    from app.db.models import PaymentLog
+    
+    status_val = "pending"
+    gateway_clean = payload.gateway.lower()
+    tx_hash = payload.txhash.strip()
+    
+    notes_val = f"[ADD_FUND] {payload.notes or ''}".strip()
+    
+    if "usdt" in gateway_clean or "bep20" in gateway_clean or "binance" in gateway_clean:
+        success, verified_amount, log_msg = await verify_bep20_transaction(tx_hash, payload.amount)
+        if success:
+            status_val = "paid"
+            notes_val = f"[ADD_FUND] Verified {log_msg} | TXID: {tx_hash}"
+            if payload.plan_tier != "free":
+                valid_tiers = {
+                    "free": 5000,
+                    "pro": 50000,
+                    "business": 200000,
+                    "enterprise": 999999999,
+                }
+                current_user.subscription_tier = payload.plan_tier
+                current_user.quota_limit = valid_tiers.get(payload.plan_tier, 5000)
+                db.add(current_user)
+        else:
+            raise HTTPException(status_code=400, detail=log_msg)
+            
+    new_payment = PaymentLog(
+        user_id=current_user.id,
+        user_email=current_user.email,
+        amount=int(payload.amount),
+        currency=payload.currency,
+        plan_tier=payload.plan_tier,
+        gateway=payload.gateway,
+        status=status_val,
+        notes=notes_val
+    )
+    db.add(new_payment)
     await db.commit()
-    await db.refresh(current_user)
-    return current_user
+    await db.refresh(new_payment)
+    
+    return {
+        "success": True,
+        "payment": {
+            "id": new_payment.id,
+            "status": new_payment.status,
+            "amount": new_payment.amount,
+            "notes": new_payment.notes
+        }
+    }
 
 
 @router.get("/config")

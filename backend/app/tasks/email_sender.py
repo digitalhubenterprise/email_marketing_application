@@ -313,7 +313,10 @@ async def async_send_campaign(campaign_id: int) -> None:
             message["X-Mailer"] = "SmartCampaign/1.0"
             
             # RFC 8058 One-Click Unsubscribe headers
-            unsubscribe_url = f"{settings.TRACKING_BASE_URL}/api/track/unsubscribe/{contact.id}"
+            import hmac
+            import hashlib
+            unsubscribe_token = hmac.new(settings.JWT_SECRET.encode(), str(contact.id).encode(), hashlib.sha256).hexdigest()
+            unsubscribe_url = f"{settings.TRACKING_BASE_URL}/api/track/unsubscribe/{contact.id}?token={unsubscribe_token}"
             message["List-Unsubscribe"] = f"<{unsubscribe_url}>"
             message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
 
@@ -528,10 +531,11 @@ def send_system_email_task(recipient_email: str, subject: str, html_body: str) -
                         hostname=host,
                         port=port,
                         use_tls=use_ssl,
-                        start_tls=start_tls,
                         timeout=30,
                     )
                     await smtp_client.connect()
+                    if start_tls:
+                        await smtp_client.starttls()
                     await smtp_client.login(username, password)
                     await smtp_client.send_message(msg)
                     await smtp_client.quit()

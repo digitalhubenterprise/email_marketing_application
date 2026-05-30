@@ -10,7 +10,8 @@ import {
   LogOut,
   Shield,
   Activity,
-  CheckCircle2
+  CheckCircle2,
+  Menu
 } from 'lucide-react'
 import { useAuth } from '../App'
 
@@ -20,6 +21,7 @@ export default function AdminLayout() {
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [adminRole, setAdminRole] = useState<string | null>(null);
   const { appConfig } = useAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
@@ -52,25 +54,46 @@ export default function AdminLayout() {
   ];
 
   return (
-    <div className="flex min-h-screen bg-[#f4f6fa] text-slate-800 font-sans">
+    <div className="flex min-h-screen bg-[#f4f6fa] text-slate-800 font-sans relative overflow-x-hidden">
+      {/* Dim overlay backdrop */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden fixed inset-0 bg-black/40 backdrop-blur-sm z-40 transition-opacity duration-300"
+        />
+      )}
+
       {/* Admin Sidebar Navigation (Premium crisp white background) */}
-      <aside className="w-64 bg-white border-r border-slate-200/80 flex flex-col h-screen fixed left-0 top-0 z-40 shadow-[4px_0_24px_rgba(0,0,0,0.015)]">
-        <div className="py-4 px-5 border-b border-slate-100 flex items-center gap-3">
-          {appConfig?.logo_url ? (
-            <img src={appConfig.logo_url} alt={appConfig.site_name} className="h-9 object-contain rounded-lg" />
-          ) : (
-            <div className="h-9 w-9 bg-brand-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
-              <Shield size={19} className="animate-pulse" />
+      <aside className={`
+        w-64 bg-white border-r border-slate-200/80 flex flex-col h-screen fixed top-0 z-50
+        transition-transform duration-300 ease-in-out shadow-[4px_0_24px_rgba(0,0,0,0.015)]
+        ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        lg:translate-x-0 lg:left-0 lg:z-40
+      `}>
+        <div className="py-4 px-5 border-b border-slate-100 flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {appConfig?.logo_url ? (
+              <img src={appConfig.logo_url} alt={appConfig.site_name} className="h-9 object-contain rounded-lg" />
+            ) : (
+              <div className="h-9 w-9 bg-brand-500 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/20">
+                <Shield size={19} className="animate-pulse" />
+              </div>
+            )}
+            <div>
+              <h1 className="font-extrabold text-sm text-slate-900 tracking-wide truncate max-w-[100px]">
+                {appConfig?.site_name || "SmartCampaign"}
+              </h1>
+              <span className="text-[9px] text-brand-600 font-black tracking-widest uppercase bg-brand-50 px-1.5 py-0.5 rounded border border-brand-100">
+                Admin Portal
+              </span>
             </div>
-          )}
-          <div>
-            <h1 className="font-extrabold text-sm text-slate-900 tracking-wide truncate max-w-[140px]">
-              {appConfig?.site_name || "SmartCampaign"}
-            </h1>
-            <span className="text-[9px] text-brand-600 font-black tracking-widest uppercase bg-brand-50 px-1.5 py-0.5 rounded border border-brand-100">
-              Admin Portal
-            </span>
           </div>
+          <button 
+            onClick={() => setSidebarOpen(false)}
+            className="lg:hidden text-slate-400 hover:text-slate-900 p-1 rounded-md"
+          >
+            ✕
+          </button>
         </div>
 
         {/* Navigation Sidebar Link Items */}
@@ -80,6 +103,7 @@ export default function AdminLayout() {
               key={item.to}
               to={item.to}
               end={item.to === "/admin"}
+              onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => `
                 flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200
                 ${isActive
@@ -118,10 +142,17 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Admin Section Body Content */}
-      <div className="flex-1 pl-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:pl-64 pl-0 flex flex-col min-h-screen relative overflow-x-hidden">
         <header className="h-16 bg-white border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-30 shadow-[0_2px_24px_rgba(0,0,0,0.01)]">
           <div className="flex items-center gap-2.5">
-            <span className="text-xs font-semibold text-slate-400">Environment Node:</span>
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden text-slate-500 hover:text-slate-900 p-1 hover:bg-slate-50 rounded-lg transition-colors mr-1"
+              aria-label="Toggle Admin Menu"
+            >
+              <Menu size={18} />
+            </button>
+            <span className="text-xs font-semibold text-slate-400 hidden sm:inline">Environment Node:</span>
             <span className="text-xs font-extrabold text-slate-800 px-2.5 py-1 bg-slate-50 rounded-lg border border-slate-200 flex items-center gap-1.5">
               <CheckCircle2 size={12} className="text-brand-500" />
               SaaS-Master-Controller

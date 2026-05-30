@@ -5,7 +5,7 @@ export default function AdminRegister() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('support');
-  const [inviteToken, setInviteToken] = useState('supersecretadmininvitekey2026'); // Pre-fill with our platform standard invite secret
+  const [inviteToken, setInviteToken] = useState(''); // Secure empty token default
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);

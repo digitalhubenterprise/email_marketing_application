@@ -12,7 +12,12 @@ import {
 } from 'lucide-react'
 import { useAuth } from '../App'
 
-export default function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean;
+  onClose?: () => void;
+}
+
+export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarProps) {
   const { logout, user, appConfig } = useAuth();
 
   const navItems = [
@@ -26,22 +31,35 @@ export default function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 bg-dark-800 border-r border-dark-700/50 flex flex-col h-screen fixed left-0 top-0">
+    <aside className={`
+      w-64 bg-dark-800 border-r border-dark-700/50 flex flex-col h-screen fixed top-0 z-50
+      transition-transform duration-300 ease-in-out
+      ${isOpen ? "translate-x-0" : "-translate-x-full"}
+      lg:translate-x-0 lg:left-0 lg:z-40
+    `}>
       {/* Platform Title Logo */}
-      <div className="py-3.5 px-4 border-b border-dark-700/50 flex items-center gap-2.5">
-        {appConfig?.logo_url ? (
-          <img src={appConfig.logo_url} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
-        ) : (
-          <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
-            {appConfig?.site_name?.substring(0, 1) || "S"}
+      <div className="py-3.5 px-4 border-b border-dark-700/50 flex items-center justify-between gap-2.5">
+        <div className="flex items-center gap-2.5">
+          {appConfig?.logo_url ? (
+            <img src={appConfig.logo_url} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
+          ) : (
+            <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
+              {appConfig?.site_name?.substring(0, 1) || "S"}
+            </div>
+          )}
+          <div>
+            <h1 className="font-bold text-sm text-white font-sans tracking-wide truncate max-w-[120px]">
+              {appConfig?.site_name || "SmartCampaign"}
+            </h1>
+            <span className="text-[10px] text-brand-400 font-bold tracking-wider uppercase">SaaS V1.0</span>
           </div>
-        )}
-        <div>
-          <h1 className="font-bold text-sm text-white font-sans tracking-wide truncate max-w-[140px]">
-            {appConfig?.site_name || "SmartCampaign"}
-          </h1>
-          <span className="text-[10px] text-brand-400 font-bold tracking-wider uppercase">SaaS V1.0</span>
         </div>
+        <button 
+          onClick={onClose}
+          className="lg:hidden text-dark-400 hover:text-white p-1 rounded-md"
+        >
+          ✕
+        </button>
       </div>
 
       {/* Nav List */}
@@ -51,6 +69,7 @@ export default function Sidebar() {
             key={item.to}
             to={item.to}
             end={item.to === "/"}
+            onClick={onClose}
             className={({ isActive }) => `
               flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
               ${isActive 

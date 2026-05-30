@@ -342,6 +342,7 @@ async def upload_csv(
         return CSVImportResponse(
             success_count=success_count,
             failed_count=failed_count,
+            skipped_count=skipped_count,
             errors=errors,
         )
 

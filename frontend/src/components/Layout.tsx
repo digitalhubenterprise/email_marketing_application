@@ -2,11 +2,12 @@ import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { useAuth } from '../App'
-import { Mail, CheckCircle, Megaphone, X, AlertCircle } from 'lucide-react'
+import { Mail, CheckCircle, Megaphone, X, AlertCircle, Menu } from 'lucide-react'
 
 export default function Layout() {
   const { user, appConfig } = useAuth();
   const [announcementDismissed, setAnnouncementDismissed] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Calculate remaining quota percentage
   const quotaUsed = user?.quota_sent || 0;
@@ -15,12 +16,20 @@ export default function Layout() {
   const isNudgeActive = quotaPercent >= 80;
 
   return (
-    <div className="flex min-h-screen bg-dark-950">
+    <div className="flex min-h-screen bg-dark-950 relative overflow-x-hidden">
       {/* Side bar */}
-      <Sidebar />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+
+      {/* Dim overlay backdrop */}
+      {sidebarOpen && (
+        <div 
+          onClick={() => setSidebarOpen(false)}
+          className="lg:hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-40 transition-opacity duration-300"
+        />
+      )}
 
       {/* Main pane content */}
-      <div className="flex-1 pl-64 flex flex-col min-h-screen">
+      <div className="flex-1 lg:pl-64 pl-0 flex flex-col min-h-screen">
         {/* 80% Quota Alert Box */}
         {isNudgeActive && (
           <div className="mx-6 mt-4 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs rounded-xl flex items-center justify-between shadow-md animate-fadeIn">
@@ -53,8 +62,15 @@ export default function Layout() {
 
         {/* Top navbar */}
         <header className="h-14 bg-dark-950/80 backdrop-blur-md border-b border-dark-700/30 px-6 flex items-center justify-between sticky top-0 z-30">
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-medium text-dark-400">Current Scope:</span>
+          <div className="flex items-center gap-2.5">
+            <button 
+              onClick={() => setSidebarOpen(true)}
+              className="lg:hidden text-dark-400 hover:text-white p-1 hover:bg-dark-800 rounded-lg transition-colors mr-1"
+              aria-label="Toggle Sidebar Menu"
+            >
+              <Menu size={18} />
+            </button>
+            <span className="text-xs font-medium text-dark-400 hidden sm:inline">Current Scope:</span>
             <span className="text-xs font-semibold text-white px-2 py-0.5 bg-dark-800 rounded-md border border-dark-700/50">
               beta.smartcampaign.today
             </span>

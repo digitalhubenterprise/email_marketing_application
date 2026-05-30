@@ -43,4 +43,5 @@ class ContactResponse(ContactBase):
 class CSVImportResponse(BaseModel):
     success_count: int
     failed_count: int
+    skipped_count: int = 0
     errors: List[str]

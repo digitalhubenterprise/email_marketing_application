@@ -120,6 +120,28 @@ export default function Wallet() {
     }
   }, [token]);
 
+  const savePaymentToBackend = async (txnId: string, amount: number, gatewayLabel: string) => {
+    try {
+      await fetch('/api/auth/my-payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          amount: amount,
+          currency: 'USD',
+          plan_tier: 'free',
+          gateway: gatewayLabel,
+          txhash: txnId,
+          notes: `Instant Wallet top-up verified via client verifier.`
+        })
+      });
+    } catch (e) {
+      console.error("Failed to sync payment record to backend:", e);
+    }
+  };
+
   const handleQuickAdd = (amt: number) => {
     setTopUpAmount(amt.toString());
   };
@@ -280,9 +302,11 @@ export default function Wallet() {
           setVerifyProgress(70);
           setVerifyLog(`Blockchain receipt found! Verified transfer of ${verifiedAmount.toFixed(2)} USDT...`);
           
-          setTimeout(() => {
+          setTimeout(async () => {
             setVerifyProgress(100);
             setVerifyLog("Realtime payment verified! SaaS balance credited.");
+            
+            await savePaymentToBackend(txnId, verifiedAmount, "USDT BEP20");
             
             setBalance(prev => prev + verifiedAmount);
             setTransactions(prev => [
@@ -308,9 +332,11 @@ export default function Wallet() {
           setVerifyProgress(70);
           setVerifyLog(gateway === "binance" ? "Validating instant API webhook confirmation..." : "Verifying block transaction payload confirmations (6/12 block depth)...");
           
-          setTimeout(() => {
+          setTimeout(async () => {
             setVerifyProgress(100);
             setVerifyLog("Payment verified successfully! Balance credited.");
+            
+            await savePaymentToBackend(txnId, amt, label);
             
             setBalance(prev => prev + amt);
             setTransactions(prev => [

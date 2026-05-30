@@ -122,12 +122,27 @@ async def track_email_click(
 
 
 @router.api_route("/unsubscribe/{contact_id}", methods=["GET", "POST"])
-async def unsubscribe_contact(contact_id: int, request: Request):
+async def unsubscribe_contact(
+    contact_id: int,
+    request: Request,
+    token: str = Query(..., description="Secure unsubscribe token")
+):
     """
     Handles unsubscribe requests.
     Supports GET (browser-based unsubscribe confirmation)
     and POST (RFC 8058 One-Click unsubscribe).
     """
+    import hmac
+    import hashlib
+    from app.core.config import settings
+
+    expected_token = hmac.new(settings.JWT_SECRET.encode(), str(contact_id).encode(), hashlib.sha256).hexdigest()
+    if not hmac.compare_digest(token, expected_token):
+        return Response(
+            content=b"<html><body><h3>Invalid or missing unsubscribe security token.</h3></body></html>",
+            media_type="text/html",
+            status_code=403,
+        )
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(Contact).where(Contact.id == contact_id)
