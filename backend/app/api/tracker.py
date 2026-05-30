@@ -1,12 +1,12 @@
-from urllib.parse import urlparse, urlencode, quote_plus
-from fastapi import APIRouter, Query
+import json
+from urllib.parse import urlparse
+from fastapi import APIRouter, Query, Request
 from fastapi.responses import Response, RedirectResponse
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import update
 
 from app.db.session import AsyncSessionLocal
-from app.db.models import CampaignLog, Campaign
+from app.db.models import CampaignLog, Campaign, Contact
 
 router = APIRouter()
 
@@ -32,8 +32,13 @@ def is_safe_redirect_url(url: str) -> bool:
 
 
 @router.get("/open/{log_id}")
-async def track_email_open(log_id: int):
+async def track_email_open(log_id: int, request: Request):
     """Serves a 1x1 pixel tracking GIF and records open event — called by email clients."""
+    user_agent = request.headers.get("User-Agent", "").lower()
+    device_type = "Desktop"
+    if any(keyword in user_agent for keyword in ["mobile", "android", "iphone", "ipad", "ipod", "windows phone"]):
+        device_type = "Mobile"
+
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(CampaignLog).where(CampaignLog.id == log_id)
@@ -41,11 +46,8 @@ async def track_email_open(log_id: int):
         log = result.scalars().first()
 
         if log and not log.opened:
-            await db.execute(
-                update(CampaignLog)
-                .where(CampaignLog.id == log_id)
-                .values(opened=True)
-            )
+            log.opened = True
+            log.device_type = device_type
             await db.execute(
                 update(Campaign)
                 .where(Campaign.id == log.campaign_id)
@@ -68,6 +70,7 @@ async def track_email_open(log_id: int):
 @router.get("/click/{log_id}")
 async def track_email_click(
     log_id: int,
+    request: Request,
     url: str = Query(..., description="Target redirect URL (must be http/https)")
 ):
     """
@@ -83,23 +86,128 @@ async def track_email_click(
             status_code=400,
         )
 
+    user_agent = request.headers.get("User-Agent", "").lower()
+    device_type = "Desktop"
+    if any(keyword in user_agent for keyword in ["mobile", "android", "iphone", "ipad", "ipod", "windows phone"]):
+        device_type = "Mobile"
+
     async with AsyncSessionLocal() as db:
         result = await db.execute(
             select(CampaignLog).where(CampaignLog.id == log_id)
         )
         log = result.scalars().first()
 
-        if log and not log.clicked:
-            await db.execute(
-                update(CampaignLog)
-                .where(CampaignLog.id == log_id)
-                .values(clicked=True)
-            )
-            await db.execute(
-                update(Campaign)
-                .where(Campaign.id == log.campaign_id)
-                .values(click_count=Campaign.click_count + 1)
-            )
+        if log:
+            # Map link click counts
+            clicks = {}
+            if log.link_clicks:
+                try:
+                    clicks = json.loads(log.link_clicks)
+                except Exception:
+                    pass
+            clicks[url] = clicks.get(url, 0) + 1
+            log.link_clicks = json.dumps(clicks)
+            log.device_type = device_type
+
+            if not log.clicked:
+                log.clicked = True
+                await db.execute(
+                    update(Campaign)
+                    .where(Campaign.id == log.campaign_id)
+                    .values(click_count=Campaign.click_count + 1)
+                )
             await db.commit()
 
     return RedirectResponse(url=url, status_code=302)
+
+
+@router.api_route("/unsubscribe/{contact_id}", methods=["GET", "POST"])
+async def unsubscribe_contact(contact_id: int, request: Request):
+    """
+    Handles unsubscribe requests.
+    Supports GET (browser-based unsubscribe confirmation)
+    and POST (RFC 8058 One-Click unsubscribe).
+    """
+    async with AsyncSessionLocal() as db:
+        result = await db.execute(
+            select(Contact).where(Contact.id == contact_id)
+        )
+        contact = result.scalars().first()
+        if not contact:
+            return Response(
+                content=b"<html><body><h3>Contact not found</h3></body></html>",
+                media_type="text/html",
+                status_code=404,
+            )
+
+        # Update contact status
+        contact.is_unsubscribed = True
+        contact.status = "unsubscribed"
+        await db.commit()
+
+    if request.method == "POST":
+        return Response(content="Unsubscribed successfully", media_type="text/plain", status_code=200)
+
+    # Return a confirmation HTML page
+    html_response = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Unsubscribed Successfully</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <style>
+            body {{
+                font-family: 'Inter', sans-serif;
+                background-color: #f8f9fa;
+                color: #212529;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                min-height: 100vh;
+                margin: 0;
+            }}
+            .card {{
+                background: white;
+                padding: 40px;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+                max-width: 480px;
+                width: 100%;
+                text-align: center;
+            }}
+            h2 {{
+                color: #e03131;
+                margin-top: 0;
+            }}
+            p {{
+                font-size: 16px;
+                line-height: 1.5;
+                color: #495057;
+            }}
+            .btn {{
+                display: inline-block;
+                margin-top: 20px;
+                padding: 10px 20px;
+                background-color: #4c6ef5;
+                color: white;
+                text-decoration: none;
+                border-radius: 6px;
+                font-weight: 500;
+                transition: background-color 0.2s;
+            }}
+            .btn:hover {{
+                background-color: #3b5bdb;
+            }}
+        </style>
+    </head>
+    <body>
+        <div class="card">
+            <h2>Unsubscribed</h2>
+            <p>You have been successfully unsubscribed from this list. You will no longer receive any promotional emails from us.</p>
+            <p style="font-size: 14px; color: #868e96;">Email: <strong>{contact.email}</strong></p>
+        </div>
+    </body>
+    </html>
+    """
+    return Response(content=html_response, media_type="text/html", status_code=200)

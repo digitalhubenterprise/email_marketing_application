@@ -24,6 +24,8 @@ class ContactBase(BaseModel):
     email: EmailStr
     name: Optional[str] = None
     tags: Optional[str] = None  # comma-separated
+    status: Optional[str] = "active"
+    custom_fields: Optional[str] = "{}"
 
 class ContactCreate(ContactBase):
     pass

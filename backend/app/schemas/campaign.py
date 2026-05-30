@@ -5,6 +5,13 @@ from pydantic import BaseModel
 class CampaignBase(BaseModel):
     name: str
     subject: str
+    subject_b: Optional[str] = None
+    ab_split_ratio: Optional[int] = 0
+    ab_winner_metric: Optional[str] = None
+    ab_winner_subject: Optional[str] = None
+    throttle_limit: Optional[int] = 0
+    category: Optional[str] = "Newsletter"
+    is_archived: Optional[bool] = False
     content_html: str
     smtp_server_id: Optional[int] = None
     contact_list_id: Optional[int] = None

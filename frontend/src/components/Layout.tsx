@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { useAuth } from '../App'
-import { Mail, CheckCircle, Megaphone, X } from 'lucide-react'
+import { Mail, CheckCircle, Megaphone, X, AlertCircle } from 'lucide-react'
 
 export default function Layout() {
   const { user, appConfig } = useAuth();
@@ -12,6 +12,7 @@ export default function Layout() {
   const quotaUsed = user?.quota_sent || 0;
   const quotaLimit = user?.quota_limit || 1000;
   const quotaPercent = Math.min((quotaUsed / quotaLimit) * 100, 100);
+  const isNudgeActive = quotaPercent >= 80;
 
   return (
     <div className="flex min-h-screen bg-dark-950">
@@ -20,6 +21,17 @@ export default function Layout() {
 
       {/* Main pane content */}
       <div className="flex-1 pl-64 flex flex-col min-h-screen">
+        {/* 80% Quota Alert Box */}
+        {isNudgeActive && (
+          <div className="mx-6 mt-4 p-3 bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs rounded-xl flex items-center justify-between shadow-md animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <AlertCircle size={14} className="animate-pulse shrink-0" />
+              <span><strong>Quota Capacity Nudge:</strong> You have consumed {quotaPercent.toFixed(1)}% of your monthly email sends quota. Upgrade your plan now to prevent campaigns pause.</span>
+            </div>
+            <a href="/billing" className="px-3 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[10px] font-bold transition-all shrink-0">Upgrade Plan</a>
+          </div>
+        )}
+
         {/* Global Broadcast Announcement Banner */}
         {appConfig?.announcement_active && appConfig.announcement_message && !announcementDismissed && (
           <div className="bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 text-white px-6 py-2.5 text-xs font-bold flex items-center justify-between border-b border-brand-500/30 animate-slideDown shadow-lg relative z-40">

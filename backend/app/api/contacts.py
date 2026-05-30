@@ -1,7 +1,7 @@
 import csv
 import io
 import re
-from typing import List
+from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -117,6 +117,9 @@ async def delete_contact_list(
 @router.get("/lists/{list_id}/contacts", response_model=List[ContactResponse])
 async def list_contacts(
     list_id: int,
+    tag: Optional[str] = None,
+    status: Optional[str] = None,
+    search: Optional[str] = None,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -128,9 +131,17 @@ async def list_contacts(
     if not list_check.scalars().first():
         raise HTTPException(status_code=404, detail="Mailing list not found.")
 
-    result = await db.execute(
-        select(Contact).where(Contact.list_id == list_id).order_by(Contact.id.desc())
-    )
+    query = select(Contact).where(Contact.list_id == list_id)
+    if tag:
+        query = query.where(Contact.tags.ilike(f"%{tag}%"))
+    if status:
+        query = query.where(Contact.status == status.lower())
+    if search:
+        query = query.where(
+            (Contact.email.ilike(f"%{search}%")) | (Contact.name.ilike(f"%{search}%"))
+        )
+
+    result = await db.execute(query.order_by(Contact.id.desc()))
     return result.scalars().all()
 
 
@@ -172,6 +183,8 @@ async def create_contact(
         email=email,
         name=(contact_in.name or "").strip(),
         tags=(contact_in.tags or "").strip(),
+        status=(contact_in.status or "active").strip().lower(),
+        custom_fields=(contact_in.custom_fields or "{}").strip(),
     )
     db.add(new_contact)
     await db.commit()
@@ -258,12 +271,15 @@ async def upload_csv(
         # Auto-map column headers
         email_idx = -1
         name_idx = -1
+        custom_header_mappings = []
         for idx, h in enumerate(headers):
             h_clean = h.strip().lower()
             if "email" in h_clean or "mail" in h_clean:
                 email_idx = idx
             elif "name" in h_clean or "first" in h_clean or "subscriber" in h_clean:
                 name_idx = idx
+            else:
+                custom_header_mappings.append((h.strip(), idx))
 
         if email_idx == -1:
             raise HTTPException(
@@ -281,6 +297,7 @@ async def upload_csv(
         failed_count = 0
         skipped_count = 0
         errors: list[str] = []
+        import json
 
         for row_num, row in enumerate(reader, start=2):
             if row_num > CSV_MAX_ROWS + 1:
@@ -306,7 +323,17 @@ async def upload_csv(
             if name_idx != -1 and len(row) > name_idx:
                 name = row[name_idx].strip()[:200]  # Cap name length
 
-            contact = Contact(list_id=list_id, email=email, name=name)
+            custom_data = {}
+            for h_name, h_idx in custom_header_mappings:
+                if len(row) > h_idx:
+                    custom_data[h_name] = row[h_idx].strip()
+
+            contact = Contact(
+                list_id=list_id,
+                email=email,
+                name=name,
+                custom_fields=json.dumps(custom_data)
+            )
             db.add(contact)
             existing_emails.add(email)  # Prevent duplicates within the same upload
             success_count += 1

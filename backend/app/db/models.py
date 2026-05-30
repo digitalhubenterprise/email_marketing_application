@@ -18,6 +18,12 @@ class User(Base):
     subscription_tier = Column(String, default="free")  # free, pro, business
     quota_limit = Column(Integer, default=1000)        # Max monthly sends
     quota_sent = Column(Integer, default=0)            # Current month sends
+    brand_primary_color = Column(String, default="#4c6ef5")
+    brand_secondary_color = Column(String, default="#fab005")
+    brand_font_family = Column(String, default="Inter")
+    notification_settings = Column(String, default="all")
+    two_factor_secret = Column(String, nullable=True)
+    two_factor_enabled = Column(Boolean, default=False)
     created_at = Column(DateTime, default=utc_now_naive)
 
     smtp_servers = relationship("SMTPServer", back_populates="user", cascade="all, delete-orphan")
@@ -40,6 +46,7 @@ class SMTPServer(Base):
     from_name = Column(String, nullable=False)
     from_email = Column(String, nullable=False)
     daily_send_limit = Column(Integer, default=500)
+    reputation_score = Column(Integer, default=100)
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utc_now_naive)
 
@@ -69,6 +76,8 @@ class Contact(Base):
     email = Column(String, index=True, nullable=False)
     name = Column(String, nullable=True)
     tags = Column(String, nullable=True)  # Comma-separated strings
+    status = Column(String, default="active")  # active, unsubscribed, bounced
+    custom_fields = Column(Text, default="{}")  # Store as stringified JSON dict
     is_unsubscribed = Column(Boolean, default=False)
     created_at = Column(DateTime, default=utc_now_naive)
 
@@ -96,10 +105,17 @@ class Campaign(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     name = Column(String, nullable=False)
     subject = Column(String, nullable=False)
+    subject_b = Column(String, nullable=True)  # For A/B testing
+    ab_split_ratio = Column(Integer, default=0)  # Percentage to test (0 to 100)
+    ab_winner_metric = Column(String, nullable=True)  # "open_rate", "click_rate"
+    ab_winner_subject = Column(String, nullable=True)  # The determined winner
+    throttle_limit = Column(Integer, default=0)  # Emails per hour limit (0 = no limit)
+    category = Column(String, default="Newsletter")  # Newsletter, Promo, Transactional, etc.
+    is_archived = Column(Boolean, default=False)
     content_html = Column(Text, nullable=False)
     smtp_server_id = Column(Integer, ForeignKey("smtp_servers.id", ondelete="SET NULL"), nullable=True)
     contact_list_id = Column(Integer, ForeignKey("contact_lists.id", ondelete="SET NULL"), nullable=True)
-    status = Column(String, default="draft")  # draft, scheduled, sending, sent, failed
+    status = Column(String, default="draft")  # draft, scheduled, sending, sent, failed, paused
     total_recipients = Column(Integer, default=0)
     sent_count = Column(Integer, default=0)
     open_count = Column(Integer, default=0)
@@ -125,6 +141,9 @@ class CampaignLog(Base):
     contact_id = Column(Integer, ForeignKey("contacts.id", ondelete="CASCADE"), nullable=False)
     email = Column(String, nullable=False)
     status = Column(String, default="pending")  # pending, sent, bounced, failed
+    device_type = Column(String, default="Desktop")  # Desktop, Mobile
+    link_clicks = Column(Text, default="{}")  # Stringified JSON clicks dict
+    error_code = Column(String, nullable=True)  # Store bounce code like 550 or 421
     opened = Column(Boolean, default=False)
     clicked = Column(Boolean, default=False)
     error_message = Column(Text, nullable=True)

@@ -30,6 +30,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const [diagnostics, setDiagnostics] = useState<any | null>(null);
+  const [loadingDiagnostics, setLoadingDiagnostics] = useState(true);
+
   const fetchStats = async () => {
     setError(null);
     const token = localStorage.getItem("admin_token");
@@ -53,8 +56,29 @@ export default function AdminDashboard() {
     }
   };
 
+  const fetchDiagnostics = async () => {
+    setLoadingDiagnostics(true);
+    const token = localStorage.getItem("admin_token");
+    try {
+      const response = await fetch("/api/admin/dashboard/diagnostics", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDiagnostics(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch systems diagnostics:", err);
+    } finally {
+      setLoadingDiagnostics(false);
+    }
+  };
+
   useEffect(() => {
     fetchStats();
+    fetchDiagnostics();
   }, []);
 
   if (loading) {
@@ -100,6 +124,7 @@ export default function AdminDashboard() {
           onClick={() => {
             setLoading(true);
             fetchStats();
+            fetchDiagnostics();
           }}
           className="flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-200/80 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-all shadow-[0_2px_12px_rgba(0,0,0,0.015)]"
         >
@@ -218,24 +243,64 @@ export default function AdminDashboard() {
         </div>
 
         {/* System Queue Diagnostics */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] flex flex-col justify-between">
-          <div className="space-y-2">
-            <h3 className="font-extrabold text-sm text-slate-900 tracking-wide">Celery Queue Diagnostics</h3>
-            <p className="text-[10px] text-slate-400">Platform background process health indicator.</p>
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] space-y-4 flex flex-col justify-between">
+          <div className="space-y-1">
+            <h3 className="font-extrabold text-sm text-slate-900 tracking-wide flex items-center gap-1.5">
+              <span>Celery Cluster Diagnostics</span>
+              {diagnostics && diagnostics.celery.status === 'online' ? (
+                <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
+              ) : (
+                <span className="w-1.5 h-1.5 bg-rose-500 rounded-full" />
+              )}
+            </h3>
+            <p className="text-[10px] text-slate-400">Real-time background dispatch system health.</p>
           </div>
 
-          <div className="py-5 text-center space-y-4">
-            <div className="inline-flex items-center justify-center p-3 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-600 mb-2">
-              <CheckCircle2 size={32} className="animate-pulse" />
+          {loadingDiagnostics ? (
+            <div className="py-8 flex flex-col items-center justify-center">
+              <span className="animate-spin rounded-full h-5 w-5 border-b-2 border-brand-500"></span>
             </div>
-            <p className="text-xs font-bold text-slate-900">SaaS Dispatch Core healthy</p>
-            <span className="text-[10px] text-slate-500 block bg-slate-50 py-1.5 px-3 border border-slate-200 rounded-xl font-bold">
-              Beat Periodic Schedules active
-            </span>
-          </div>
+          ) : !diagnostics ? (
+            <div className="text-[10px] text-slate-400 text-center py-6">
+              Diagnostics unavailable.
+            </div>
+          ) : (
+            <div className="space-y-3.5">
+              {/* Redis status line */}
+              <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                <span className="font-semibold text-slate-500">Redis Broker</span>
+                <span className={`font-bold ${diagnostics.redis.status === 'online' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                  {diagnostics.redis.status === 'online' ? `ONLINE (${diagnostics.redis.ping_latency_ms}ms)` : 'OFFLINE'}
+                </span>
+              </div>
 
-          <div className="text-[9px] text-slate-500 text-center font-bold">
-            Broker Status: <span className="text-emerald-600 font-extrabold">REDIS ONLINE</span>
+              {/* Active workers */}
+              <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                <span className="font-semibold text-slate-500">Active Workers</span>
+                <span className="font-extrabold text-slate-800">
+                  {diagnostics.celery.workers.length} nodes
+                </span>
+              </div>
+
+              {/* Registered tasks count */}
+              <div className="flex items-center justify-between text-xs border-b border-slate-100 pb-2">
+                <span className="font-semibold text-slate-500">Registered Tasks</span>
+                <span className="font-bold text-slate-800">
+                  {diagnostics.celery.registered_tasks_count} tasks
+                </span>
+              </div>
+
+              {/* System environment context */}
+              <div className="bg-slate-50 rounded-xl p-2.5 border border-slate-150 text-[9px] text-slate-500 font-mono space-y-0.5">
+                <div>Python: {diagnostics.system.python_version}</div>
+                <div>OS: {diagnostics.system.os}</div>
+                <div>Process PID: {diagnostics.system.process_id}</div>
+              </div>
+            </div>
+          )}
+
+          <div className="text-[9px] text-slate-400 text-center font-semibold pt-1">
+            Broker Engine: <span className="text-indigo-600 font-bold">Redis Cluster</span>
           </div>
         </div>
       </div>

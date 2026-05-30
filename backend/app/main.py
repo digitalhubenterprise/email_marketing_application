@@ -49,7 +49,10 @@ ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:80",
     "http://127.0.0.1:3000",
+    "http://beta.smartcampaign.today",
     "https://beta.smartcampaign.today",
+    "http://betaapi.smartcampaign.today",
+    "https://betaapi.smartcampaign.today",
 ]
 
 # In production, only allow the real domain

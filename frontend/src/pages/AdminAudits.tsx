@@ -9,7 +9,8 @@ import {
   RefreshCw,
   Mail,
   Eye,
-  MousePointerClick
+  MousePointerClick,
+  Download
 } from 'lucide-react'
 
 interface AuditLog {
@@ -114,6 +115,33 @@ export default function AdminAudits() {
     fetchAdminLogs();
   };
 
+  const handleExportAudits = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const response = await fetch("/api/admin/audits/export", {
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `system_audit_logs_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert("Failed to export compliance audit trail.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network error exporting compliance audit trail.");
+    }
+  };
+
   return (
     <div className="space-y-2 animate-fadeIn text-slate-800">
       {/* Header Tab Selector & Action Row */}
@@ -145,18 +173,30 @@ export default function AdminAudits() {
           </button>
         </div>
 
-        <button
-          onClick={() => {
-            setAdminPage(1);
-            setUserPage(1);
-            fetchAdminLogs();
-            fetchUserLogs();
-          }}
-          className="px-3.5 py-1.5 border border-slate-200 rounded-xl bg-white text-xs font-bold text-slate-700 transition-all flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-350 shadow-sm"
-        >
-          <RefreshCw size={13} className={adminLoading || userLoading ? "animate-spin text-brand-500" : "text-slate-500"} />
-          Reload All Logs
-        </button>
+        <div className="flex items-center gap-3">
+          {activeTab === 'admin' && (
+            <button
+              onClick={handleExportAudits}
+              className="px-3.5 py-1.5 border border-slate-200 rounded-xl bg-slate-900 text-white hover:bg-slate-800 text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-sm"
+            >
+              <Download size={13} />
+              Export Audits to CSV
+            </button>
+          )}
+
+          <button
+            onClick={() => {
+              setAdminPage(1);
+              setUserPage(1);
+              fetchAdminLogs();
+              fetchUserLogs();
+            }}
+            className="px-3.5 py-1.5 border border-slate-200 rounded-xl bg-white text-xs font-bold text-slate-700 transition-all flex items-center justify-center gap-2 hover:bg-slate-50 hover:border-slate-350 shadow-sm"
+          >
+            <RefreshCw size={13} className={adminLoading || userLoading ? "animate-spin text-brand-500" : "text-slate-500"} />
+            Reload All Logs
+          </button>
+        </div>
       </div>
 
       {/* Tab Contents */}

@@ -101,6 +101,8 @@ class PaymentLogBase(BaseModel):
     currency: str = "USD"
     plan_tier: str = "pro"
     gateway: str = "bKash"
+    status: str = "pending"
+    action_type: Optional[str] = "add_fund"
     notes: Optional[str] = None
 
 class PaymentLogCreate(PaymentLogBase):

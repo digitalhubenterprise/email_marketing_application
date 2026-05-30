@@ -51,6 +51,20 @@ export default function AdminBilling() {
   const [newGateway, setNewGateway] = useState('bKash');
   const [newNotes, setNewNotes] = useState('');
 
+  // Add Funds States
+  const [showAddFundsModal, setShowAddFundsModal] = useState(false);
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState<any[]>([]);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
+  const [fundAmount, setFundAmount] = useState(1000);
+  const [fundCurrency, setFundCurrency] = useState('USD');
+  const [fundAction, setFundAction] = useState<'add_fund' | 'rebate' | 'overdrive'>('add_fund');
+  const [fundStatus, setFundStatus] = useState('paid');
+  const [fundGateway, setFundGateway] = useState('bKash');
+  const [fundNotes, setFundNotes] = useState('');
+  const [fundTier, setFundTier] = useState('pro');
+  const [searchingUsers, setSearchingUsers] = useState(false);
+
   const [usdMonth, setUsdMonth] = useState(0);
   const [bdtMonth, setBdtMonth] = useState(0);
 
@@ -279,6 +293,77 @@ export default function AdminBilling() {
     }
   };
 
+  // Add Funds Effects and Handlers
+  useEffect(() => {
+    if (userSearchQuery.trim().length < 2) {
+      setUserSearchResults([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(async () => {
+      setSearchingUsers(true);
+      const token = localStorage.getItem("admin_token");
+      try {
+        const res = await fetch(`/api/admin/users?search=${encodeURIComponent(userSearchQuery)}&limit=5`, {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUserSearchResults(data.users || []);
+        }
+      } catch (err) {
+        console.error(err);
+      } finally {
+        setSearchingUsers(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [userSearchQuery]);
+
+  const handleAddFundsSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) {
+      alert("Please search and select a user first.");
+      return;
+    }
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch('/api/admin/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          user_email: selectedUser.email,
+          amount: fundAmount,
+          currency: fundCurrency,
+          plan_tier: selectedUser.subscription_tier || 'pro',
+          gateway: fundGateway,
+          status: fundStatus,
+          action_type: fundAction,
+          notes: fundNotes
+        })
+      });
+      if (res.ok) {
+        alert("Funds / Quota transaction applied successfully.");
+        setShowAddFundsModal(false);
+        // Reset states
+        setSelectedUser(null);
+        setUserSearchQuery('');
+        setFundAmount(1000);
+        setFundNotes('');
+        fetchPayments();
+      } else {
+        const errorData = await res.json();
+        alert(`Error: ${errorData.detail || "Failed to process funds transaction."}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to API server.");
+    }
+  };
+
   const handleEditPlanSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPlan) return;
@@ -405,13 +490,22 @@ export default function AdminBilling() {
         </div>
 
         {activeTab === 'billing' && (
-          <button
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-3.5 py-2 brand-gradient-bg rounded-xl text-xs font-bold text-white hover:opacity-95 shadow-md shadow-brand-500/10 transition-all self-end md:self-auto"
-          >
-            <Plus size={14} />
-            Record Offline Transfer
-          </button>
+          <div className="flex gap-2 self-end md:self-auto">
+            <button
+              onClick={() => setShowAddFundsModal(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-xl text-xs font-bold text-white shadow-md shadow-emerald-500/10 transition-all"
+            >
+              <PlusCircle size={14} />
+              Add Funds
+            </button>
+            <button
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-3.5 py-2 brand-gradient-bg rounded-xl text-xs font-bold text-white hover:opacity-95 shadow-md shadow-brand-500/10 transition-all"
+            >
+              <Plus size={14} />
+              Record Offline Transfer
+            </button>
+          </div>
         )}
 
         {activeTab === 'subscription' && (
@@ -913,6 +1007,253 @@ export default function AdminBilling() {
                   className="flex-1 py-2.5 brand-gradient-bg text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-500/10"
                 >
                   Save Log
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ADD FUNDS MODAL */}
+      {showAddFundsModal && (
+        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl overflow-hidden border border-slate-200 shadow-2xl relative animate-scaleUp text-slate-800">
+            <div className="absolute top-0 left-0 w-full h-[3px] bg-emerald-600" />
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+              <h3 className="font-extrabold text-sm text-slate-900 flex items-center gap-2">
+                <PlusCircle size={16} className="text-emerald-600" />
+                Add Funds & Adjust Quota
+              </h3>
+              <button onClick={() => {
+                setShowAddFundsModal(false);
+                setSelectedUser(null);
+                setUserSearchQuery('');
+              }} className="text-slate-400 hover:text-slate-650">
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddFundsSubmit} className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
+              {/* Search and Select User */}
+              <div className="relative">
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Search and Select User
+                </label>
+                
+                {selectedUser ? (
+                  <div className="flex items-center justify-between p-2.5 rounded-xl bg-emerald-50 border border-emerald-250 text-emerald-800 text-xs font-semibold">
+                    <div className="flex flex-col">
+                      <span className="font-bold">{selectedUser.email}</span>
+                      <span className="text-[10px] text-emerald-600">
+                        Tier: {selectedUser.subscription_tier.toUpperCase()} | Quota: {selectedUser.quota_limit.toLocaleString()}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedUser(null);
+                        setUserSearchQuery('');
+                      }}
+                      className="p-1 hover:bg-emerald-100 rounded-full text-emerald-800"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      type="text"
+                      required
+                      value={userSearchQuery}
+                      onChange={(e) => setUserSearchQuery(e.target.value)}
+                      placeholder="Type email address to search..."
+                      className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-emerald-500 font-semibold"
+                    />
+                    
+                    {searchingUsers && (
+                      <div className="absolute right-3 top-9 text-[10px] text-slate-400 font-semibold animate-pulse">
+                        Searching...
+                      </div>
+                    )}
+
+                    {userSearchResults.length > 0 && (
+                      <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 rounded-xl shadow-xl z-50 overflow-hidden max-h-40 overflow-y-auto">
+                        {userSearchResults.map((u) => (
+                          <button
+                            key={u.id}
+                            type="button"
+                            onClick={() => {
+                              setSelectedUser(u);
+                              setUserSearchResults([]);
+                            }}
+                            className="w-full text-left px-3.5 py-2.5 hover:bg-slate-50 text-xs font-semibold text-slate-700 flex justify-between items-center border-b border-slate-100 last:border-0"
+                          >
+                            <span>{u.email}</span>
+                            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-100 text-slate-500">
+                              {u.subscription_tier}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {userSearchQuery.trim().length >= 2 && !searchingUsers && userSearchResults.length === 0 && (
+                      <div className="absolute left-0 right-0 mt-1 bg-white border border-slate-200 p-3 rounded-xl text-center text-[10px] text-slate-400 font-bold shadow-lg z-50">
+                        No active users found matching '{userSearchQuery}'
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+
+              {/* Amount and Currency */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Amount Value
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    value={fundAmount}
+                    onChange={(e) => setFundAmount(parseInt(e.target.value))}
+                    placeholder="Enter transaction volume..."
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-emerald-500 font-semibold"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Currency Unit
+                  </label>
+                  <select
+                    value={fundCurrency}
+                    onChange={(e) => setFundCurrency(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-emerald-500 font-semibold"
+                  >
+                    <option value="USD">USD ($)</option>
+                    <option value="BDT">BDT (৳)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Action Type Selection (Checkbox style radio cards) */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Action Type Selection
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setFundAction('add_fund')}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      fundAction === 'add_fund'
+                        ? 'border-emerald-500 bg-emerald-50/50 text-emerald-800 font-bold shadow-sm'
+                        : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 text-xs font-semibold'
+                    }`}
+                  >
+                    <span className="block text-xs">Add Fund</span>
+                    <span className="block text-[8px] opacity-75 mt-0.5">Top-up Balance</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFundAction('rebate')}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      fundAction === 'rebate'
+                        ? 'border-emerald-500 bg-emerald-50/50 text-emerald-800 font-bold shadow-sm'
+                        : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 text-xs font-semibold'
+                    }`}
+                  >
+                    <span className="block text-xs">Rebate</span>
+                    <span className="block text-[8px] opacity-75 mt-0.5">Refund / Credit</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setFundAction('overdrive')}
+                    className={`p-2.5 rounded-xl border text-center transition-all ${
+                      fundAction === 'overdrive'
+                        ? 'border-emerald-500 bg-emerald-50/50 text-emerald-800 font-bold shadow-sm'
+                        : 'border-slate-200 bg-slate-50 text-slate-500 hover:bg-slate-100 text-xs font-semibold'
+                    }`}
+                  >
+                    <span className="block text-xs">Overdrive</span>
+                    <span className="block text-[8px] opacity-75 mt-0.5">Override Quota</span>
+                  </button>
+                </div>
+              </div>
+
+
+
+              {/* Status and Gateway Row */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Transaction Status
+                  </label>
+                  <select
+                    value={fundStatus}
+                    onChange={(e) => setFundStatus(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-emerald-500 font-semibold"
+                  >
+                    <option value="paid">paid (verified / instant)</option>
+                    <option value="pending">pending (awaiting clear)</option>
+                    <option value="unpaid">unpaid (invoice trace)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                    Payment Gateway
+                  </label>
+                  <select
+                    value={fundGateway}
+                    onChange={(e) => setFundGateway(e.target.value)}
+                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-emerald-500 font-semibold"
+                  >
+                    <option value="bKash">bKash</option>
+                    <option value="Bank Transfer">Bank Transfer</option>
+                    <option value="Stripe">Stripe</option>
+                    <option value="PayPal">PayPal</option>
+                    <option value="Refund">Refund Entry</option>
+                    <option value="Cash">Cash payment</option>
+                    <option value="System Credits">System Credits</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div>
+                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                  Internal Notes & Details
+                </label>
+                <textarea
+                  rows={2}
+                  value={fundNotes}
+                  onChange={(e) => setFundNotes(e.target.value)}
+                  placeholder="E.g., Authorized by customer request #429..."
+                  className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-emerald-500 font-semibold resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowAddFundsModal(false);
+                    setSelectedUser(null);
+                    setUserSearchQuery('');
+                  }}
+                  className="flex-1 py-2.5 border border-slate-200 rounded-xl text-xs font-bold text-slate-500 hover:bg-slate-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-emerald-500/10"
+                >
+                  Apply Transaction
                 </button>
               </div>
             </form>

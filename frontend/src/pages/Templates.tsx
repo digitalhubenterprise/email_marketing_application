@@ -1,6 +1,27 @@
 import React, { useEffect, useState } from 'react'
 import { useAuth } from '../App'
-import { FileText, Plus, Trash2, Eye, Layout, Code, Monitor, Smartphone, Mail, Sparkles, ArrowLeft, RefreshCw } from 'lucide-react'
+import { 
+  FileText, 
+  Plus, 
+  Trash2, 
+  Eye, 
+  Layout, 
+  Code, 
+  Monitor, 
+  Smartphone, 
+  Mail, 
+  ArrowLeft, 
+  RefreshCw,
+  Palette,
+  Type,
+  Image,
+  Link,
+  Sliders,
+  ChevronUp,
+  ChevronDown,
+  Copy,
+  FolderOpen
+} from 'lucide-react'
 
 interface EmailTemplate {
   id: number;
@@ -8,6 +29,25 @@ interface EmailTemplate {
   subject: string;
   content_html: string;
   created_at: string;
+}
+
+interface ContentBlock {
+  id: string;
+  type: "text" | "image" | "button" | "divider" | "spacer" | "social" | "two-col" | "three-col";
+  content: string; // HTML or Text
+  url?: string; // For images/links
+  color?: string; // Text color, button color
+  backgroundColor?: string;
+  fontSize?: string;
+  textAlign?: "left" | "center" | "right";
+  paddingTop?: string;
+  paddingBottom?: string;
+  height?: string; // For spacers
+  width?: string;
+  borderRadius?: string;
+  col1Content?: string;
+  col2Content?: string;
+  col3Content?: string;
 }
 
 export default function Templates() {
@@ -23,6 +63,104 @@ export default function Templates() {
   const [previewTemplate, setPreviewTemplate] = useState<EmailTemplate | null>(null);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [showCreator, setShowCreator] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<"welcome" | "promo" | "newsletter" | "cart" | "reengage">("welcome");
+
+  // Visual Builder States
+  const [builderMode, setBuilderMode] = useState<"visual" | "html">("visual");
+  const [blocks, setBlocks] = useState<ContentBlock[]>([
+    { id: "b1", type: "text", content: "<h2>Hi {{name}},</h2><p>Welcome to our official newsletter list. We have loaded our default template.</p>", textAlign: "left", fontSize: "14px", color: "#2d3748" },
+    { id: "b2", type: "button", content: "Visit Website", url: "https://example.com", color: "#ffffff", backgroundColor: "#4c6ef5", textAlign: "center", borderRadius: "8px", paddingTop: "12px", paddingBottom: "12px" },
+    { id: "b3", type: "divider", content: "" }
+  ]);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>("b1");
+
+  // Account Brand settings
+  const [brandPrimary, setBrandPrimary] = useState("#4c6ef5");
+  const [brandSecondary, setBrandSecondary] = useState("#fab005");
+  const [brandFont, setBrandFont] = useState("Inter");
+
+  // Category template list definitions
+  const presetTemplates = [
+    // Welcome
+    { id: "w1", cat: "welcome", name: "Welcome Onboarding Sequence", sub: "👋 Welcome to your new dashboard, let's get started!", blocks: [
+      { id: "1", type: "text", content: "<h2>Welcome Aboard!</h2><p>We are absolutely thrilled to have you here {{name}}. Your account is fully activated.</p>", color: "#1a1c2e" },
+      { id: "2", type: "button", content: "Get Started Now", url: "https://example.com/start", color: "#ffffff", backgroundColor: brandPrimary, borderRadius: "6px", textAlign: "center" },
+      { id: "3", type: "text", content: "<p>If you have any questions, simply reply to this email.</p>", color: "#4a5568" }
+    ]},
+    { id: "w2", cat: "welcome", name: "SaaS Premium Intro", sub: "🚀 Let's optimize your deliverability paths", blocks: [
+      { id: "1", type: "text", content: "<h2>Let's Scale Your Sends</h2><p>Hey {{name}}, here is a quick overview of what you can accomplish with your new premium SMTP routing nodes.</p>", color: "#1a1c2e" },
+      { id: "2", type: "two-col", content: "", col1Content: "<h3>Fast Speeds</h3><p>Up to 10k hourly dispatches</p>", col2Content: "<h3>Auto Bounces</h3><p>Idempotent decoders flag blocks</p>" }
+    ]},
+    { id: "w3", cat: "welcome", name: "Warm Community Greeting", sub: "💬 Join our private Discord community inside!", blocks: [
+      { id: "1", type: "text", content: "<h2>Welcome to the Community!</h2><p>Connect with 1,000+ marketers and scale your email flows seamlessly.</p>" },
+      { id: "2", type: "button", content: "Join Community Chat", url: "https://discord.gg", color: "#ffffff", backgroundColor: "#5865F2", borderRadius: "8px", textAlign: "center" }
+    ]},
+    { id: "w4", cat: "welcome", name: "Product Warm-up Intro", sub: "📦 Quick walkthrough of your custom settings", blocks: [
+      { id: "1", type: "text", content: "<h2>Ready to explore?</h2><p>Here are three quick tabs to configure first: SMTP Servers, Contacts Lists, and Campaigns.</p>" }
+    ]},
+
+    // Promo
+    { id: "p1", cat: "promo", name: "Lifetime Deal Promo", sub: "🔥 30% Off Lifetime Deal — SmartCampaign Pro", blocks: [
+      { id: "1", type: "text", content: "<span style='color:#e03131; font-weight:bold; font-size:11px;'>SPECIAL PROMOTION</span><h2>Get 30% Off Lifetime Pro</h2><p>Hi {{name}}, unlock unlimited contact imports and deep tracking dashboards.</p>", color: "#1a1c2e" },
+      { id: "2", type: "button", content: "Claim 30% Discount", url: "https://example.com/promo", color: "#ffffff", backgroundColor: "#10b981", borderRadius: "6px", textAlign: "center" }
+    ]},
+    { id: "p2", cat: "promo", name: "Flash Sale Alert", sub: "⏳ Only 24 Hours Left! Get our exclusive bundle", blocks: [
+      { id: "1", type: "text", content: "<h2>Hurry, Limited Time Only!</h2><p>We are running a 24-hour flash sale on all standard subscriptions.</p>" },
+      { id: "2", type: "button", content: "Upgrade Package", url: "https://example.com/upgrade", color: "#ffffff", backgroundColor: "#e03131", borderRadius: "4px" }
+    ]},
+    { id: "p3", cat: "promo", name: "Black Friday Launch", sub: "🏷️ Black Friday deals have arrived early!", blocks: [
+      { id: "1", type: "text", content: "<h2>Save big today!</h2><p>Use coupon code <b>BLACKFRIDAY</b> at checkout for a flat discount.</p>" }
+    ]},
+    { id: "p4", cat: "promo", name: "New Feature Showcase", sub: "✨ Upgrade: Drag & Drop React Block Builder", blocks: [
+      { id: "1", type: "text", content: "<h2>Introducing Visual Editor</h2><p>Say goodbye to writing manual HTML tags. Drag blocks, configure CTA buttons, and preview on phone templates.</p>" }
+    ]},
+
+    // Newsletter
+    { id: "n1", cat: "newsletter", name: "Monthly Tech Digest", sub: "📬 Your Monthly SaaS Digest Inside!", blocks: [
+      { id: "1", type: "text", content: "<h2>Monthly SaaS Digest</h2><p>We're thrilled to share our core platform updates, custom database indexes, and faster API routes.</p>" },
+      { id: "2", type: "divider", content: "" },
+      { id: "3", type: "text", content: "<h3>🚀 Dynamic Multi-SMTP routing</h3><p>Manage and throttle dispatches seamlessly across custom delivery nodes.</p>" }
+    ]},
+    { id: "n2", cat: "newsletter", name: "Weekly Executive Summary", sub: "📊 Executive Trends & Email Marketing Metrics", blocks: [
+      { id: "1", type: "text", content: "<h2>Weekly Market Trends</h2><p>Understanding delivery statistics, click margins, and mobile responsive checks.</p>" }
+    ]},
+    { id: "n3", cat: "newsletter", name: "Industry Insights Brief", sub: "💡 5 email deliverability rules you must know", blocks: [
+      { id: "1", type: "text", content: "<h2>Keep spam rates below 0.1%</h2><p>Always verify custom domains with SPF, DKIM, and DMARC properties.</p>" }
+    ]},
+    { id: "n4", cat: "newsletter", name: "Product Changelog V2", sub: "🛠️ Changelog: Custom fields & tag segments", blocks: [
+      { id: "1", type: "text", content: "<h2>Custom Fields & Tagging</h2><p>You can now map CSV files into key-value JSON parameters dynamically.</p>" }
+    ]},
+
+    // Abandoned Cart
+    { id: "c1", cat: "cart", name: "Forgot Something Reminder", sub: "🛒 Did you leave something in your cart?", blocks: [
+      { id: "1", type: "text", content: "<h2>Don't miss out!</h2><p>Hi {{name}}, we noticed you left items in your shopping cart. We have reserved them for a limited time.</p>" },
+      { id: "2", type: "button", content: "Complete Checkout", url: "https://example.com/cart", color: "#ffffff", backgroundColor: brandPrimary, borderRadius: "6px" }
+    ]},
+    { id: "c2", cat: "cart", name: "10% Cart Recover Coupon", sub: "🎁 Still thinking? Take 10% off your cart items!", blocks: [
+      { id: "1", type: "text", content: "<h2>Here is 10% off</h2><p>Complete your order now using coupon code <b>RECOVER10</b> at checkout.</p>" }
+    ]},
+    { id: "c3", cat: "cart", name: "Order Reservation Warning", sub: "⚠️ Warning: Your cart reservation is expiring!", blocks: [
+      { id: "1", type: "text", content: "<h2>Final Nudge</h2><p>Items in your cart are in high demand and will be released to other shoppers shortly.</p>" }
+    ]},
+    { id: "c4", cat: "cart", name: "Checkout Nudge Alert", sub: "⚡ Checkout now to receive free shipping", blocks: [
+      { id: "1", type: "text", content: "<h2>Free shipping unlocked!</h2><p>We've added free shipping to your pending order. Click below to checkout.</p>" }
+    ]},
+
+    // Re-engagement
+    { id: "r1", cat: "reengage", name: "We Miss You Email", sub: "❤️ We haven't seen you in a while...", blocks: [
+      { id: "1", type: "text", content: "<h2>We miss you, {{name}}!</h2><p>We have added multiple templates and visual grids since your last send. Come back and check them out.</p>" },
+      { id: "2", type: "button", content: "Reactivate Account", url: "https://example.com/reactivate", color: "#ffffff", backgroundColor: "#ab33e5", borderRadius: "8px" }
+    ]},
+    { id: "r2", cat: "reengage", name: "$10 Free Reactivation Gift", sub: "💵 We've credited your account with $10!", blocks: [
+      { id: "1", type: "text", content: "<h2>Here is a $10 credit</h2><p>Use it toward any premium monthly plan or contact expansion pack.</p>" }
+    ]},
+    { id: "r3", cat: "reengage", name: "Founder Quick Check-in", sub: "💬 Quick question from our founder...", blocks: [
+      { id: "1", type: "text", content: "<p>Hey {{name}},</p><p>I noticed you haven't sent any email templates recently. Is there anything we can build to make your flows easier?</p><p>Regards,<br/>Alex, Founder</p>" }
+    ]},
+    { id: "r4", cat: "reengage", name: "Account Warning Deactivation", sub: "⚠️ Inactive account: action required to keep templates", blocks: [
+      { id: "1", type: "text", content: "<h2>Keep your designs safe</h2><p>Log in within 7 days to ensure your templates library remains active.</p>" }
+    ]}
+  ];
 
   const fetchTemplates = async () => {
     try {
@@ -30,8 +168,7 @@ export default function Templates() {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
-        const data = await res.json();
-        setTemplates(data);
+        setTemplates(await res.json());
       }
     } catch (err) {
       console.error(err);
@@ -46,6 +183,7 @@ export default function Templates() {
 
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
+    const finalHtml = builderMode === "visual" ? compileBlocksToHtml() : contentHtml;
     try {
       const res = await fetch("/api/templates", {
         method: "POST",
@@ -53,16 +191,14 @@ export default function Templates() {
           "Content-Type": "application/json",
           "Authorization": `Bearer ${token}`
         },
-        body: JSON.stringify({ name, subject, content_html: contentHtml })
+        body: JSON.stringify({ name, subject, content_html: finalHtml })
       });
       if (res.ok) {
-        const newT = await res.json();
         setName("");
         setSubject("");
         setContentHtml("");
         setShowCreator(false);
         await fetchTemplates();
-        setPreviewTemplate(newT);
       }
     } catch (err) {
       console.error(err);
@@ -78,8 +214,7 @@ export default function Templates() {
         headers: { "Authorization": `Bearer ${token}` }
       });
       if (res.ok) {
-        const updated = templates.filter(t => t.id !== id);
-        setTemplates(updated);
+        setTemplates(templates.filter(t => t.id !== id));
         if (previewTemplate?.id === id) {
           setPreviewTemplate(null);
         }
@@ -89,48 +224,103 @@ export default function Templates() {
     }
   };
 
-  // Curated elegant template presets users can load instantly
-  const loadPreset = (presetType: "newsletter" | "promo" | "welcome") => {
-    if (presetType === "newsletter") {
-      setName("Monthly Newsletter");
-      setSubject("📬 Your Monthly SaaS Digest Inside!");
-      setContentHtml(`<!DOCTYPE html>
+  const loadPresetLayout = (p: any) => {
+    setName(p.name);
+    setSubject(p.sub);
+    setBlocks(p.blocks.map((b: any) => ({
+      ...b,
+      id: Math.random().toString(36).substr(2, 9),
+      col1Content: b.col1Content || "",
+      col2Content: b.col2Content || "",
+      col3Content: b.col3Content || ""
+    })) as ContentBlock[]);
+  };
+
+  const compileBlocksToHtml = (): string => {
+    let body = "";
+    blocks.forEach(b => {
+      const align = b.textAlign || "left";
+      const padTop = b.paddingTop || "10px";
+      const padBot = b.paddingBottom || "10px";
+      const color = b.color || "#333333";
+
+      if (b.type === "text") {
+        body += `<tr><td align="${align}" style="padding-top:${padTop}; padding-bottom:${padBot}; color:${color}; font-size:${b.fontSize || '14px'}; font-family:${brandFont}, sans-serif; line-height:1.5;">${b.content}</td></tr>`;
+      } else if (b.type === "button") {
+        body += `<tr><td align="${align}" style="padding-top:${padTop}; padding-bottom:${padBot};">
+          <table border="0" cellpadding="0" cellspacing="0" style="display:inline-block;">
+            <tr>
+              <td align="center" bgcolor="${b.backgroundColor || brandPrimary}" style="border-radius:${b.borderRadius || '6px'};">
+                <a href="${b.url || '#'}" target="_blank" style="font-size:12px; font-weight:bold; color:${color}; text-decoration:none; padding:10px 20px; display:inline-block; font-family:${brandFont}, sans-serif;">${b.content}</a>
+              </td>
+            </tr>
+          </table>
+        </td></tr>`;
+      } else if (b.type === "image") {
+        body += `<tr><td align="${align}" style="padding-top:${padTop}; padding-bottom:${padBot};">
+          <img src="${b.url || 'https://via.placeholder.com/400x150'}" alt="Image" style="max-width:100%; height:auto; border-radius:${b.borderRadius || '0px'};" />
+        </td></tr>`;
+      } else if (b.type === "divider") {
+        body += `<tr><td style="padding-top:${padTop}; padding-bottom:${padBot};"><hr style="border:0; border-top:1px solid #e2e8f0;" /></td></tr>`;
+      } else if (b.type === "spacer") {
+        body += `<tr><td style="height:${b.height || '20px'};"></td></tr>`;
+      } else if (b.type === "two-col") {
+        body += `<tr><td style="padding-top:${padTop}; padding-bottom:${padBot};">
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="48%" valign="top" style="font-family:${brandFont}, sans-serif; font-size:13px; color:#4a5568; line-height:1.5;">${b.col1Content || 'Column 1'}</td>
+              <td width="4%"></td>
+              <td width="48%" valign="top" style="font-family:${brandFont}, sans-serif; font-size:13px; color:#4a5568; line-height:1.5;">${b.col2Content || 'Column 2'}</td>
+            </tr>
+          </table>
+        </td></tr>`;
+      } else if (b.type === "three-col") {
+        body += `<tr><td style="padding-top:${padTop}; padding-bottom:${padBot};">
+          <table width="100%" border="0" cellpadding="0" cellspacing="0">
+            <tr>
+              <td width="30%" valign="top" style="font-family:${brandFont}, sans-serif; font-size:13px; color:#4a5568; line-height:1.5;">${b.col1Content || 'Column 1'}</td>
+              <td width="5%"></td>
+              <td width="30%" valign="top" style="font-family:${brandFont}, sans-serif; font-size:13px; color:#4a5568; line-height:1.5;">${b.col2Content || 'Column 2'}</td>
+              <td width="5%"></td>
+              <td width="30%" valign="top" style="font-family:${brandFont}, sans-serif; font-size:13px; color:#4a5568; line-height:1.5;">${b.col3Content || 'Column 3'}</td>
+            </tr>
+          </table>
+        </td></tr>`;
+      }
+    });
+
+    return `<!DOCTYPE html>
 <html>
-<body style="font-family: Arial, sans-serif; background-color: #f6f6f9; margin: 0; padding: 20px;">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Outfit:wght@400;600;700&family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <title>SmartCampaign</title>
+</head>
+<body style="font-family:'${brandFont}', Arial, sans-serif; background-color:#f8f9fa; margin:0; padding:20px;">
   <table width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td align="center">
-        <table width="100%" max-width="500" style="max-width: 500px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.04); border: 1px solid #e1e9fe;">
+        <table width="100%" max-width="600" style="max-width:600px; background-color:#ffffff; border-radius:12px; border:1px solid #e2e8f0; overflow:hidden; box-shadow:0 4px 12px rgba(0,0,0,0.03);">
+          <!-- Header Banner -->
           <tr>
-            <td align="center" style="background: linear-gradient(135deg, #4c6ef5 0%, #3b51db 100%); padding: 25px 20px;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 20px; font-weight: bold; font-family: sans-serif;">SmartCampaign Digest</h1>
+            <td align="center" bgcolor="${brandPrimary}" style="padding:30px 20px;">
+              <h1 style="color:#ffffff; margin:0; font-size:24px; font-family:'${brandFont}', sans-serif; font-weight:700;">SmartCampaign</h1>
             </td>
           </tr>
+          <!-- Body Content -->
           <tr>
-            <td style="padding: 25px 20px; color: #414467; line-height: 1.5; font-size: 13px;">
-              <h2 style="color: #1a1c2e; font-size: 16px; margin-top: 0; font-family: sans-serif;">Hi {{name}},</h2>
-              <p>We are thrilled to bring you our latest updates for this month! We have added custom socket diagnostics and faster email queues.</p>
-              
-              <div style="background-color: #f0f4ff; border-radius: 8px; padding: 12px; margin: 15px 0; border: 1px solid #c8d7fd;">
-                <h4 style="margin: 0 0 4px 0; color: #4c6ef5; font-size: 13px;">🚀 Dynamic Multi-SMTP routing</h4>
-                <p style="margin: 0; font-size: 11px; color: #51557d;">Connect external delivery nodes seamlessly and route campaigns with higher delivery priority!</p>
-              </div>
-
-              <p>Let us know your feedback on our new system.</p>
-
-              <table border="0" cellpadding="0" cellspacing="0" style="margin-top: 20px;">
-                <tr>
-                  <td align="center" style="border-radius: 6px;" bgcolor="#4c6ef5">
-                    <a href="https://beta.smartcampaign.today" target="_blank" style="font-size: 12px; font-weight: bold; color: #ffffff; text-decoration: none; padding: 10px 20px; border-radius: 6px; border: 1px solid #4c6ef5; display: inline-block; font-family: sans-serif;">Explore Dashboard</a>
-                  </td>
-                </tr>
+            <td style="padding:30px 24px;">
+              <table width="100%" border="0" cellpadding="0" cellspacing="0">
+                ${body}
               </table>
             </td>
           </tr>
+          <!-- Footer -->
           <tr>
-            <td align="center" style="padding: 20px; background-color: #f6f6f9; font-size: 10px; color: #878cae; border-top: 1px solid #ececf3;">
-              <p style="margin: 0;">You are receiving this because you signed up at SmartCampaign.</p>
-              <p style="margin: 5px 0 0 0;"><a href="#" style="color: #4c6ef5; text-decoration: none;">Unsubscribe</a> from this list.</p>
+            <td align="center" style="padding:20px; background-color:#f8f9fa; font-size:11px; color:#a0aec0; border-top:1px solid #edf2f7;">
+              <p style="margin:0;">Sent by SmartCampaign. All rights reserved.</p>
+              <p style="margin:5px 0 0 0;"><a href="{{unsubscribe}}" style="color:${brandPrimary}; text-decoration:none; font-weight:600;">Unsubscribe</a> from this list.</p>
             </td>
           </tr>
         </table>
@@ -138,103 +328,89 @@ export default function Templates() {
     </tr>
   </table>
 </body>
-</html>`);
-    } else if (presetType === "promo") {
-      setName("Product Launch Discount");
-      setSubject("🔥 30% Off Lifetime Deal — SmartCampaign");
-      setContentHtml(`<!DOCTYPE html>
-<html>
-<body style="font-family: Arial, sans-serif; background-color: #f6f6f9; margin: 0; padding: 20px;">
-  <table width="100%" border="0" cellpadding="0" cellspacing="0">
-    <tr>
-      <td align="center">
-        <table width="100%" max-width="500" style="max-width: 500px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.04);">
-          <tr>
-            <td align="center" style="padding: 30px 20px; color: #414467; line-height: 1.5; font-size: 13px;">
-              <span style="font-weight: bold; color: #4c6ef5; text-transform: uppercase; font-size: 10px; tracking-wider: 2px;">LIFETIME PROMOTION</span>
-              <h2 style="color: #1a1c2e; font-size: 18px; margin: 5px 0 15px 0; font-weight: bold; font-family: sans-serif;">Get 30% Off SmartCampaign Pro</h2>
-              <p>Hey {{name}},</p>
-              <p>For a limited time, we are offering an exclusive discount on our premium plans. Access unlimited contact uploads, detailed CRM nodes integrations, and priority sending.</p>
-              
-              <div style="text-align: center; margin: 25px 0;">
-                <span style="font-size: 13px; text-decoration: line-through; color: #878cae;">$29.00/mo</span>
-                <span style="font-size: 24px; font-weight: bold; color: #10b981; margin-left: 8px;">$19.00/mo</span>
-                <p style="font-size: 10px; color: #878cae; margin-top: 4px;">Locked in forever. Cancel anytime.</p>
-              </div>
-
-              <div style="text-align: center;">
-                <a href="https://beta.smartcampaign.today/billing" target="_blank" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); font-size: 12px; font-weight: bold; color: #ffffff; text-decoration: none; padding: 12px 28px; border-radius: 8px; display: inline-block; box-shadow: 0 4px 8px rgba(16, 185, 129, 0.15); font-family: sans-serif;">Claim Discount Now</a>
-              </div>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`);
-    } else if (presetType === "welcome") {
-      setName("Welcome Aboard");
-      setSubject("Welcome to SmartCampaign! Let's get sending");
-      setContentHtml(`<!DOCTYPE html>
-<html>
-<body style="font-family: Arial, sans-serif; background-color: #f6f6f9; margin: 0; padding: 20px;">
-  <table width="100%" border="0" cellpadding="0" cellspacing="0">
-    <tr>
-      <td align="center">
-        <table width="100%" max-width="500" style="max-width: 500px; background-color: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.04);">
-          <tr>
-            <td style="padding: 30px 20px; color: #414467; line-height: 1.5; font-size: 13px;">
-              <h2 style="color: #1a1c2e; font-size: 18px; margin-top: 0; font-family: sans-serif;">Welcome {{name}}!</h2>
-              <p>Thank you for choosing SmartCampaign. We built this SaaS to help you manage newsletters, verify delivery paths, and scale your audience efficiently.</p>
-              <p>Here are the first 3 steps to take:</p>
-              <ol style="padding-left: 20px; margin: 10px 0;">
-                <li style="margin-bottom: 6px;">Configure a custom SMTP server under <b>SMTP Servers</b> tab.</li>
-                <li style="margin-bottom: 6px;">Upload a CSV list of subscribers under <b>Contact Lists</b> tab.</li>
-                <li style="margin-bottom: 6px;">Launch your first email campaign under <b>Campaigns</b> tab!</li>
-              </ol>
-              <p>Have any questions? We're here to help.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-</body>
-</html>`);
-    }
+</html>`;
   };
 
+  const addBlock = (type: ContentBlock["type"]) => {
+    const newId = Math.random().toString(36).substr(2, 9);
+    let newBlock: ContentBlock = { id: newId, type, content: "New block content", textAlign: "left" };
+
+    if (type === "button") {
+      newBlock = { id: newId, type, content: "Click Here", url: "https://example.com", color: "#ffffff", backgroundColor: brandPrimary, borderRadius: "6px", textAlign: "center" };
+    } else if (type === "image") {
+      newBlock = { id: newId, type, content: "", url: "https://images.unsplash.com/photo-1557683316-973673baf926?w=600&auto=format&fit=crop&q=60", borderRadius: "8px", textAlign: "center" };
+    } else if (type === "divider") {
+      newBlock = { id: newId, type, content: "" };
+    } else if (type === "spacer") {
+      newBlock = { id: newId, type, content: "", height: "20px" };
+    } else if (type === "two-col") {
+      newBlock = { id: newId, type, content: "", col1Content: "<h3>Column 1</h3><p>Enter details</p>", col2Content: "<h3>Column 2</h3><p>Enter details</p>" };
+    } else if (type === "three-col") {
+      newBlock = { id: newId, type, content: "", col1Content: "<h3>Col 1</h3>", col2Content: "<h3>Col 2</h3>", col3Content: "<h3>Col 3</h3>" };
+    }
+
+    setBlocks([...blocks, newBlock]);
+    setSelectedBlockId(newId);
+  };
+
+  const updateBlock = (id: string, updates: Partial<ContentBlock>) => {
+    setBlocks(blocks.map(b => b.id === id ? { ...b, ...updates } as ContentBlock : b));
+  };
+
+  const moveBlock = (index: number, direction: "up" | "down") => {
+    if (direction === "up" && index === 0) return;
+    if (direction === "down" && index === blocks.length - 1) return;
+    const targetIdx = direction === "up" ? index - 1 : index + 1;
+    const newBlocks = [...blocks];
+    const temp = newBlocks[index];
+    newBlocks[index] = newBlocks[targetIdx];
+    newBlocks[targetIdx] = temp;
+    setBlocks(newBlocks);
+  };
+
+  const cloneBlock = (b: ContentBlock) => {
+    const newId = Math.random().toString(36).substr(2, 9);
+    const cloned = { ...b, id: newId };
+    setBlocks([...blocks, cloned]);
+    setSelectedBlockId(newId);
+  };
+
+  const removeBlock = (id: string) => {
+    setBlocks(blocks.filter(b => b.id !== id));
+    if (selectedBlockId === id) setSelectedBlockId(null);
+  };
+
+  const activeSelectedBlock = blocks.find(b => b.id === selectedBlockId);
+
   return (
-    <div className="space-y-2.5 animate-fadeIn">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 pb-1 border-b border-dark-700/15">
-        <div className="flex items-center gap-1.5">
+    <div className="space-y-3 animate-fadeIn">
+      {/* Header banner */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 border-b border-dark-700/25">
+        <div className="flex items-center gap-2">
           {(previewTemplate || showCreator) && (
             <button
               onClick={() => {
                 setPreviewTemplate(null);
                 setShowCreator(false);
               }}
-              className="p-1 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-md border border-dark-700/50 transition-colors animate-fadeIn"
-              title="Back to templates list"
+              className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
             >
-              <ArrowLeft size={12} />
+              <ArrowLeft size={13} />
             </button>
           )}
           <div>
-            <h2 className="text-lg font-extrabold text-white tracking-tight flex items-center gap-1.5">
-              <Layout size={16} className="text-brand-400 shrink-0" />
+            <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
+              <Layout size={18} className="text-brand-400 shrink-0" />
               <span>
                 {showCreator 
-                  ? "New Template Design" 
+                  ? "Visual Design Workspace" 
                   : previewTemplate 
-                    ? `Preview: ${previewTemplate.name}` 
-                    : "Design Templates"
+                    ? `Review Design: ${previewTemplate.name}` 
+                    : "Email Templates Builder"
                 }
               </span>
             </h2>
-            <p className="text-[9px] text-dark-400 mt-0.5">Build responsive templates with dynamic variables `{"{{name}}"}` and `{"{{email}}"}`</p>
+            <p className="text-[10px] text-dark-400 mt-0.5">Construct responsive blocks layouts and personalize subject templates with custom CRM tags.</p>
           </div>
         </div>
 
@@ -244,63 +420,65 @@ export default function Templates() {
               setShowCreator(true);
               setName("");
               setSubject("");
-              setContentHtml("");
+              setBlocks([
+                { id: "b1", type: "text", content: "<h2>Hi {{first_name | 'Friend'}},</h2><p>Enter your content blocks here. Custom fields like {{company}} are auto-mapped.</p>" }
+              ]);
             }}
-            className="flex items-center self-start sm:self-center gap-1 px-2.5 py-1.5 brand-gradient-bg text-white text-[11px] font-bold rounded-md shadow-md shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
+            className="flex items-center gap-1.5 px-3 py-2 brand-gradient-bg text-white text-xs font-bold rounded-lg shadow-md shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
           >
-            <Plus size={12} />
-            <span>Create New Template</span>
+            <Plus size={14} />
+            <span>Launch Visual Builder</span>
           </button>
         )}
       </div>
 
       {!showCreator && !previewTemplate ? (
-        /* ================== DISPLAY LIST AS DIRECTORY TABLE ================== */
+        /* ================== DISPLAY SAVED LIST ================== */
         <div>
           {loading ? (
-            <div className="flex justify-center py-10">
-              <RefreshCw className="animate-spin text-brand-500" size={16} />
+            <div className="flex justify-center py-20">
+              <RefreshCw className="animate-spin text-brand-500" size={18} />
             </div>
           ) : templates.length > 0 ? (
-            <div className="glass-panel overflow-hidden border border-dark-700/30 rounded-xl">
+            <div className="glass-panel overflow-hidden border border-dark-700/30 rounded-xl shadow-md">
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className="border-b border-dark-700/40 bg-dark-950/50 text-[9px] font-bold text-dark-400 uppercase tracking-wider">
-                      <th className="py-2 px-3">Template Name</th>
-                      <th className="py-2 px-3">Subject Line</th>
-                      <th className="py-2 px-3 text-right">Actions</th>
+                    <tr className="border-b border-dark-700/40 bg-dark-950/40 text-[9px] font-bold text-dark-400 uppercase tracking-wider">
+                      <th className="py-2.5 px-4">Template name</th>
+                      <th className="py-2.5 px-4">Subject path</th>
+                      <th className="py-2.5 px-4 text-right">Options</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-dark-800/30 text-xs">
+                  <tbody className="divide-y divide-dark-800/30 text-[11px] text-dark-200">
                     {templates.map((t) => (
                       <tr
                         key={t.id}
                         onClick={() => setPreviewTemplate(t)}
                         className="hover:bg-dark-900/40 cursor-pointer transition-colors group"
                       >
-                        <td className="py-2 px-3 font-bold text-white flex items-center gap-2">
+                        <td className="py-3 px-4 font-bold text-white flex items-center gap-2">
                           <Layout size={12} className="text-brand-400 shrink-0" />
                           <span className="truncate max-w-[200px]">{t.name}</span>
                         </td>
-                        <td className="py-2 px-3 text-dark-350 font-medium font-mono text-[11px] truncate max-w-[340px]">
+                        <td className="py-3 px-4 text-dark-350 font-mono">
                           {t.subject}
                         </td>
-                        <td className="py-2 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                        <td className="py-3 px-4 text-right" onClick={(e) => e.stopPropagation()}>
                           <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => setPreviewTemplate(t)}
-                              className="p-1 bg-dark-950 hover:bg-dark-900 text-brand-400 hover:text-brand-300 border border-dark-800 rounded-md transition-colors"
-                              title="Preview template"
+                              className="p-1 bg-dark-950 hover:bg-dark-900 text-brand-400 hover:text-white border border-dark-800 rounded-md transition-colors"
+                              title="Preview"
                             >
-                              <Eye size={11} />
+                              <Eye size={12} />
                             </button>
                             <button
                               onClick={(e) => handleDelete(t.id, e)}
                               className="p-1 bg-dark-950 hover:bg-rose-500/10 text-dark-500 hover:text-rose-400 border border-dark-800 rounded-md transition-colors"
-                              title="Delete template"
+                              title="Delete"
                             >
-                              <Trash2 size={11} />
+                              <Trash2 size={12} />
                             </button>
                           </div>
                         </td>
@@ -311,181 +489,549 @@ export default function Templates() {
               </div>
             </div>
           ) : (
-            <div className="text-center py-10 border border-dashed border-dark-700/50 rounded-lg bg-dark-900/25 flex flex-col items-center justify-center gap-1.5">
-              <div className="h-7 w-7 rounded-full bg-dark-950/80 border border-dark-700/40 flex items-center justify-center text-dark-500">
-                <FileText size={14} />
-              </div>
+            <div className="text-center py-20 border border-dashed border-dark-700/50 rounded-xl bg-dark-900/25 flex flex-col items-center justify-center gap-2">
+              <FileText size={18} className="text-dark-500" />
               <div>
-                <p className="text-[11px] font-bold text-white">No email templates</p>
-                <p className="text-[9px] text-dark-500 mt-0.5 max-w-[180px] mx-auto">Create a template above or choose a pre-configured layout block.</p>
+                <p className="text-xs font-bold text-white">No saved email templates</p>
+                <p className="text-[10px] text-dark-500 mt-0.5 max-w-[200px] mx-auto leading-normal">Open the workspace visual builder above to load dynamic grids and CTA modules.</p>
               </div>
             </div>
           )}
         </div>
       ) : showCreator ? (
-        /* ================== CREATOR SECTION ================== */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 items-start">
-          {/* Creator Inputs */}
-          <div className="glass-panel p-2.5 rounded-lg border border-dark-700/30 shadow-md shadow-dark-950/20 space-y-2.5">
-            {/* Quick presets load */}
-            <div className="space-y-1">
-              <span className="text-[7.5px] font-bold text-dark-400 uppercase tracking-wider">Load Dynamic Layout Presets:</span>
-              <div className="flex gap-1">
+        /* ================== VISUAL DRAG & DROP BUILDER ================== */
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 items-start">
+          {/* Left panel: Available layouts, template library */}
+          <div className="lg:col-span-3 space-y-3">
+            {/* Curated template library */}
+            <div className="glass-panel p-3 rounded-xl border border-dark-700/30 space-y-3">
+              <h4 className="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1">
+                <FolderOpen size={12} className="text-brand-400" />
+                <span>20+ Elegant Presets</span>
+              </h4>
+
+              {/* Category selector */}
+              <div className="grid grid-cols-5 gap-0.5 bg-dark-950 p-0.5 border border-dark-800 rounded-lg">
                 <button
-                  type="button" onClick={() => loadPreset("welcome")}
-                  className="flex-1 py-1 bg-dark-950 hover:bg-dark-900 rounded-md border border-dark-700/60 text-[9px] font-bold text-brand-400 transition-colors"
+                  type="button" onClick={() => setSelectedCategory("welcome")}
+                  className={`py-1 text-[8px] font-bold rounded-md transition-all ${selectedCategory === "welcome" ? "bg-brand-500 text-white" : "text-dark-400 hover:text-white"}`}
+                  title="Welcome sequence"
                 >
                   Welcome
                 </button>
                 <button
-                  type="button" onClick={() => loadPreset("newsletter")}
-                  className="flex-1 py-1 bg-dark-950 hover:bg-dark-900 rounded-md border border-dark-700/60 text-[9px] font-bold text-brand-400 transition-colors"
-                >
-                  Newsletter
-                </button>
-                <button
-                  type="button" onClick={() => loadPreset("promo")}
-                  className="flex-1 py-1 bg-dark-950 hover:bg-dark-900 rounded-md border border-dark-700/60 text-[9px] font-bold text-brand-400 transition-colors"
+                  type="button" onClick={() => setSelectedCategory("promo")}
+                  className={`py-1 text-[8px] font-bold rounded-md transition-all ${selectedCategory === "promo" ? "bg-brand-500 text-white" : "text-dark-400 hover:text-white"}`}
+                  title="Product promotion"
                 >
                   Promo
                 </button>
+                <button
+                  type="button" onClick={() => setSelectedCategory("newsletter")}
+                  className={`py-1 text-[8px] font-bold rounded-md transition-all ${selectedCategory === "newsletter" ? "bg-brand-500 text-white" : "text-dark-400 hover:text-white"}`}
+                  title="Monthly digest"
+                >
+                  News
+                </button>
+                <button
+                  type="button" onClick={() => setSelectedCategory("cart")}
+                  className={`py-1 text-[8px] font-bold rounded-md transition-all ${selectedCategory === "cart" ? "bg-brand-500 text-white" : "text-dark-400 hover:text-white"}`}
+                  title="Abandoned Cart"
+                >
+                  Cart
+                </button>
+                <button
+                  type="button" onClick={() => setSelectedCategory("reengage")}
+                  className={`py-1 text-[8px] font-bold rounded-md transition-all ${selectedCategory === "reengage" ? "bg-brand-500 text-white" : "text-dark-400 hover:text-white"}`}
+                  title="Re-engagement"
+                >
+                  Re
+                </button>
+              </div>
+
+              {/* Filtered layouts catalog */}
+              <div className="space-y-1 max-h-[140px] overflow-y-auto pr-1">
+                {presetTemplates
+                  .filter(p => p.cat === selectedCategory)
+                  .map(p => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => loadPresetLayout(p)}
+                      className="w-full text-left px-2 py-1.5 bg-dark-950 hover:bg-dark-900 border border-dark-800 hover:border-brand-500/40 rounded-lg text-[9.5px] font-bold text-dark-200 transition-all flex items-center justify-between"
+                    >
+                      <span className="truncate max-w-[140px]">{p.name}</span>
+                      <Plus size={10} className="text-brand-400" />
+                    </button>
+                  ))}
               </div>
             </div>
 
-            <form onSubmit={handleCreate} className="space-y-2 pt-1.5 border-t border-dark-700/15">
-              <div className="flex flex-col gap-0.5">
-                <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Template Title</label>
-                <div className="relative">
-                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-dark-500">
-                    <FileText size={11} />
-                  </div>
+            {/* Layout Canvas Blocks List */}
+            <div className="glass-panel p-3 rounded-xl border border-dark-700/30 space-y-2">
+              <h4 className="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-dark-700/10 pb-1.5">
+                <Sliders size={12} className="text-brand-400" />
+                <span>Available Block Types</span>
+              </h4>
+
+              <div className="grid grid-cols-2 gap-1.5">
+                <button
+                  type="button" onClick={() => addBlock("text")}
+                  className="p-2 bg-dark-950 hover:bg-dark-900 border border-dark-800 rounded-lg text-[10px] font-bold text-white flex flex-col items-center justify-center gap-1.5 hover:border-brand-500/40 transition-all"
+                >
+                  <Type size={14} className="text-brand-400" />
+                  <span>Text Body</span>
+                </button>
+                <button
+                  type="button" onClick={() => addBlock("image")}
+                  className="p-2 bg-dark-950 hover:bg-dark-900 border border-dark-800 rounded-lg text-[10px] font-bold text-white flex flex-col items-center justify-center gap-1.5 hover:border-brand-500/40 transition-all"
+                >
+                  <Image size={14} className="text-brand-400" />
+                  <span>Image Block</span>
+                </button>
+                <button
+                  type="button" onClick={() => addBlock("button")}
+                  className="p-2 bg-dark-950 hover:bg-dark-900 border border-dark-800 rounded-lg text-[10px] font-bold text-white flex flex-col items-center justify-center gap-1.5 hover:border-brand-500/40 transition-all"
+                >
+                  <Link size={14} className="text-brand-400" />
+                  <span>CTA Button</span>
+                </button>
+                <button
+                  type="button" onClick={() => addBlock("divider")}
+                  className="p-2 bg-dark-950 hover:bg-dark-900 border border-dark-800 rounded-lg text-[10px] font-bold text-white flex flex-col items-center justify-center gap-1.5 hover:border-brand-500/40 transition-all"
+                >
+                  <Sliders size={14} className="text-brand-400" />
+                  <span>Divider Row</span>
+                </button>
+                <button
+                  type="button" onClick={() => addBlock("two-col")}
+                  className="p-2 bg-dark-950 hover:bg-dark-900 border border-dark-800 rounded-lg text-[10px] font-bold text-white flex flex-col items-center justify-center gap-1.5 hover:border-brand-500/40 transition-all"
+                >
+                  <Layout size={14} className="text-brand-400" />
+                  <span>2-Col Row</span>
+                </button>
+                <button
+                  type="button" onClick={() => addBlock("three-col")}
+                  className="p-2 bg-dark-950 hover:bg-dark-900 border border-dark-800 rounded-lg text-[10px] font-bold text-white flex flex-col items-center justify-center gap-1.5 hover:border-brand-500/40 transition-all"
+                >
+                  <Layout size={14} className="text-brand-400" />
+                  <span>3-Col Row</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Global Account Brand Defaults */}
+            <div className="glass-panel p-3 rounded-xl border border-dark-700/30 space-y-2">
+              <h4 className="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                <Palette size={12} className="text-brand-400" />
+                <span>Account Brand colors</span>
+              </h4>
+              <div className="space-y-1.5 pt-1 border-t border-dark-700/10 text-[10px]">
+                <div className="flex justify-between items-center">
+                  <span className="text-dark-400">Primary Color</span>
+                  <input
+                    type="color" value={brandPrimary} onChange={e => setBrandPrimary(e.target.value)}
+                    className="w-5 h-5 bg-transparent border-0 cursor-pointer"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-dark-400">Secondary Color</span>
+                  <input
+                    type="color" value={brandSecondary} onChange={e => setBrandSecondary(e.target.value)}
+                    className="w-5 h-5 bg-transparent border-0 cursor-pointer"
+                  />
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-dark-400">Font Family</span>
+                  <select
+                    value={brandFont} onChange={e => setBrandFont(e.target.value)}
+                    className="bg-dark-950 text-white border border-dark-800 px-1 py-0.5 rounded text-[9.5px] cursor-pointer"
+                  >
+                    <option value="Inter">Inter</option>
+                    <option value="Outfit">Outfit</option>
+                    <option value="Roboto">Roboto</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Center panel: Live interactive editor & wizard setup */}
+          <div className="lg:col-span-6 space-y-3">
+            {/* Top Wizard Config inputs */}
+            <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 space-y-2.5 shadow-md shadow-dark-950/15">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col gap-0.5">
+                  <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Template Name</label>
                   <input
                     type="text" required value={name} onChange={e => setName(e.target.value)}
                     placeholder="e.g. Welcome sequence"
-                    className="w-full pl-7.5 pr-2.5 py-1.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-md text-[11px] focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    className="w-full px-3 py-1.5 bg-dark-950/50 hover:bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none placeholder:text-dark-600 transition-all duration-200"
                   />
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-0.5">
-                <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Email Subject Line</label>
-                <div className="relative">
-                  <div className="absolute left-2.5 top-1/2 -translate-y-1/2 text-dark-500">
-                    <Mail size={11} />
-                  </div>
+                <div className="flex flex-col gap-0.5">
+                  <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Email Subject</label>
                   <input
                     type="text" required value={subject} onChange={e => setSubject(e.target.value)}
-                    placeholder="e.g. Hi {{name}}! Welcome aboard!"
-                    className="w-full pl-7.5 pr-2.5 py-1.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-md text-[11px] focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    placeholder="e.g. Hi {{first_name}}, welcome aboard!"
+                    className="w-full px-3 py-1.5 bg-dark-950/50 hover:bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none placeholder:text-dark-600 transition-all duration-200"
                   />
                 </div>
-              </div>
-
-              <div className="flex flex-col gap-0.5">
-                <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">HTML Source Code</label>
-                <div className="relative">
-                  <div className="absolute left-2.5 top-2.5 text-dark-500">
-                    <Code size={11} />
-                  </div>
-                  <textarea
-                    required value={contentHtml} onChange={e => setContentHtml(e.target.value)}
-                    placeholder="Write responsive HTML tags here. Supports {{name}} and {{email}} tag variables."
-                    rows={6}
-                    className="w-full pl-7.5 pr-2.5 py-1.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-md text-[11px] focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white font-mono placeholder:text-dark-600 leading-normal"
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                disabled={!name || !subject || !contentHtml}
-                className="w-full py-1.5 brand-gradient-bg text-white font-bold rounded-md text-[11px] transition-all duration-200 hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1 glow-btn disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                <Plus size={11} />
-                <span>Save Design Template</span>
-              </button>
-            </form>
-          </div>
-
-          {/* Right Panel: Live Render Preview */}
-          <div className="glass-panel p-2.5 rounded-lg border border-dark-700/30 shadow-md shadow-dark-950/20 space-y-2.5">
-            <div className="flex justify-between items-center pb-1.5 border-b border-dark-700/15">
-              <h3 className="text-[10px] font-bold text-white flex items-center gap-1">
-                <Code size={12} className="text-brand-400 shrink-0" />
-                <span>Real-Time HTML Render Preview</span>
-              </h3>
-
-              <div className="flex bg-dark-950 border border-dark-700/60 p-0.5 rounded-md">
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("desktop")}
-                  className={`p-0.5 rounded-md transition-all ${previewMode === "desktop" ? "bg-brand-500 text-white" : "text-dark-400"}`}
-                  title="Desktop Preview"
-                >
-                  <Monitor size={10} />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setPreviewMode("mobile")}
-                  className={`p-0.5 rounded-md transition-all ${previewMode === "mobile" ? "bg-brand-500 text-white" : "text-dark-400"}`}
-                  title="Mobile Preview"
-                >
-                  <Smartphone size={10} />
-                </button>
               </div>
             </div>
 
-            <div className={`mx-auto bg-white rounded-lg overflow-hidden shadow-inner border border-dark-700/20 transition-all duration-300 ${
-              previewMode === "mobile" ? "max-w-[280px] h-[330px]" : "w-full h-[330px]"
-            }`}>
-              {contentHtml ? (
-                <iframe
-                  title="Live Preview"
-                  srcDoc={contentHtml.replace("{{name}}", "John Doe").replace("{{email}}", "john@domain.com")}
-                  className="w-full h-full border-0"
+            {/* Interactive Blocks list canvas wrapper */}
+            <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 flex flex-col gap-2.5 min-h-[360px]">
+              <div className="flex justify-between items-center border-b border-dark-700/10 pb-2">
+                <span className="text-[10px] font-extrabold text-white uppercase tracking-wider">Interactive Live Canvas Editor</span>
+                
+                {/* HTML Source code switch */}
+                <div className="flex bg-dark-950 border border-dark-800 p-0.5 rounded-md">
+                  <button
+                    type="button" onClick={() => setBuilderMode("visual")}
+                    className={`px-2 py-0.5 text-[8.5px] font-bold rounded-md transition-all ${builderMode === "visual" ? "bg-brand-500 text-white" : "text-dark-400 hover:text-white"}`}
+                  >
+                    Visual blocks
+                  </button>
+                  <button
+                    type="button" onClick={() => setBuilderMode("html")}
+                    className={`px-2 py-0.5 text-[8.5px] font-bold rounded-md transition-all ${builderMode === "html" ? "bg-brand-500 text-white" : "text-dark-400 hover:text-white"}`}
+                  >
+                    HTML source
+                  </button>
+                </div>
+              </div>
+
+              {builderMode === "html" ? (
+                <textarea
+                  value={contentHtml} onChange={e => setContentHtml(e.target.value)}
+                  placeholder="Write direct responsive HTML source code..."
+                  rows={14}
+                  className="w-full px-3 py-2 bg-dark-950/40 hover:bg-dark-950/65 focus:bg-dark-950/80 border border-dark-700/50 rounded-lg text-[11.5px] font-mono text-white focus:outline-none leading-normal h-[330px]"
                 />
               ) : (
-                <div className="w-full h-full flex flex-col items-center justify-center bg-dark-900/10 text-dark-500 p-4 text-center gap-1">
-                  <Monitor size={28} className="text-dark-700" />
-                  <p className="text-[11px] font-bold text-dark-350">Live Preview Box</p>
-                  <p className="text-[9px] mt-0.5 leading-normal max-w-[180px] mx-auto text-dark-400">Start writing HTML tags in the builder or click a dynamic preset layout to preview rendering details.</p>
+                /* Dynamic interactive blocks rendering */
+                <div className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
+                  {blocks.map((b, idx) => {
+                    const isSelected = selectedBlockId === b.id;
+                    return (
+                      <div
+                        key={b.id}
+                        onClick={() => setSelectedBlockId(b.id)}
+                        className={`group relative p-3 border rounded-xl cursor-pointer transition-all duration-200 ${
+                          isSelected 
+                            ? "bg-dark-950 border-brand-500 shadow-md shadow-brand-500/5" 
+                            : "bg-dark-950/50 border-dark-750 hover:bg-dark-950/80"
+                        }`}
+                      >
+                        {/* Block type label & context buttons */}
+                        <div className="flex justify-between items-center mb-2">
+                          <span className="text-[7.5px] font-extrabold uppercase bg-dark-900 border border-dark-800 text-brand-400 px-1 py-0.5 rounded tracking-wider">
+                            {b.type} block
+                          </span>
+
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button
+                              type="button" onClick={(e) => { e.stopPropagation(); moveBlock(idx, "up"); }}
+                              className="p-0.5 hover:bg-dark-800 text-dark-450 hover:text-white rounded border border-dark-800"
+                            >
+                              <ChevronUp size={10} />
+                            </button>
+                            <button
+                              type="button" onClick={(e) => { e.stopPropagation(); moveBlock(idx, "down"); }}
+                              className="p-0.5 hover:bg-dark-800 text-dark-450 hover:text-white rounded border border-dark-800"
+                            >
+                              <ChevronDown size={10} />
+                            </button>
+                            <button
+                              type="button" onClick={(e) => { e.stopPropagation(); cloneBlock(b); }}
+                              className="p-0.5 hover:bg-dark-800 text-dark-450 hover:text-white rounded border border-dark-800"
+                              title="Clone"
+                            >
+                              <Copy size={10} />
+                            </button>
+                            <button
+                              type="button" onClick={(e) => { e.stopPropagation(); removeBlock(b.id); }}
+                              className="p-0.5 hover:bg-rose-500/10 text-dark-450 hover:text-rose-400 rounded border border-dark-800"
+                              title="Delete"
+                            >
+                              <Trash2 size={10} />
+                            </button>
+                          </div>
+                        </div>
+
+                        {/* Block preview rendering content */}
+                        <div className="text-[11px] text-white">
+                          {b.type === "text" && (
+                            <div dangerouslySetInnerHTML={{ __html: b.content || "<p style='color:#a0aec0;'>[Double-click right editor to write text...]</p>" }} />
+                          )}
+                          {b.type === "button" && (
+                            <div className="flex justify-center my-1.5">
+                              <span
+                                style={{
+                                  backgroundColor: b.backgroundColor || brandPrimary,
+                                  color: b.color || "#ffffff",
+                                  borderRadius: b.borderRadius || "6px"
+                                }}
+                                className="px-4 py-1.5 text-[10px] font-bold"
+                              >
+                                {b.content}
+                              </span>
+                            </div>
+                          )}
+                          {b.type === "image" && (
+                            <div className="flex justify-center my-1">
+                              <img
+                                src={b.url || "https://via.placeholder.com/200x60"}
+                                alt="Block Graphic"
+                                className="max-h-[60px] object-cover rounded-lg border border-dark-800"
+                              />
+                            </div>
+                          )}
+                          {b.type === "divider" && (
+                            <hr className="border-0 border-t border-dark-800/80 my-2" />
+                          )}
+                          {b.type === "spacer" && (
+                            <div style={{ height: b.height || '20px' }} className="border border-dashed border-dark-800 flex items-center justify-center text-[7.5px] text-dark-500">
+                              Spacer Block ({b.height || '20px'})
+                            </div>
+                          )}
+                          {b.type === "two-col" && (
+                            <div className="grid grid-cols-2 gap-2 bg-dark-900/30 p-2 rounded-lg border border-dark-800">
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col1Content || "Column 1" }} />
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col2Content || "Column 2" }} />
+                            </div>
+                          )}
+                          {b.type === "three-col" && (
+                            <div className="grid grid-cols-3 gap-2 bg-dark-900/30 p-2 rounded-lg border border-dark-800">
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col1Content || "Column 1" }} />
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col2Content || "Column 2" }} />
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col3Content || "Column 3" }} />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               )}
+
+              {/* Action Footer dispatches */}
+              <div className="mt-auto border-t border-dark-700/10 pt-2.5">
+                <button
+                  onClick={handleCreate}
+                  disabled={!name || !subject}
+                  className="w-full py-2 brand-gradient-bg text-white font-bold rounded-lg text-xs transition-all hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5 glow-btn disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  <FileText size={12} />
+                  <span>Compile and Save Design Template</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Right panel: Block settings properties inspector or interactive Frame preview */}
+          <div className="lg:col-span-3 space-y-3.5">
+            {/* Properties inspector */}
+            <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 space-y-2.5 shadow-md shadow-dark-950/15">
+              <h4 className="text-[10px] font-bold text-white uppercase tracking-wider flex items-center gap-1.5 border-b border-dark-700/10 pb-1.5">
+                <Sliders size={12} className="text-brand-400" />
+                <span>Properties Inspector</span>
+              </h4>
+
+              {activeSelectedBlock ? (
+                <div className="space-y-2.5 text-[10px] text-dark-300">
+                  <span className="font-bold text-white uppercase tracking-wide bg-dark-900 border border-dark-800 px-1 py-0.5 rounded text-[8px]">
+                    Editing {activeSelectedBlock.type}
+                  </span>
+
+                  {(activeSelectedBlock.type === "text" || activeSelectedBlock.type === "button") && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold text-dark-400">Content / CTA Label</label>
+                      {activeSelectedBlock.type === "text" ? (
+                        <textarea
+                          value={activeSelectedBlock.content}
+                          onChange={e => updateBlock(activeSelectedBlock.id, { content: e.target.value })}
+                          rows={4}
+                          className="w-full px-2 py-1 bg-dark-950 hover:bg-dark-950/80 border border-dark-800 rounded-lg text-white font-mono text-[9px] leading-normal"
+                        />
+                      ) : (
+                        <input
+                          type="text" value={activeSelectedBlock.content}
+                          onChange={e => updateBlock(activeSelectedBlock.id, { content: e.target.value })}
+                          className="w-full px-2.5 py-1 bg-dark-950 hover:bg-dark-950/80 border border-dark-800 rounded-lg text-white font-bold"
+                        />
+                      )}
+                    </div>
+                  )}
+
+                  {activeSelectedBlock.type === "image" && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold text-dark-400">Image Asset URL</label>
+                      <input
+                        type="text" value={activeSelectedBlock.url || ""}
+                        onChange={e => updateBlock(activeSelectedBlock.id, { url: e.target.value })}
+                        placeholder="https://example.com/asset.jpg"
+                        className="w-full px-2.5 py-1 bg-dark-950 hover:bg-dark-950/80 border border-dark-800 rounded-lg text-white font-bold"
+                      />
+                    </div>
+                  )}
+
+                  {activeSelectedBlock.type === "button" && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold text-dark-400">Destination Link (URL)</label>
+                      <input
+                        type="text" value={activeSelectedBlock.url || ""}
+                        onChange={e => updateBlock(activeSelectedBlock.id, { url: e.target.value })}
+                        className="w-full px-2.5 py-1 bg-dark-950 hover:bg-dark-950/80 border border-dark-800 rounded-lg text-white font-mono text-[9px]"
+                      />
+                    </div>
+                  )}
+
+                  {(activeSelectedBlock.type === "two-col" || activeSelectedBlock.type === "three-col") && (
+                    <div className="space-y-2">
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-dark-400">Column 1 Content</label>
+                        <textarea
+                          value={activeSelectedBlock.col1Content || ""}
+                          onChange={e => updateBlock(activeSelectedBlock.id, { col1Content: e.target.value })}
+                          rows={2}
+                          className="w-full px-2 py-1 bg-dark-950 border border-dark-800 rounded text-white text-[9px]"
+                        />
+                      </div>
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-dark-400">Column 2 Content</label>
+                        <textarea
+                          value={activeSelectedBlock.col2Content || ""}
+                          onChange={e => updateBlock(activeSelectedBlock.id, { col2Content: e.target.value })}
+                          rows={2}
+                          className="w-full px-2 py-1 bg-dark-950 border border-dark-800 rounded text-white text-[9px]"
+                        />
+                      </div>
+                      {activeSelectedBlock.type === "three-col" && (
+                        <div className="flex flex-col gap-1">
+                          <label className="text-[9px] font-bold text-dark-400">Column 3 Content</label>
+                          <textarea
+                            value={activeSelectedBlock.col3Content || ""}
+                            onChange={e => updateBlock(activeSelectedBlock.id, { col3Content: e.target.value })}
+                            rows={2}
+                            className="w-full px-2 py-1 bg-dark-950 border border-dark-800 rounded text-white text-[9px]"
+                          />
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeSelectedBlock.type === "spacer" && (
+                    <div className="flex flex-col gap-1">
+                      <label className="text-[9px] font-bold text-dark-400">Height (pixels)</label>
+                      <input
+                        type="text" value={activeSelectedBlock.height || "20px"}
+                        onChange={e => updateBlock(activeSelectedBlock.id, { height: e.target.value })}
+                        className="w-full px-2.5 py-1 bg-dark-950 hover:bg-dark-950/80 border border-dark-800 rounded-lg text-white font-bold"
+                      />
+                    </div>
+                  )}
+
+                  {/* Formatting selectors */}
+                  <div className="grid grid-cols-2 gap-2 pt-1 border-t border-dark-700/10">
+                    {activeSelectedBlock.textAlign !== undefined && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-dark-400">Alignment</label>
+                        <select
+                          value={activeSelectedBlock.textAlign || "left"}
+                          onChange={e => updateBlock(activeSelectedBlock.id, { textAlign: e.target.value as any })}
+                          className="bg-dark-950 text-white border border-dark-800 px-1 py-0.5 rounded text-[9.5px]"
+                        >
+                          <option value="left">Left</option>
+                          <option value="center">Center</option>
+                          <option value="right">Right</option>
+                        </select>
+                      </div>
+                    )}
+                    {activeSelectedBlock.borderRadius !== undefined && (
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[9px] font-bold text-dark-400">Corners (radius)</label>
+                        <input
+                          type="text" value={activeSelectedBlock.borderRadius || "6px"}
+                          onChange={e => updateBlock(activeSelectedBlock.id, { borderRadius: e.target.value })}
+                          className="w-full px-2 bg-dark-950 border border-dark-800 rounded py-0.5 text-white"
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-dark-500">
+                  <Sliders size={14} className="mx-auto mb-1 text-dark-700" />
+                  <span>Choose any canvas block to inspect properties.</span>
+                </div>
+              )}
+            </div>
+
+            {/* Live frame renderer (device frame bezel) */}
+            <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/15 flex flex-col gap-2">
+              <div className="flex justify-between items-center pb-2 border-b border-dark-700/10">
+                <span className="text-[10px] font-bold text-white uppercase tracking-wider">Bezel Mock Preview</span>
+                
+                <div className="flex bg-dark-950 border border-dark-800 p-0.5 rounded-md">
+                  <button
+                    type="button" onClick={() => setPreviewMode("desktop")}
+                    className={`p-0.5 rounded transition-all ${previewMode === "desktop" ? "bg-brand-500 text-white" : "text-dark-400"}`}
+                  >
+                    <Monitor size={10} />
+                  </button>
+                  <button
+                    type="button" onClick={() => setPreviewMode("mobile")}
+                    className={`p-0.5 rounded transition-all ${previewMode === "mobile" ? "bg-brand-500 text-white" : "text-dark-400"}`}
+                  >
+                    <Smartphone size={10} />
+                  </button>
+                </div>
+              </div>
+
+              <div className={`mx-auto bg-white rounded-lg overflow-hidden border border-dark-750/30 transition-all duration-300 ${
+                previewMode === "mobile" ? "max-w-[200px] h-[240px] border-8 border-dark-950 rounded-2xl" : "w-full h-[240px]"
+              }`}>
+                <iframe
+                  title="Block Canvas Bezel Render"
+                  srcDoc={builderMode === "visual" ? compileBlocksToHtml().replace("{{name}}", "John Doe").replace("{{email}}", "john@domain.com") : contentHtml}
+                  className="w-full h-full border-0"
+                />
+              </div>
             </div>
           </div>
         </div>
       ) : (
         /* ================== DETAILED SINGLE VIEW ================== */
-        <div className="space-y-2.5 glass-panel p-2.5 rounded-lg border border-dark-700/30 shadow-md">
-          <div className="flex items-center justify-between pb-1.5 border-b border-dark-700/15">
-            <div className="flex items-center gap-2">
-              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Previewing: {previewTemplate?.name}</span>
-              <span className="text-[9px] text-dark-400 font-semibold truncate max-w-[200px]">Subject: {previewTemplate?.subject}</span>
+        <div className="space-y-3.5">
+          <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 shadow-md flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[11px] font-bold text-white uppercase tracking-wider">Previewing Template: {previewTemplate?.name}</span>
+              <span className="text-[9.5px] text-brand-400 font-mono">Subject: {previewTemplate?.subject}</span>
             </div>
 
-            <div className="flex bg-dark-950 border border-dark-700/60 p-0.5 rounded-md">
+            <div className="flex bg-dark-950 border border-dark-800 p-0.5 rounded-md">
               <button
-                type="button"
-                onClick={() => setPreviewMode("desktop")}
-                className={`p-0.5 rounded-md transition-all ${previewMode === "desktop" ? "bg-brand-500 text-white" : "text-dark-400"}`}
+                type="button" onClick={() => setPreviewMode("desktop")}
+                className={`p-1 rounded transition-all ${previewMode === "desktop" ? "bg-brand-500 text-white" : "text-dark-400"}`}
               >
-                <Monitor size={10} />
+                <Monitor size={11} />
               </button>
               <button
-                type="button"
-                onClick={() => setPreviewMode("mobile")}
-                className={`p-0.5 rounded-md transition-all ${previewMode === "mobile" ? "bg-brand-500 text-white" : "text-dark-400"}`}
+                type="button" onClick={() => setPreviewMode("mobile")}
+                className={`p-1 rounded transition-all ${previewMode === "mobile" ? "bg-brand-500 text-white" : "text-dark-400"}`}
               >
-                <Smartphone size={10} />
+                <Smartphone size={11} />
               </button>
             </div>
           </div>
 
-          <div className={`mx-auto bg-white rounded-lg overflow-hidden border border-dark-700/20 shadow-2xl transition-all duration-300 ${
-            previewMode === "mobile" ? "max-w-[280px] h-[350px]" : "w-full h-[350px]"
+          <div className={`mx-auto bg-white rounded-xl overflow-hidden border border-dark-750/30 shadow-2xl transition-all duration-300 ${
+            previewMode === "mobile" ? "max-w-[340px] h-[480px] border-[12px] border-dark-950 rounded-3xl" : "w-full h-[480px]"
           }`}>
             <iframe
-              title="Saved Preview"
+              title="Saved Design Bezel Preview"
               srcDoc={previewTemplate?.content_html?.replace("{{name}}", "John Doe").replace("{{email}}", "john@domain.com") || ""}
               className="w-full h-full border-0"
             />

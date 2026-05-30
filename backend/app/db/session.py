@@ -149,6 +149,41 @@ async def create_db_tables() -> None:
     except Exception as e:
         print(f"DB migration warning 4 (non-fatal): {e}")
 
+    # Major SaaS platform feature upgrades migrations (Modules 1 - 7)
+    try:
+        async with engine.begin() as conn:
+            from sqlalchemy import text
+            # users upgrades
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS brand_primary_color VARCHAR DEFAULT '#4c6ef5'"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS brand_secondary_color VARCHAR DEFAULT '#fab005'"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS brand_font_family VARCHAR DEFAULT 'Inter'"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_settings VARCHAR DEFAULT 'all'"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT false"))
+            
+            # smtp reputation
+            await conn.execute(text("ALTER TABLE smtp_servers ADD COLUMN IF NOT EXISTS reputation_score INTEGER DEFAULT 100"))
+            
+            # contacts upgrade
+            await conn.execute(text("ALTER TABLE contacts ADD COLUMN IF NOT EXISTS status VARCHAR DEFAULT 'active'"))
+            await conn.execute(text("ALTER TABLE contacts ADD COLUMN IF NOT EXISTS custom_fields TEXT DEFAULT '{}'"))
+            
+            # campaigns upgrade
+            await conn.execute(text("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS subject_b VARCHAR"))
+            await conn.execute(text("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS ab_split_ratio INTEGER DEFAULT 0"))
+            await conn.execute(text("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS ab_winner_metric VARCHAR"))
+            await conn.execute(text("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS ab_winner_subject VARCHAR"))
+            await conn.execute(text("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS throttle_limit INTEGER DEFAULT 0"))
+            await conn.execute(text("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS category VARCHAR DEFAULT 'Newsletter'"))
+            await conn.execute(text("ALTER TABLE campaigns ADD COLUMN IF NOT EXISTS is_archived BOOLEAN DEFAULT false"))
+            
+            # campaign logs upgrade
+            await conn.execute(text("ALTER TABLE campaign_logs ADD COLUMN IF NOT EXISTS device_type VARCHAR DEFAULT 'Desktop'"))
+            await conn.execute(text("ALTER TABLE campaign_logs ADD COLUMN IF NOT EXISTS link_clicks TEXT DEFAULT '{}'"))
+            await conn.execute(text("ALTER TABLE campaign_logs ADD COLUMN IF NOT EXISTS error_code VARCHAR"))
+    except Exception as e:
+        print(f"DB feature upgrades migration warning (non-fatal): {e}")
+
     # Create rules to protect admin_audit_logs from deletion or updates (append-only)
     try:
         async with engine.begin() as conn:

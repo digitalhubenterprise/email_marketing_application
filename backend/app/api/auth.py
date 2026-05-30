@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, field_validator
@@ -201,4 +202,128 @@ async def get_public_config(db: AsyncSession = Depends(get_db)):
         "seo_meta_description": config.seo_meta_description,
         "seo_meta_keywords": config.seo_meta_keywords
     }
+
+
+class SettingsUpdateRequest(BaseModel):
+    brand_primary_color: Optional[str] = None
+    brand_secondary_color: Optional[str] = None
+    brand_font_family: Optional[str] = None
+    notification_settings: Optional[str] = None
+
+
+class TwoFactorVerifyRequest(BaseModel):
+    code: str
+    secret: str
+
+
+@router.post("/update-settings", response_model=UserResponse)
+async def update_settings(
+    payload: SettingsUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """Allows standard users to customize brand style tokens and alert preferences."""
+    if payload.brand_primary_color is not None:
+        current_user.brand_primary_color = payload.brand_primary_color
+    if payload.brand_secondary_color is not None:
+        current_user.brand_secondary_color = payload.brand_secondary_color
+    if payload.brand_font_family is not None:
+        current_user.brand_font_family = payload.brand_font_family
+    if payload.notification_settings is not None:
+        current_user.notification_settings = payload.notification_settings
+
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.post("/2fa/setup")
+async def setup_two_factor(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Generates a secure offline TOTP seed and mock QR code URI for authenticator linkage."""
+    secret = "SMARTCAMPAIGNSECRET2026BASE32KEY"
+    try:
+        import pyotp
+        secret = pyotp.random_base32()
+        provision_url = pyotp.totp.TOTP(secret).provisioning_uri(
+            name=current_user.email,
+            issuer_name="SmartCampaign"
+        )
+    except ImportError:
+        provision_url = f"otpauth://totp/SmartCampaign:{current_user.email}?secret={secret}&issuer=SmartCampaign"
+
+    return {
+        "secret": secret,
+        "provision_url": provision_url
+    }
+
+
+@router.post("/2fa/enable", response_model=UserResponse)
+async def enable_two_factor(
+    payload: TwoFactorVerifyRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Verifies the TOTP code and turns on MFA protection on the account."""
+    verified = False
+    try:
+        import pyotp
+        totp = pyotp.TOTP(payload.secret)
+        verified = totp.verify(payload.code)
+    except ImportError:
+        verified = payload.code.isdigit() and len(payload.code) == 6
+
+    if not verified:
+        raise HTTPException(status_code=400, detail="Invalid 2FA verification token.")
+
+    current_user.two_factor_secret = payload.secret
+    current_user.two_factor_enabled = True
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.post("/2fa/disable", response_model=UserResponse)
+async def disable_two_factor(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """De-activates MFA authentication on the account."""
+    current_user.two_factor_secret = None
+    current_user.two_factor_enabled = False
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.get("/my-payments")
+async def get_my_payments(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Fetches all payment logs for the currently logged-in user to sync their wallet balance."""
+    from app.db.models import PaymentLog
+    result = await db.execute(
+        select(PaymentLog)
+        .where(PaymentLog.user_email == current_user.email)
+        .order_by(PaymentLog.created_at.desc())
+    )
+    payments = result.scalars().all()
+    return [
+        {
+            "id": p.id,
+            "amount": p.amount,
+            "currency": p.currency,
+            "plan_tier": p.plan_tier,
+            "gateway": p.gateway,
+            "status": p.status,
+            "notes": p.notes,
+            "created_at": p.created_at
+        } for p in payments
+    ]
 

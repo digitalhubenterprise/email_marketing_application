@@ -82,6 +82,43 @@ export default function AdminSettings() {
   const [systemSmtpFromEmail, setSystemSmtpFromEmail] = useState('');
   const [systemSmtpEnabled, setSystemSmtpEnabled] = useState(false);
   const [testingSmtp, setTestingSmtp] = useState(false);
+  const [smtpTestRecipient, setSmtpTestRecipient] = useState('');
+  const [smtpTestLogs, setSmtpTestLogs] = useState<string[]>([]);
+  const [smtpTestSuccess, setSmtpTestSuccess] = useState<boolean | null>(null);
+
+  const handleTestSmtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!smtpTestRecipient) {
+      alert("Please enter a valid recipient email address.");
+      return;
+    }
+    setTestingSmtp(true);
+    setSmtpTestSuccess(null);
+    setSmtpTestLogs(["[Diagnostics] Connecting to SaaS API Gateway..."]);
+    
+    const token = localStorage.getItem("admin_token");
+    try {
+      const response = await fetch(`/api/admin/settings/smtp/test?recipient_email=${encodeURIComponent(smtpTestRecipient)}`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      });
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setSmtpTestSuccess(true);
+        setSmtpTestLogs(data.logs || ["Diagnostic check completed successfully!"]);
+      } else {
+        setSmtpTestSuccess(false);
+        setSmtpTestLogs(data.logs || [`Diagnostic check failed: ${data.error || 'Unknown error'}`]);
+      }
+    } catch (err: any) {
+      setSmtpTestSuccess(false);
+      setSmtpTestLogs(prev => [...prev, `❌ Network communication failure: ${err.message || 'Connection refused'}`]);
+    } finally {
+      setTestingSmtp(false);
+    }
+  };
 
   const [saving, setSaving] = useState(false);
   const [togglingMaintenance, setTogglingMaintenance] = useState(false);
@@ -99,6 +136,7 @@ export default function AdminSettings() {
         setSiteName(data.site_name);
         setLogoUrl(data.logo_url || '');
         setSupportEmail(data.support_email);
+        setSmtpTestRecipient(data.support_email || '');
         setRateLimit(data.global_send_rate_limit);
         setDefaultFrom(data.default_from_email);
         setAnnouncementActive(data.announcement_active || false);
@@ -717,6 +755,78 @@ export default function AdminSettings() {
                             <p className="text-[9px] text-slate-400 font-semibold">Enforce OTP confirmation before users access dashboards.</p>
                           </div>
                         </div>
+                      </div>
+                    </div>
+
+                    {/* System SMTP Connection Diagnostic Panel */}
+                    <div className="border-t border-slate-100 pt-5 mt-5">
+                      <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200/60 shadow-[0_4px_20px_rgba(0,0,0,0.01)] space-y-4">
+                        <div>
+                          <h4 className="text-xs font-extrabold text-slate-800 flex items-center gap-1.5 uppercase tracking-wider">
+                            🔌 System SMTP Diagnostic Test Console
+                          </h4>
+                          <p className="text-[10px] text-slate-400 mt-0.5">
+                            Validate your saved SMTP configuration by sending a real-time diagnostic message. Ensure you save changes above before running tests.
+                          </p>
+                        </div>
+
+                        <div className="flex flex-col sm:flex-row gap-3 items-end">
+                          <div className="flex-1 w-full">
+                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Recipient Test Email Address
+                            </label>
+                            <input
+                              type="email"
+                              value={smtpTestRecipient}
+                              onChange={(e) => setSmtpTestRecipient(e.target.value)}
+                              placeholder="admin@yourdomain.com"
+                              className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            />
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleTestSmtp}
+                            disabled={testingSmtp}
+                            className="w-full sm:w-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all shadow-sm hover:shadow flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {testingSmtp ? (
+                              <>
+                                <span className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></span>
+                                Testing...
+                              </>
+                            ) : (
+                              "Run Diagnostic Test"
+                            )}
+                          </button>
+                        </div>
+
+                        {/* Live Log Stream Display */}
+                        {smtpTestLogs.length > 0 && (
+                          <div className="space-y-2 animate-fadeIn">
+                            <div className="flex items-center justify-between">
+                              <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider">
+                                Live Connection Handshake Output
+                              </span>
+                              {smtpTestSuccess === true && (
+                                <span className="text-[9px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 border border-emerald-100 rounded-md">
+                                  Diagnostic Test Passed
+                                </span>
+                              )}
+                              {smtpTestSuccess === false && (
+                                <span className="text-[9px] font-bold text-rose-600 bg-rose-50 px-2 py-0.5 border border-rose-100 rounded-md">
+                                  Diagnostic Test Failed
+                                </span>
+                              )}
+                            </div>
+                            <div className="bg-slate-900 rounded-xl p-3.5 border border-slate-950 font-mono text-[9px] text-slate-300 max-h-[220px] overflow-y-auto space-y-1 shadow-inner">
+                              {smtpTestLogs.map((log, idx) => (
+                                <div key={idx} className={log.includes("❌") || log.includes("failure") ? "text-rose-400" : log.includes("success") || log.includes("established") ? "text-emerald-400" : "text-slate-300"}>
+                                  {log}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
 

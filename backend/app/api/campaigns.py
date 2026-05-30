@@ -170,6 +170,12 @@ async def create_campaign(
         user_id=current_user.id,
         name=campaign_in.name.strip(),
         subject=campaign_in.subject.strip(),
+        subject_b=campaign_in.subject_b.strip() if campaign_in.subject_b else None,
+        ab_split_ratio=campaign_in.ab_split_ratio or 0,
+        ab_winner_metric=campaign_in.ab_winner_metric,
+        throttle_limit=campaign_in.throttle_limit or 0,
+        category=campaign_in.category or "Newsletter",
+        is_archived=campaign_in.is_archived or False,
         content_html=campaign_in.content_html,
         smtp_server_id=campaign_in.smtp_server_id,
         contact_list_id=campaign_in.contact_list_id,
@@ -319,3 +325,82 @@ async def list_campaign_logs(
         .order_by(CampaignLog.id.desc())
     )
     return result.scalars().all()
+
+
+@router.post("/{campaign_id}/pause", response_model=CampaignResponse)
+async def pause_campaign(
+    campaign_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Pauses a running campaign."""
+    result = await db.execute(
+        select(Campaign).where(
+            Campaign.id == campaign_id,
+            Campaign.user_id == current_user.id,
+        )
+    )
+    campaign = result.scalars().first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+
+    if campaign.status != "sending":
+        raise HTTPException(status_code=400, detail="Only campaigns in 'sending' status can be paused.")
+
+    campaign.status = "paused"
+    await db.commit()
+    await db.refresh(campaign)
+    return campaign
+
+
+@router.post("/{campaign_id}/resume", response_model=CampaignResponse)
+async def resume_campaign(
+    campaign_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Resumes a paused campaign."""
+    result = await db.execute(
+        select(Campaign).where(
+            Campaign.id == campaign_id,
+            Campaign.user_id == current_user.id,
+        )
+    )
+    campaign = result.scalars().first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+
+    if campaign.status != "paused":
+        raise HTTPException(status_code=400, detail="Only paused campaigns can be resumed.")
+
+    campaign.status = "sending"
+    await db.commit()
+    await db.refresh(campaign)
+
+    from app.tasks.email_sender import send_campaign_task
+    send_campaign_task.delay(campaign.id)
+
+    return campaign
+
+
+@router.post("/{campaign_id}/archive", response_model=CampaignResponse)
+async def archive_campaign(
+    campaign_id: int,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Archives a campaign."""
+    result = await db.execute(
+        select(Campaign).where(
+            Campaign.id == campaign_id,
+            Campaign.user_id == current_user.id,
+        )
+    )
+    campaign = result.scalars().first()
+    if not campaign:
+        raise HTTPException(status_code=404, detail="Campaign not found.")
+
+    campaign.is_archived = True
+    await db.commit()
+    await db.refresh(campaign)
+    return campaign

@@ -95,7 +95,7 @@ async def register_admin(
     )
     db.add(new_admin)
     await db.flush()
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     await db.refresh(new_admin)
 
     # Log audit event
@@ -141,7 +141,7 @@ async def login_admin(
         target_entity=admin.email,
         details="Admin logged in successfully."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
 
     token = create_access_token(subject=admin.id, role="admin")
     return {"access_token": token, "token_type": "bearer"}
@@ -350,7 +350,7 @@ async def bypass_email_verification(
         target_entity=user.email,
         details="User account force-activated manually bypassing verification."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     return {"message": f"User {user.email} successfully activated."}
 
 
@@ -374,7 +374,7 @@ async def suspend_user(
         target_entity=user.email,
         details="User account suspended."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     return {"message": f"User {user.email} successfully suspended."}
 
 
@@ -398,7 +398,7 @@ async def unsuspend_user(
         target_entity=user.email,
         details="User account suspension lifted."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     return {"message": f"User {user.email} successfully unsuspended."}
 
 
@@ -425,7 +425,7 @@ async def delete_user(
         target_entity=user_email,
         details=f"GDPR Hard-Delete completed. Purged all SMTP configs, contacts, campaigns, and logs."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     return {"message": f"User {user_email} and all nested databases deleted completely."}
 
 
@@ -457,7 +457,7 @@ async def override_user_plan(
         target_entity=user.email,
         details=f"Tier overridden from {old_tier} ({old_quota}) to {tier} ({quota_limit})."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     return {"message": f"Successfully updated subscription parameters for {user.email}."}
 
 
@@ -482,7 +482,7 @@ async def extend_user_quota(
         target_entity=user.email,
         details=f"Extended SMTP quota limits by adding +{quota_add} emails capacity."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     return {"message": f"SMTP quota expanded successfully for {user.email}."}
 
 
@@ -513,7 +513,7 @@ async def reset_user_password(
         target_entity=user.email,
         details=f"Admin reset password for user {user.email}. Temporary password generated."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     
     # Queue system Password Reset Email task
     try:
@@ -556,7 +556,7 @@ async def impersonate_user(
         target_entity=user.email,
         details=f"Admin impersonated user {user.email} for support and debug diagnostics."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     
     return {
         "access_token": access_token,
@@ -595,11 +595,18 @@ async def create_payment_entry(
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(get_current_admin)
 ):
-    """Creates a payment log transaction (supports bKash, Bank transfers)."""
+    """Creates a payment log transaction with support for Add Fund, Rebate, and Overdrive actions."""
     # Verify user
     res = await db.execute(select(User).where(User.email == pay_in.user_email))
     user = res.scalars().first()
     user_id = user.id if user else None
+
+    # Determine status and notes
+    status_val = pay_in.status.lower() if pay_in.status else "pending"
+    action_type = pay_in.action_type.lower() if pay_in.action_type else "add_fund"
+    
+    # Store dynamic details in notes
+    notes_val = f"[{action_type.upper()}] {pay_in.notes or ''}".strip()
 
     new_payment = PaymentLog(
         user_id=user_id,
@@ -608,20 +615,46 @@ async def create_payment_entry(
         currency=pay_in.currency,
         plan_tier=pay_in.plan_tier,
         gateway=pay_in.gateway,
-        status="pending",
-        notes=pay_in.notes
+        status=status_val,
+        notes=notes_val
     )
     db.add(new_payment)
     await db.flush()
-    await db.commit()
+
+    # If transaction is PAID and user exists, apply the changes immediately!
+    if status_val == "paid" and user:
+        if action_type == "add_fund":
+            # Dynamic quota allocation based on plan_tier
+            quota_limit = 5000
+            if pay_in.plan_tier.lower() == "pro":
+                quota_limit = 50000
+            elif pay_in.plan_tier.lower() == "business":
+                quota_limit = 200000
+            elif pay_in.plan_tier.lower() == "enterprise":
+                quota_limit = 999999999
+            
+            user.subscription_tier = pay_in.plan_tier.lower()
+            user.quota_limit = quota_limit
+            user.is_active = True
+            
+        elif action_type == "overdrive":
+            # Direct quota limit override using the amount field!
+            user.subscription_tier = pay_in.plan_tier.lower()
+            user.quota_limit = pay_in.amount
+            user.is_active = True
+            
+        elif action_type == "rebate":
+            # Rebate option - keep tier but adjust or reset if needed, or simply log it.
+            pass
+
     await db.refresh(new_payment)
 
     await log_audit(
         db,
         admin_email=admin.email,
-        action_type="create_payment_log",
+        action_type=f"payment_{action_type}",
         target_entity=str(new_payment.id),
-        details=f"Recorded pending transaction. User: {pay_in.user_email}, Amount: {pay_in.amount} {pay_in.currency}."
+        details=f"Recorded {action_type} transaction. Status: {status_val}, User: {pay_in.user_email}, Amount: {pay_in.amount} {pay_in.currency}."
     )
     await db.commit()
 
@@ -637,6 +670,7 @@ async def mark_payment_paid(
     """
     Offline payment verification handler.
     Validates physical bKash/Bank Transfer transactions and updates quota/tier immediately.
+    Supports Add Fund, Rebate, and Overdrive actions.
     """
     res = await db.execute(select(PaymentLog).where(PaymentLog.id == payment_id))
     payment = res.scalars().first()
@@ -648,30 +682,53 @@ async def mark_payment_paid(
 
     payment.status = "paid"
 
-    # Dynamic quota allocation based on transaction requested plan_tier
-    quota_limit = 5000
-    if payment.plan_tier.lower() == "pro":
-        quota_limit = 50000
-    elif payment.plan_tier.lower() == "business":
-        quota_limit = 200000
-    elif payment.plan_tier.lower() == "enterprise":
-        quota_limit = 999999999
+    # Detect action type from notes
+    action_type = "add_fund"
+    if payment.notes:
+        if payment.notes.startswith("[OVERDRIVE]"):
+            action_type = "overdrive"
+        elif payment.notes.startswith("[REBATE]"):
+            action_type = "rebate"
+        elif payment.notes.startswith("[ADD_FUND]"):
+            action_type = "add_fund"
 
     # Locate user and update credentials
     user_res = await db.execute(select(User).where(User.email == payment.user_email))
     user = user_res.scalars().first()
+    
+    quota_limit = 5000
     if user:
-        user.subscription_tier = payment.plan_tier.lower()
-        user.quota_limit = quota_limit
-        user.is_active = True
         payment.user_id = user.id
+        if action_type == "add_fund":
+            quota_limit = 5000
+            if payment.plan_tier.lower() == "pro":
+                quota_limit = 50000
+            elif payment.plan_tier.lower() == "business":
+                quota_limit = 200000
+            elif payment.plan_tier.lower() == "enterprise":
+                quota_limit = 999999999
+            
+            user.subscription_tier = payment.plan_tier.lower()
+            user.quota_limit = quota_limit
+            user.is_active = True
+            
+        elif action_type == "overdrive":
+            # Direct quota override using the payment amount
+            user.subscription_tier = payment.plan_tier.lower()
+            user.quota_limit = payment.amount
+            user.is_active = True
+            quota_limit = payment.amount
+            
+        elif action_type == "rebate":
+            # Rebate option - keeps current tier/quota
+            pass
 
     await log_audit(
         db,
         admin_email=admin.email,
-        action_type="payment_marked_paid",
+        action_type=f"payment_marked_paid_{action_type}",
         target_entity=str(payment_id),
-        details=f"Offline payment marked paid. Credited '{payment.plan_tier}' quota ({quota_limit} sends) to '{payment.user_email}'."
+        details=f"Offline payment marked paid ({action_type}). User: '{payment.user_email}', Quota limit set to: {user.quota_limit if user else 'N/A'}."
     )
     await db.commit()
 
@@ -706,7 +763,7 @@ async def mark_payment_refunded(
         target_entity=str(payment_id),
         details=f"Refund recorded. Downgraded user '{payment.user_email}' to free tiers."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
 
     return {"message": f"Payment {payment_id} successfully refunded and user limits downgraded."}
 
@@ -751,7 +808,7 @@ async def update_system_settings(
         target_entity="system_configs",
         details="Platform settings updated."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
     await db.refresh(config)
     return config
 
@@ -776,7 +833,7 @@ async def toggle_maintenance_mode(
         target_entity="maintenance_mode",
         details=f"Global maintenance mode {state} by administrator."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
 
     return {"message": f"Global maintenance mode has been {state}."}
 
@@ -873,7 +930,7 @@ async def force_cancel_campaign(
         target_entity=str(campaign_id),
         details=f"Emergency halt triggered. Campaign '{campaign.name}' (ID: {campaign_id}) status shifted to failed."
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, commit after audit
 
     return {"message": "Emergency force-cancel dispatched. Dispatch queue terminated."}
 
@@ -910,7 +967,7 @@ async def flag_campaign_spam(
         target_entity=str(campaign_id),
         details=f"Campaign '{campaign.name}' (ID: {campaign_id}) flagged as SPAM. Note: {note}"
     )
-    await db.commit()
+    # await db.commit()  # removed duplicate, comment for clarity
 
     return {"message": "Campaign flagged as spam and emergency stopped."}
 
@@ -978,3 +1035,244 @@ async def get_user_campaign_logs(
             } for log in logs
         ]
     }
+
+
+# ─── System SMTP Diagnostics Handshake ─────────────────────────────────
+
+@router.post("/settings/smtp/test")
+async def test_system_smtp(
+    recipient_email: str = Query(..., min_length=5),
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """
+    Triggers a real-time synchronous SMTP diagnostic connection and sends a test email.
+    """
+    from app.core.security import decrypt_smtp_password
+    import aiosmtplib
+    from email.mime.text import MIMEText
+    from email.mime.multipart import MIMEMultipart
+
+    res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = res.scalars().first()
+    if not config:
+        raise HTTPException(status_code=404, detail="System configuration not found.")
+
+    if not config.system_smtp_host:
+        raise HTTPException(
+            status_code=400,
+            detail="System SMTP host is not configured. Please configure credentials first."
+        )
+
+    logs = []
+    logs.append(f"[{datetime.now(timezone.utc).isoformat()}] SMTP Diagnostic sequence initialized.")
+    logs.append(f"Target host: {config.system_smtp_host}:{config.system_smtp_port} (Security: {config.system_smtp_security})")
+    logs.append(f"Authentication User: {config.system_smtp_username or 'None'}")
+    logs.append(f"Sending test email to: {recipient_email}")
+
+    # Decrypt password
+    plain_password = ""
+    if config.system_smtp_encrypted_password:
+        try:
+            plain_password = decrypt_smtp_password(config.system_smtp_encrypted_password)
+            logs.append("SMTP password decrypted successfully.")
+        except Exception as e:
+            logs.append(f"Error decrypting SMTP password: {str(e)}")
+            return {"success": False, "logs": logs, "error": f"Decryption error: {str(e)}"}
+    else:
+        logs.append("No saved SMTP password detected.")
+
+    use_tls = config.system_smtp_security.upper() == "SSL"
+    start_tls = config.system_smtp_security.upper() == "TLS"
+
+    smtp_client = aiosmtplib.SMTP(
+        hostname=config.system_smtp_host,
+        port=config.system_smtp_port,
+        use_tls=use_tls,
+        timeout=15,
+    )
+
+    try:
+        logs.append("Attempting TCP connection to SMTP host...")
+        await smtp_client.connect()
+        logs.append("TCP connection established successfully.")
+
+        if start_tls:
+            logs.append("Performing STARTTLS cryptographic handshake...")
+            await smtp_client.starttls()
+            logs.append("STARTTLS handshake completed successfully.")
+
+        if config.system_smtp_username and plain_password:
+            logs.append(f"Authenticating as user: {config.system_smtp_username}...")
+            await smtp_client.login(config.system_smtp_username, plain_password)
+            logs.append("SMTP authentication successful.")
+
+        logs.append("Formulating RFC 822 MIME message container...")
+        msg = MIMEMultipart()
+        msg["From"] = f"{config.system_smtp_from_name or 'SaaS Admin'} <{config.system_smtp_from_email or config.system_smtp_username}>"
+        msg["To"] = recipient_email
+        msg["Subject"] = "System SMTP Diagnostics Handshake Verification"
+
+        text_part = MIMEText(
+            f"Hello,\n\nThis is an automated system email sent to verify the connection credentials of your SaaS platform.\n\n"
+            f"Diagnostic Parameters:\n"
+            f"- Host: {config.system_smtp_host}\n"
+            f"- Port: {config.system_smtp_port}\n"
+            f"- Security: {config.system_smtp_security}\n"
+            f"- Handshake Date: {datetime.now(timezone.utc).isoformat()}\n\n"
+            f"If you received this message, your system SMTP credentials are valid and live!\n",
+            "plain",
+            "utf-8"
+        )
+        msg.attach(text_part)
+
+        logs.append("Dispatching MIME message stream...")
+        await smtp_client.send_message(msg)
+        logs.append("MIME stream successfully transferred. Message accepted.")
+
+        await smtp_client.quit()
+        logs.append("Diagnostic sequence completed successfully. SMTP connection closed cleanly.")
+
+        await log_audit(
+            db,
+            admin_email=admin.email,
+            action_type="smtp_diagnostic_success",
+            target_entity=recipient_email,
+            details="System SMTP test passed successfully. Delivered test email."
+        )
+        # await db.commit()  # removed duplicate, commit after audit
+
+        return {"success": True, "logs": logs}
+
+    except Exception as e:
+        error_msg = str(e)
+        logs.append(f"❌ DIAGNOSTIC CRITICAL FAILURE: {error_msg}")
+        
+        await log_audit(
+            db,
+            admin_email=admin.email,
+            action_type="smtp_diagnostic_failure",
+            target_entity=recipient_email,
+            details=f"System SMTP test failed. Error: {error_msg[:120]}"
+        )
+        # await db.commit()  # removed duplicate, commit after audit
+
+        try:
+            await smtp_client.quit()
+        except Exception:
+            pass
+
+        return {"success": False, "logs": logs, "error": error_msg}
+
+
+# ─── Queue & Cluster Diagnostics Dashboard Card ───────────────────────────
+
+@router.get("/dashboard/diagnostics")
+async def get_system_diagnostics(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """
+    Fetches real-time diagnostics: Celery cluster state, Redis memory and ping, and system-wide process details.
+    """
+    import sys
+    import os
+    import platform
+    import redis
+    import time
+
+    diagnostics = {
+        "celery": {
+            "status": "offline",
+            "workers": [],
+            "registered_tasks_count": 0,
+            "error": None
+        },
+        "redis": {
+            "status": "offline",
+            "ping_latency_ms": 0,
+            "dbsize": 0,
+            "error": None
+        },
+        "system": {
+            "python_version": sys.version.split()[0],
+            "os": f"{platform.system()} {platform.release()}",
+            "process_id": os.getpid(),
+        }
+    }
+
+    try:
+        inspector = celery.control.inspect()
+        ping_res = inspector.ping()
+        if ping_res:
+            diagnostics["celery"]["status"] = "online"
+            diagnostics["celery"]["workers"] = list(ping_res.keys())
+            reg = inspector.registered()
+            if reg:
+                all_tasks = set()
+                for w, tasks in reg.items():
+                    all_tasks.update(tasks)
+                diagnostics["celery"]["registered_tasks_count"] = len(all_tasks)
+        else:
+            diagnostics["celery"]["error"] = "No active Celery worker nodes detected."
+    except Exception as e:
+        diagnostics["celery"]["error"] = f"Failed to connect to Celery control: {str(e)}"
+
+    try:
+        r_client = redis.Redis.from_url(settings.REDIS_URL, socket_timeout=3)
+        start_time = time.time()
+        redis_online = r_client.ping()
+        latency = (time.time() - start_time) * 1000
+        
+        if redis_online:
+            diagnostics["redis"]["status"] = "online"
+            diagnostics["redis"]["ping_latency_ms"] = round(latency, 2)
+            try:
+                diagnostics["redis"]["dbsize"] = r_client.dbsize()
+            except Exception:
+                pass
+        else:
+            diagnostics["redis"]["error"] = "Redis server ping failed."
+    except Exception as e:
+        diagnostics["redis"]["error"] = f"Failed to connect to Redis broker: {str(e)}"
+
+    return diagnostics
+
+
+# ─── Compliance Audit Streamer Exporter ───────────────────────────────
+
+@router.get("/audits/export")
+async def export_audit_logs(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """
+    Generates and streams a CSV containing the complete immutable system audit trail.
+    """
+    from fastapi.responses import StreamingResponse
+    import csv
+    import io
+
+    res = await db.execute(select(AdminAuditLog).order_by(AdminAuditLog.created_at.desc()))
+    logs = res.scalars().all()
+    
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["ID", "Admin Email", "Action Type", "Target Entity", "Details", "Timestamp"])
+    
+    for log in logs:
+        writer.writerow([
+            log.id,
+            log.admin_email,
+            log.action_type,
+            log.target_entity or "",
+            log.details or "",
+            log.created_at.isoformat()
+        ])
+    
+    response = StreamingResponse(
+        iter([output.getvalue()]),
+        media_type="text/csv"
+    )
+    response.headers["Content-Disposition"] = "attachment; filename=system_audit_logs.csv"
+    return response

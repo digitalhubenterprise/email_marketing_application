@@ -15,6 +15,38 @@ export default function Billing() {
     const saved = localStorage.getItem("wallet_balance");
     return saved ? parseFloat(saved) : 25.40;
   });
+
+  // Load real transactions and compute real balance from backend paid payments
+  React.useEffect(() => {
+    const fetchWalletBalance = async () => {
+      try {
+        const res = await fetch('/api/auth/my-payments', {
+          headers: { "Authorization": `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          // Sum paid add_fund or rebate transactions for wallet cash balance (exclude overdrive which applies to email limits)
+          const paidSum = data
+            .filter((p: any) => {
+              const isPaid = p.status === 'paid';
+              const isOverdrive = p.notes && p.notes.startsWith("[OVERDRIVE]");
+              return isPaid && !isOverdrive;
+            })
+            .reduce((sum: number, p: any) => sum + p.amount, 0);
+
+          const finalBalance = 25.40 + paidSum;
+          setWalletBalance(finalBalance);
+          localStorage.setItem("wallet_balance", finalBalance.toString());
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    if (token) {
+      fetchWalletBalance();
+    }
+  }, [token]);
+
   const [cardHolder, setCardHolder] = useState("");
   const [cardNumber, setCardNumber] = useState("");
   const [cardExpiry, setCardExpiry] = useState("");
