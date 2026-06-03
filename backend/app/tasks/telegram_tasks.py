@@ -85,7 +85,7 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
     }
     
     payload = {
-        "model": "llama3-70b-8192",
+        "model": "llama-3.3-70b-versatile",
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt}
