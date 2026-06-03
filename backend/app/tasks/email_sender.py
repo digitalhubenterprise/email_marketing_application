@@ -459,6 +459,17 @@ def setup_periodic_tasks(sender, **kwargs):
         name="reset-monthly-quotas-task"
     )
 
+    # Check for scheduled Telegram AI posts every 60 seconds
+    try:
+        from app.tasks.telegram_tasks import check_scheduled_telegram_posts_task
+        sender.add_periodic_task(
+            60.0,
+            check_scheduled_telegram_posts_task.s(),
+            name="check-scheduled-telegram-posts-every-60s"
+        )
+    except Exception as e:
+        print(f"Error loading Telegram periodic task: {e}")
+
 
 async def async_check_scheduled_campaigns() -> None:
     """Finds scheduled campaigns whose time has passed, sets status to sending, and triggers dispatch."""

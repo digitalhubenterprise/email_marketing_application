@@ -30,6 +30,9 @@ class User(Base):
     contact_lists = relationship("ContactList", back_populates="user", cascade="all, delete-orphan")
     templates = relationship("EmailTemplate", back_populates="user", cascade="all, delete-orphan")
     campaigns = relationship("Campaign", back_populates="user", cascade="all, delete-orphan")
+    telegram_config = relationship("TelegramMarketingConfig", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    telegram_services = relationship("TelegramService", back_populates="user", cascade="all, delete-orphan")
+    telegram_logs = relationship("TelegramLog", back_populates="user", cascade="all, delete-orphan")
 
 
 class SMTPServer(Base):
@@ -227,3 +230,49 @@ class PaymentLog(Base):
     status = Column(String, default="pending")  # paid, pending, failed, refunded
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
+
+
+class TelegramMarketingConfig(Base):
+    __tablename__ = "telegram_marketing_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    telegram_bot_token = Column(String, nullable=True)
+    telegram_channel = Column(String, nullable=True)
+    groq_api_key = Column(String, nullable=True)
+    interval_hours = Column(Integer, default=2)
+    is_active = Column(Boolean, default=False)
+    last_run = Column(DateTime, nullable=True)
+    next_run = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+    user = relationship("User", back_populates="telegram_config")
+
+
+class TelegramService(Base):
+    __tablename__ = "telegram_services"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    focus = Column(Text, nullable=False)
+    angle = Column(String, nullable=False)
+    active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+    user = relationship("User", back_populates="telegram_services")
+
+
+class TelegramLog(Base):
+    __tablename__ = "telegram_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    timestamp = Column(DateTime, default=utc_now_naive)
+    service_title = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    status = Column(String, nullable=False)  # "Success" or "Failed"
+    message = Column(Text, nullable=False)
+
+    user = relationship("User", back_populates="telegram_logs")

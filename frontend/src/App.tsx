@@ -10,6 +10,7 @@ import Templates from './pages/Templates'
 import Campaigns from './pages/Campaigns'
 import Billing from './pages/Billing'
 import Wallet from './pages/Wallet'
+import TelegramMarketing from './pages/TelegramMarketing'
 
 // Administrative Portal pages imports
 import AdminLayout from './components/AdminLayout'
@@ -272,6 +273,7 @@ export default function App() {
           <Route path="campaigns" element={<Campaigns />} />
           <Route path="billing" element={<Billing />} />
           <Route path="wallet" element={<Wallet />} />
+          <Route path="telegram-marketing" element={<TelegramMarketing />} />
         </Route>
 
         {/* Super Admin Center Protected Routes */}

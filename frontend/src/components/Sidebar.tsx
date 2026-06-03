@@ -26,6 +26,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
     { to: "/lists", icon: <Users size={20} />, label: "Contact Lists" },
     { to: "/templates", icon: <FileText size={20} />, label: "Email Templates" },
     { to: "/campaigns", icon: <Send size={20} />, label: "Campaigns" },
+    { to: "/telegram-marketing", icon: <Send size={20} className="rotate-[320deg]" />, label: "Telegram Marketing" },
     { to: "/billing", icon: <CreditCard size={20} />, label: "Billing & Plans" },
     { to: "/wallet", icon: <Wallet size={20} />, label: "Wallet" },
   ];
