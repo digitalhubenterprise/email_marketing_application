@@ -274,6 +274,9 @@ export default function App() {
           <Route path="billing" element={<Billing />} />
           <Route path="wallet" element={<Wallet />} />
           <Route path="telegram-marketing" element={<TelegramMarketing />} />
+          <Route path="telegram-marketing/imei" element={<TelegramMarketing defaultTab="imei" />} />
+          <Route path="telegram-marketing/server" element={<TelegramMarketing defaultTab="server" />} />
+          <Route path="telegram-marketing/remote" element={<TelegramMarketing defaultTab="remote" />} />
         </Route>
 
         {/* Super Admin Center Protected Routes */}
