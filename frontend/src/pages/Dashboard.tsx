@@ -277,7 +277,7 @@ export default function Dashboard() {
         {cards.map((c, i) => (
           <div 
             key={i} 
-            className="flex items-center justify-between p-3.5 rounded-full border border-dark-700/50 bg-[#16182a]/95 hover:bg-[#1a1c32]/95 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 relative overflow-hidden group shadow-lg"
+            className="flex items-center justify-between p-3.5 rounded-full glass-panel hover:border-brand-500/30 dark:hover:border-dark-600 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 relative overflow-hidden group shadow-lg hover:shadow-xl dark:hover:shadow-brand-500/5"
             style={{ backgroundImage: c.glowBg }}
           >
             <div className="flex items-center relative z-10">
@@ -301,7 +301,7 @@ export default function Dashboard() {
               </div>
             </div>
             
-            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-dark-900/60 border border-dark-800 text-dark-400 hover:text-white cursor-pointer transition-all duration-300 relative z-10">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-dark-800/60 border border-dark-700/50 text-dark-400 hover:text-dark-100 dark:hover:text-white hover:bg-dark-700/50 dark:hover:bg-dark-800 cursor-pointer transition-all duration-300 relative z-10">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-refresh-cw">
                 <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                 <path d="M3 3v5h5" />

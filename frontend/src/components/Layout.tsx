@@ -85,7 +85,7 @@ export default function Layout() {
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-dark-400 hover:text-white p-1 hover:bg-dark-800 rounded-lg transition-colors mr-1"
+              className="lg:hidden text-dark-400 hover:text-dark-100 dark:hover:text-white p-1 hover:bg-dark-700/50 dark:hover:bg-dark-800 rounded-lg transition-colors mr-1"
               aria-label="Toggle Sidebar Menu"
             >
               <Menu size={18} />

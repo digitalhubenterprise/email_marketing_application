@@ -57,7 +57,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
         </div>
         <button 
           onClick={onClose}
-          className="lg:hidden text-dark-400 hover:text-white p-1 rounded-md"
+          className="lg:hidden text-dark-400 hover:text-dark-100 dark:hover:text-white p-1 rounded-md"
         >
           ✕
         </button>
@@ -75,7 +75,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
               flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
               ${isActive 
                 ? 'brand-gradient-bg text-white shadow-sm shadow-brand-500/10' 
-                : 'text-dark-400 hover:text-white hover:bg-dark-700/30'}
+                : 'text-dark-400 hover:text-dark-100 hover:bg-dark-700/30'}
             `}
           >
             {item.icon}
@@ -100,7 +100,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
 
         <button
           onClick={logout}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold text-rose-400 hover:text-white hover:bg-rose-500/10 transition-colors border border-rose-500/20"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[10px] font-bold text-rose-400 hover:text-rose-600 dark:hover:text-white hover:bg-rose-500/10 transition-colors border border-rose-500/20"
         >
           <LogOut size={12} />
           Sign Out
