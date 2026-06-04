@@ -251,14 +251,19 @@ async def upload_csv(
         )
 
     try:
-        contents = await file.read()
-
-        # File size limit
-        if len(contents) > CSV_MAX_SIZE_BYTES:
-            raise HTTPException(
-                status_code=413,
-                detail=f"CSV file exceeds maximum size limit of 5MB.",
-            )
+        # Read file in chunks to prevent memory exhaustion (OOM)
+        contents = bytearray()
+        chunk_size = 1024 * 1024  # 1MB chunk size
+        while True:
+            chunk = await file.read(chunk_size)
+            if not chunk:
+                break
+            contents.extend(chunk)
+            if len(contents) > CSV_MAX_SIZE_BYTES:
+                raise HTTPException(
+                    status_code=413,
+                    detail=f"CSV file exceeds maximum size limit of 5MB.",
+                )
 
         decoded = contents.decode("utf-8-sig")  # Strip BOM characters
         csv_file = io.StringIO(decoded)
