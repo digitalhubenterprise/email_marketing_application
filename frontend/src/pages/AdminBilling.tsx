@@ -69,99 +69,22 @@ export default function AdminBilling() {
   const [bdtMonth, setBdtMonth] = useState(0);
 
   // Subscription Tab States
-  const [plans, setPlans] = useState<any[]>(() => {
-    const saved = localStorage.getItem("admin_subscription_plans");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {}
-    }
-    return [
-      {
-        tier: 'free',
-        name: 'Starter',
-        price: 499,
-        quota: 5000,
-        smtpLimit: 1,
-        validity: '30 Days',
-        throttle: '60s update interval',
-        features: [
-          'Contacts: 1,000',
-          'Sends/mo: 5,000',
-          'SMTP nodes: 1',
-          'Team seats: 1',
-          'Campaign create + send',
-          'CSV import',
-          '5 starter templates',
-          'Basic analytics',
-          'Unsubscribe handling'
-        ]
-      },
-      {
-        tier: 'pro',
-        name: 'Standard',
-        price: 1199,
-        quota: 50000,
-        smtpLimit: 3,
-        validity: '30 Days',
-        throttle: '45s update interval',
-        features: [
-          'Contacts: 10,000',
-          'Sends/mo: 50,000',
-          'SMTP nodes: 3',
-          'Team seats: 3',
-          'All Starter features',
-          'Scheduled sending',
-          '20+ templates',
-          'Advanced analytics',
-          'Mobile preview',
-          'Duplicate campaign'
-        ]
-      },
-      {
-        tier: 'business',
-        name: 'Premium',
-        price: 2499,
-        quota: 200000,
-        smtpLimit: 5,
-        validity: '30 Days',
-        throttle: '30s update interval',
-        features: [
-          'Contacts: 50,000',
-          'Sends/mo: 200,000',
-          'SMTP nodes: 5',
-          'Team seats: 10',
-          'All Standard features',
-          'A/B subject testing',
-          'Custom unsubscribe page',
-          'Campaign export (PDF)'
-        ]
-      },
-      {
-        tier: 'enterprise',
-        name: 'Enterprise',
-        price: 5999,
-        quota: 999999999,
-        smtpLimit: 999999,
-        validity: '30 Days',
-        throttle: '15s update interval',
-        features: [
-          'Contacts: Unlimited',
-          'Sends/mo: Unlimited',
-          'SMTP nodes: Unlimited',
-          'Team seats: Unlimited',
-          'All Premium features',
-          'Full API access',
-          'Multi-client manage',
-          'Custom invoice'
-        ]
-      }
-    ];
-  });
+  const [plans, setPlans] = useState<any[]>([]);
 
-  useEffect(() => {
-    localStorage.setItem("admin_subscription_plans", JSON.stringify(plans));
-  }, [plans]);
+  const fetchPlans = async () => {
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch("/api/admin/plans", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPlans(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch plans:", err);
+    }
+  };
 
   const [selectedPlan, setSelectedPlan] = useState<any | null>(null);
   const [editName, setEditName] = useState('');
@@ -220,6 +143,8 @@ export default function AdminBilling() {
   useEffect(() => {
     if (activeTab === 'billing') {
       fetchPayments();
+    } else if (activeTab === 'subscription') {
+      fetchPlans();
     }
   }, [page, status, gateway, activeTab]);
 
@@ -364,7 +289,7 @@ export default function AdminBilling() {
     }
   };
 
-  const handleEditPlanSubmit = (e: React.FormEvent) => {
+  const handleEditPlanSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedPlan) return;
 
@@ -381,26 +306,38 @@ export default function AdminBilling() {
       ...customFeaturesArray
     ];
 
-    const updated = plans.map(p => {
-      if (p.tier === selectedPlan.tier) {
-        return {
-          ...p,
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch(`/api/admin/plans/${selectedPlan.tier}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          tier: selectedPlan.tier,
           name: editName,
           price: editPrice,
           quota: editQuota,
-          smtpLimit: editSmtpLimit,
+          smtp_limit: editSmtpLimit,
           features: updatedFeatures
-        };
+        })
+      });
+      if (res.ok) {
+        alert(`Plan '${editName}' parameters successfully updated in system catalogs.`);
+        setSelectedPlan(null);
+        fetchPlans();
+      } else {
+        const errorData = await res.json();
+        alert(`Error: ${errorData.detail || "Failed to update subscription plan."}`);
       }
-      return p;
-    });
-
-    setPlans(updated);
-    alert(`Plan '${editName}' parameters successfully updated in system catalogs.`);
-    setSelectedPlan(null);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to API server.");
+    }
   };
 
-  const handleCreatePackageSubmit = (e: React.FormEvent) => {
+  const handleCreatePackageSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newPlanTier || !newPlanName) {
       alert("Please fill in the package tier and name.");
@@ -427,38 +364,67 @@ export default function AdminBilling() {
       ...customFeaturesArray
     ];
 
-    const newPlan = {
-      tier: newPlanTier.trim().toLowerCase(),
-      name: newPlanName.trim(),
-      price: newPlanPrice,
-      quota: newPlanQuota,
-      smtpLimit: newPlanSmtpLimit,
-      validity: '30 Days',
-      throttle: '30s update interval',
-      features
-    };
-
-    setPlans([...plans, newPlan]);
-    setShowCreatePackageModal(false);
-    
-    // Reset fields
-    setNewPlanTier('');
-    setNewPlanName('');
-    setNewPlanPrice(1499);
-    setNewPlanQuota(100000);
-    setNewPlanSmtpLimit(10);
-    setNewPlanContacts('25,000');
-    setNewPlanTeamSeats('5');
-    setNewPlanFeaturesText('Custom campaign scheduler\nDedicated delivery routes');
-    
-    alert(`Package '${newPlanName}' successfully added to subscription catalog!`);
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch('/api/admin/plans', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          tier: newPlanTier.trim().toLowerCase(),
+          name: newPlanName.trim(),
+          price: newPlanPrice,
+          quota: newPlanQuota,
+          smtp_limit: newPlanSmtpLimit,
+          validity: '30 Days',
+          throttle: '30s update interval',
+          features
+        })
+      });
+      if (res.ok) {
+        alert(`Package '${newPlanName}' successfully added to subscription catalog!`);
+        setShowCreatePackageModal(false);
+        // Reset fields
+        setNewPlanTier('');
+        setNewPlanName('');
+        setNewPlanPrice(1499);
+        setNewPlanQuota(100000);
+        setNewPlanSmtpLimit(10);
+        setNewPlanContacts('25,000');
+        setNewPlanTeamSeats('5');
+        setNewPlanFeaturesText('Custom campaign scheduler\nDedicated delivery routes');
+        fetchPlans();
+      } else {
+        const errorData = await res.json();
+        alert(`Error: ${errorData.detail || "Failed to create subscription plan."}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to API server.");
+    }
   };
 
-  const handleDeletePlan = (tier: string, name: string) => {
+  const handleDeletePlan = async (tier: string, name: string) => {
     if (!confirm(`Are you sure you want to completely remove the subscription plan '${name}' from catalogs?`)) return;
-    const updated = plans.filter(p => p.tier !== tier);
-    setPlans(updated);
-    alert(`Plan '${name}' has been successfully removed.`);
+    const token = localStorage.getItem("admin_token");
+    try {
+      const res = await fetch(`/api/admin/plans/${tier}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        alert(`Plan '${name}' has been successfully removed.`);
+        fetchPlans();
+      } else {
+        const errorData = await res.json();
+        alert(`Error: ${errorData.detail || "Failed to delete subscription plan."}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to connect to API server.");
+    }
   };
 
   return (

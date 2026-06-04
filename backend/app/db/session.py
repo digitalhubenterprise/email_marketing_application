@@ -182,13 +182,7 @@ async def create_db_tables() -> None:
             await conn.execute(text("ALTER TABLE campaign_logs ADD COLUMN IF NOT EXISTS link_clicks TEXT DEFAULT '{}'"))
             await conn.execute(text("ALTER TABLE campaign_logs ADD COLUMN IF NOT EXISTS error_code VARCHAR"))
             
-            # telegram_services group column upgrade
-            await conn.execute(text("ALTER TABLE telegram_services ADD COLUMN IF NOT EXISTS \"group\" VARCHAR DEFAULT 'General'"))
-            
-            # telegram_marketing_configs website_url column upgrade
-            await conn.execute(text("ALTER TABLE telegram_marketing_configs ADD COLUMN IF NOT EXISTS website_url VARCHAR DEFAULT 'iPhoneUnlock.org'"))
-    except Exception as e:
-        print(f"DB feature upgrades migration warning (non-fatal): {e}")
+
 
     # Create rules to protect admin_audit_logs from deletion or updates (append-only)
     try:
@@ -247,3 +241,50 @@ async def create_db_tables() -> None:
                 )
     except Exception as e:
         print(f"DB admin user seeding warning (non-fatal): {e}")
+
+    # Auto-seed the default subscription plans if not exists
+    try:
+        async with engine.begin() as conn:
+            from sqlalchemy import text
+            plan_check = await conn.execute(
+                text("SELECT id FROM subscription_plans LIMIT 1")
+            )
+            if not plan_check.first():
+                default_plans = [
+                    (
+                        "free", "Starter", 499, 5000, 1, "30 Days", "60s update interval",
+                        "Contacts: 1,000\nSends/mo: 5,000\nSMTP nodes: 1\nTeam seats: 1\nCampaign create + send\nCSV import\n5 starter templates\nBasic analytics\nUnsubscribe handling"
+                    ),
+                    (
+                        "pro", "Standard", 1199, 50000, 3, "30 Days", "45s update interval",
+                        "Contacts: 10,000\nSends/mo: 50,000\nSMTP nodes: 3\nTeam seats: 3\nAll Starter features\nScheduled sending\n20+ templates\nAdvanced analytics\nMobile preview\nDuplicate campaign"
+                    ),
+                    (
+                        "business", "Premium", 2499, 200000, 5, "30 Days", "30s update interval",
+                        "Contacts: 50,000\nSends/mo: 200,000\nSMTP nodes: 5\nTeam seats: 10\nAll Standard features\nA/B subject testing\nCustom unsubscribe page\nCampaign export (PDF)"
+                    ),
+                    (
+                        "enterprise", "Enterprise", 5999, 999999999, 999999, "30 Days", "15s update interval",
+                        "Contacts: Unlimited\nSends/mo: Unlimited\nSMTP nodes: Unlimited\nTeam seats: Unlimited\nAll Premium features\nFull API access\nMulti-client manage\nCustom invoice"
+                    )
+                ]
+                for tier, name, price, quota, smtp_limit, validity, throttle, features in default_plans:
+                    await conn.execute(
+                        text(
+                            "INSERT INTO subscription_plans (tier, name, price, quota, smtp_limit, validity, throttle, features) "
+                            "VALUES (:tier, :name, :price, :quota, :smtp_limit, :validity, :throttle, :features)"
+                        ),
+                        {
+                            "tier": tier,
+                            "name": name,
+                            "price": price,
+                            "quota": quota,
+                            "smtp_limit": smtp_limit,
+                            "validity": validity,
+                            "throttle": throttle,
+                            "features": features
+                        }
+                    )
+    except Exception as e:
+        print(f"DB plans seeding warning (non-fatal): {e}")
+

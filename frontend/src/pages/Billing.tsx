@@ -56,107 +56,91 @@ export default function Billing() {
   const [processingProgress, setProcessingProgress] = useState(0);
   const [successTxId, setSuccessTxId] = useState("");
 
-  const plans = [
-    {
-      name: "Starter",
-      price: "$499",
-      priceNum: 499,
-      desc: "For personal or small business use",
-      priceDetail: "Annual $4,499",
-      specs: [
-        { label: "Contacts", value: "1,000" },
-        { label: "Sends/mo", value: "5,000" },
-        { label: "SMTP", value: "1" },
-        { label: "Team seats", value: "1" }
-      ],
-      features: [
-        "Campaign create + send",
-        "CSV import",
-        "5 starter templates",
-        "Basic analytics",
-        "Unsubscribe handling"
-      ],
-      quota: 5000,
-      icon: <Zap className="text-lime-500" size={16} />,
-      btnText: "Current Plan",
-      tierCode: "free",
-      color: "border-dark-700/30"
-    },
-    {
-      name: "Standard",
-      price: "$1,199",
-      priceNum: 1199,
-      desc: "For growing businesses — Best Seller",
-      priceDetail: "Annual $10,999",
-      specs: [
-        { label: "Contacts", value: "10,000" },
-        { label: "Sends/mo", value: "50,000" },
-        { label: "SMTP", value: "3" },
-        { label: "Team seats", value: "3" }
-      ],
-      features: [
-        "All Starter features",
-        "Scheduled sending",
-        "20+ templates",
-        "Advanced analytics",
-        "Mobile preview",
-        "Duplicate campaign"
-      ],
-      quota: 50000,
-      icon: <Sparkles className="text-brand-400" size={16} />,
-      btnText: "Upgrade to Standard",
-      tierCode: "pro",
-      color: "border-brand-500/35 shadow-md shadow-brand-500/5 bg-brand-500/5"
-    },
-    {
-      name: "Premium",
-      price: "$2,499",
-      priceNum: 2499,
-      desc: "For power users & marketing teams",
-      priceDetail: "Annual $22,999",
-      specs: [
-        { label: "Contacts", value: "50,000" },
-        { label: "Sends/mo", value: "200,000" },
-        { label: "SMTP", value: "5" },
-        { label: "Team seats", value: "10" }
-      ],
-      features: [
-        "All Standard features",
-        "A/B subject testing",
-        "Custom unsubscribe page",
-        "Campaign export (PDF)"
-      ],
-      quota: 200000,
-      icon: <Award className="text-amber-400" size={16} />,
-      btnText: "Upgrade to Premium",
-      tierCode: "business",
-      color: "border-amber-500/20"
-    },
-    {
-      name: "Enterprise",
-      price: "$5,999",
-      priceNum: 5999,
-      desc: "For agencies & high-volume senders",
-      priceDetail: "Annual $54,999",
-      specs: [
-        { label: "Contacts", value: "Unlimited" },
-        { label: "Sends/mo", value: "Unlimited" },
-        { label: "SMTP", value: "Unlimited" },
-        { label: "Team seats", value: "Unlimited" }
-      ],
-      features: [
-        "All Premium features",
-        "Full API access",
-        "Multi-client manage",
-        "Custom invoice"
-      ],
-      quota: 999999999,
-      icon: <ShieldCheck className="text-emerald-400" size={16} />,
-      btnText: "Upgrade to Enterprise",
-      tierCode: "enterprise",
-      color: "border-emerald-500/20 hover:border-emerald-500/40"
-    }
-  ];
+  const [plans, setPlans] = useState<any[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchPlans = async () => {
+      try {
+        const res = await fetch('/api/auth/plans');
+        if (res.ok) {
+          const data = await res.json();
+          const mappedPlans = data.map((p: any) => {
+            const contactsLine = p.features.find((f: string) => f.startsWith('Contacts:')) || 'Contacts: 1,000';
+            const contactsVal = contactsLine.replace('Contacts:', '').trim();
+
+            const sendsLine = p.features.find((f: string) => f.startsWith('Sends/mo:')) || 'Sends/mo: 5,000';
+            const sendsVal = sendsLine.replace('Sends/mo:', '').trim();
+
+            const smtpLine = p.features.find((f: string) => f.startsWith('SMTP nodes:')) || 'SMTP nodes: 1';
+            const smtpVal = smtpLine.replace('SMTP nodes:', '').trim();
+
+            const teamSeatsLine = p.features.find((f: string) => f.startsWith('Team seats:')) || 'Team seats: 1';
+            const teamSeatsVal = teamSeatsLine.replace('Team seats:', '').trim();
+
+            const customFeatures = p.features.filter((f: string) => 
+              !f.startsWith('Contacts:') && 
+              !f.startsWith('Sends/mo:') && 
+              !f.startsWith('SMTP nodes:') && 
+              !f.startsWith('Team seats:')
+            );
+
+            let desc = "Custom business tier parameters";
+            let color = "border-dark-700/30";
+            let icon: React.ReactNode = <Zap className="text-lime-500" size={16} />;
+            
+            if (p.tier === 'free') {
+              desc = "For personal or small business use";
+              color = "border-dark-700/30";
+              icon = <Zap className="text-lime-500" size={16} />;
+            } else if (p.tier === 'pro') {
+              desc = "For growing businesses — Best Seller";
+              color = "border-brand-500/35 shadow-md shadow-brand-500/5 bg-brand-500/5";
+              icon = <Sparkles className="text-brand-400" size={16} />;
+            } else if (p.tier === 'business') {
+              desc = "For power users & marketing teams";
+              color = "border-amber-500/20";
+              icon = <Award className="text-amber-400" size={16} />;
+            } else if (p.tier === 'enterprise') {
+              desc = "For agencies & high-volume senders";
+              color = "border-emerald-500/20 hover:border-emerald-500/40";
+              icon = <ShieldCheck className="text-emerald-400" size={16} />;
+            } else {
+              color = "border-indigo-500/20 hover:border-indigo-500/40";
+              icon = <Layers className="text-indigo-400" size={16} />;
+            }
+
+            return {
+              name: p.name,
+              price: `$${p.price.toLocaleString()}`,
+              priceNum: p.price,
+              desc: desc,
+              priceDetail: `Annual $${(p.price * 9).toLocaleString()}`,
+              specs: [
+                { label: "Contacts", value: contactsVal },
+                { label: "Sends/mo", value: sendsVal },
+                { label: "SMTP", value: smtpVal },
+                { label: "Team seats", value: teamSeatsVal }
+              ],
+              features: customFeatures,
+              quota: p.quota,
+              icon: icon,
+              btnText: `Upgrade to ${p.name}`,
+              tierCode: p.tier,
+              color: color
+            };
+          });
+          setPlans(mappedPlans);
+        }
+      } catch (err) {
+        console.error("Failed to load public plans:", err);
+      } finally {
+        setPlansLoading(false);
+      }
+    };
+    fetchPlans();
+  }, []);
+
 
   const handleUpgrade = async (tier: string, method: "wallet" | "direct", price: number) => {
     setLoading(true);
@@ -264,106 +248,116 @@ export default function Billing() {
       </div>
 
       {/* Plans Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-stretch">
-        {plans.map((p, idx) => {
-          const isCurrent = user?.subscription_tier === p.tierCode;
-          const staggerDelay = `${idx * 80}ms`;
-          return (
-            <div
-              key={p.name}
-              style={{ animationDelay: staggerDelay }}
-              className="opacity-0 animate-slideUp flex flex-col"
-            >
+      {plansLoading ? (
+        <div className="flex items-center justify-center py-20 w-full col-span-full">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500 mx-auto" />
+        </div>
+      ) : plans.length === 0 ? (
+        <div className="text-center py-10 w-full text-xs text-dark-400 font-bold col-span-full">
+          No billing plans configured in system database.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-stretch">
+          {plans.map((p, idx) => {
+            const isCurrent = user?.subscription_tier === p.tierCode;
+            const staggerDelay = `${idx * 80}ms`;
+            return (
               <div
-                className={`glass-panel p-4.5 rounded-xl border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:scale-[1.015] hover:-translate-y-0.5 group shadow-lg flex-1 ${p.color} ${
-                  p.name === "Standard" ? "animate-pulseGlow" : ""
-                }`}
+                key={p.name}
+                style={{ animationDelay: staggerDelay }}
+                className="opacity-0 animate-slideUp flex flex-col"
               >
-                {p.name === "Standard" && (
-                  <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-brand-500 text-white text-[8px] font-extrabold uppercase tracking-wider rounded-b-md shadow-md shadow-brand-500/20">
-                    Most Popular
-                  </span>
-                )}
-                
-                <div className="space-y-4">
-                  <div className="flex flex-col items-center mt-1 text-center">
-                    <div className="w-8 h-8 rounded-full bg-dark-950/80 border border-dark-700/50 flex items-center justify-center text-dark-400 group-hover:scale-110 transition-transform duration-300 mb-2">
-                      {p.icon}
-                    </div>
-                    <h3 className="text-sm font-bold text-white font-sans">{p.name}</h3>
-                    <p className="text-[10px] text-dark-400 mt-0.5 leading-normal max-w-[170px]">{p.desc}</p>
-                  </div>
-
-                  <div className="flex flex-col items-center justify-center py-1 text-center">
-                    <div className="flex items-baseline justify-center gap-0.5">
-                      <span className="text-2xl font-extrabold text-white tracking-tight">{p.price}</span>
-                      <span className="text-[10px] text-dark-400 font-medium">/ month</span>
-                    </div>
-                    {p.priceDetail && (
-                      <span className="text-[9px] text-dark-400 mt-0.5 font-medium">{p.priceDetail}</span>
-                    )}
-                  </div>
-
-                  <div className="h-[1px] bg-dark-700/20" />
-
-                  {/* Specifications Grid */}
-                  <div className="space-y-2 py-1 px-1.5">
-                    {p.specs.map((spec) => (
-                      <div key={spec.label} className="flex justify-between items-center text-[11px]">
-                        <span className="text-dark-400 font-medium flex items-center gap-1.5">
-                          {spec.label === "Contacts" && <Users size={12} className="text-dark-500 shrink-0" />}
-                          {spec.label === "Sends/mo" && <Send size={12} className="text-dark-500 shrink-0" />}
-                          {spec.label === "SMTP" && <Server size={12} className="text-dark-500 shrink-0" />}
-                          {spec.label === "Team seats" && <Layers size={12} className="text-dark-500 shrink-0" />}
-                          <span>{spec.label}</span>
-                        </span>
-                        <span className="text-white font-extrabold font-mono">{spec.value}</span>
+                <div
+                  className={`glass-panel p-4.5 rounded-xl border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:scale-[1.015] hover:-translate-y-0.5 group shadow-lg flex-1 ${p.color} ${
+                    p.name === "Standard" ? "animate-pulseGlow" : ""
+                  }`}
+                >
+                  {p.name === "Standard" && (
+                    <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-brand-500 text-white text-[8px] font-extrabold uppercase tracking-wider rounded-b-md shadow-md shadow-brand-500/20">
+                      Most Popular
+                    </span>
+                  )}
+                  
+                  <div className="space-y-4">
+                    <div className="flex flex-col items-center mt-1 text-center">
+                      <div className="w-8 h-8 rounded-full bg-dark-950/80 border border-dark-700/50 flex items-center justify-center text-dark-400 group-hover:scale-110 transition-transform duration-300 mb-2">
+                        {p.icon}
                       </div>
-                    ))}
+                      <h3 className="text-sm font-bold text-white font-sans">{p.name}</h3>
+                      <p className="text-[10px] text-dark-400 mt-0.5 leading-normal max-w-[170px]">{p.desc}</p>
+                    </div>
+
+                    <div className="flex flex-col items-center justify-center py-1 text-center">
+                      <div className="flex items-baseline justify-center gap-0.5">
+                        <span className="text-2xl font-extrabold text-white tracking-tight">{p.price}</span>
+                        <span className="text-[10px] text-dark-400 font-medium">/ month</span>
+                      </div>
+                      {p.priceDetail && (
+                        <span className="text-[9px] text-dark-400 mt-0.5 font-medium">{p.priceDetail}</span>
+                      )}
+                    </div>
+
+                    <div className="h-[1px] bg-dark-700/20" />
+
+                    {/* Specifications Grid */}
+                    <div className="space-y-2 py-1 px-1.5">
+                      {p.specs.map((spec: any) => (
+                        <div key={spec.label} className="flex justify-between items-center text-[11px]">
+                          <span className="text-dark-400 font-medium flex items-center gap-1.5">
+                            {spec.label === "Contacts" && <Users size={12} className="text-dark-500 shrink-0" />}
+                            {spec.label === "Sends/mo" && <Send size={12} className="text-dark-500 shrink-0" />}
+                            {spec.label === "SMTP" && <Server size={12} className="text-dark-500 shrink-0" />}
+                            {spec.label === "Team seats" && <Layers size={12} className="text-dark-500 shrink-0" />}
+                            <span>{spec.label}</span>
+                          </span>
+                          <span className="text-white font-extrabold font-mono">{spec.value}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="h-[1px] bg-dark-700/20" />
+
+                    <ul className="space-y-2 text-left w-full pl-5 pr-2">
+                      {p.features.map((f: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-2 text-[10.5px] text-dark-300 leading-relaxed">
+                          <span className="p-0.5 bg-brand-500/10 text-brand-400 rounded-md border border-brand-500/20 mt-0.5 shrink-0">
+                            <Check size={8} />
+                          </span>
+                          <span>{f}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
 
-                  <div className="h-[1px] bg-dark-700/20" />
-
-                  <ul className="space-y-2 text-left w-full pl-5 pr-2">
-                    {p.features.map((f, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-[10.5px] text-dark-300 leading-relaxed">
-                        <span className="p-0.5 bg-brand-500/10 text-brand-400 rounded-md border border-brand-500/20 mt-0.5 shrink-0">
-                          <Check size={8} />
-                        </span>
-                        <span>{f}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="mt-4.5 pt-2">
-                  <button
-                    type="button"
-                    disabled={isCurrent || loading}
-                    onClick={() => {
-                      setShowSimModal(p.tierCode);
-                      setCheckoutStatus("idle");
-                      setPayMethod("wallet");
-                      setProcessingProgress(0);
-                      setProcessingLog("");
-                    }}
-                    className={`w-full py-2 px-4 text-xs font-bold rounded-lg transition-all text-center flex items-center justify-center gap-1.5
-                      ${isCurrent 
-                        ? 'bg-dark-950 text-dark-400 border border-dark-800 cursor-default' 
-                        : p.name === 'Standard'
-                          ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.99]'
-                          : 'bg-dark-950 hover:bg-dark-900 text-white border border-dark-700 hover:scale-[1.01] active:scale-[0.99]'}
-                    `}
-                  >
-                    <span>{isCurrent ? "Active Plan" : p.btnText}</span>
-                    {!isCurrent && <ArrowUpRight size={12} />}
-                  </button>
+                  <div className="mt-4.5 pt-2">
+                    <button
+                      type="button"
+                      disabled={isCurrent || loading}
+                      onClick={() => {
+                        setShowSimModal(p.tierCode);
+                        setCheckoutStatus("idle");
+                        setPayMethod("wallet");
+                        setProcessingProgress(0);
+                        setProcessingLog("");
+                      }}
+                      className={`w-full py-2 px-4 text-xs font-bold rounded-lg transition-all text-center flex items-center justify-center gap-1.5
+                        ${isCurrent 
+                          ? 'bg-dark-950 text-dark-400 border border-dark-800 cursor-default' 
+                          : p.name === 'Standard'
+                            ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.99]'
+                            : 'bg-dark-950 hover:bg-dark-900 text-white border border-dark-700 hover:scale-[1.01] active:scale-[0.99]'}
+                      `}
+                    >
+                      <span>{isCurrent ? "Active Plan" : p.btnText}</span>
+                      {!isCurrent && <ArrowUpRight size={12} />}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Multi-Option Cashier Checkout Modal */}
       {showSimModal && selectedPlan && (

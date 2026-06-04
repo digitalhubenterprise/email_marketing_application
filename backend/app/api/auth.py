@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
 from app.db.session import get_db
-from app.db.models import User, SystemConfig
+from app.db.models import User, SystemConfig, SubscriptionPlan, PaymentLog
 from app.core.security import (
     get_password_hash,
     verify_password,
@@ -39,14 +39,6 @@ limiter = Limiter(key_func=get_real_client_ip)
 
 class UpgradeRequest(BaseModel):
     tier: str
-
-    @field_validator("tier")
-    @classmethod
-    def tier_must_be_valid(cls, v: str) -> str:
-        allowed = {"free", "pro", "business", "enterprise"}
-        if v.lower() not in allowed:
-            raise ValueError(f"Invalid tier. Must be one of: {', '.join(sorted(allowed))}")
-        return v.lower()
 
 
 class ChangePasswordRequest(BaseModel):
@@ -161,19 +153,66 @@ async def change_password(
     return {"message": "Password updated successfully."}
 
 
-# ─── Subscription Upgrade ─────────────────────────────────────────────
-
 @router.post("/upgrade", response_model=UserResponse)
 async def upgrade_tier(
     payload: UpgradeRequest,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Plan upgrades must be processed via the Billing & Checkout interface or administrative action."""
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Plan upgrades must be processed via the Billing & Checkout interface or administrative action.",
+    """Plan upgrades processed via the Billing & Checkout interface."""
+    tier_lower = payload.tier.strip().lower()
+    
+    plan_res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.tier == tier_lower))
+    plan = plan_res.scalars().first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Subscription plan not found in catalogs.")
+    
+    current_user.subscription_tier = tier_lower
+    current_user.quota_limit = plan.quota
+    current_user.is_active = True
+    db.add(current_user)
+    
+    new_payment = PaymentLog(
+        user_id=current_user.id,
+        user_email=current_user.email,
+        amount=plan.price,
+        currency="USD",
+        plan_tier=tier_lower,
+        gateway="Stripe",
+        status="paid",
+        notes=f"Simulated upgrade to {plan.name} plan."
     )
+    db.add(new_payment)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+# ─── Subscription Plans Public Fetch ───────────────────────────────────
+
+@router.get("/plans")
+async def list_public_plans(
+    db: AsyncSession = Depends(get_db)
+):
+    """Public route to list all subscription plans."""
+    res = await db.execute(select(SubscriptionPlan).order_by(SubscriptionPlan.price.asc()))
+    plans = res.scalars().all()
+    result = []
+    for p in plans:
+        result.append({
+            "id": p.id,
+            "tier": p.tier,
+            "name": p.name,
+            "price": p.price,
+            "quota": p.quota,
+            "smtpLimit": p.smtp_limit,
+            "validity": p.validity,
+            "throttle": p.throttle,
+            "features": p.features.split("\n") if p.features else [],
+            "created_at": p.created_at
+        })
+    return result
+
 
 
 class PaymentSubmitRequest(BaseModel):

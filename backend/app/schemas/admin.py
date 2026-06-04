@@ -140,3 +140,37 @@ class AdminDashboardStats(BaseModel):
     revenue_usd_month: int
     revenue_bdt_month: int
     recent_activities: List[AdminAuditLogResponse]
+
+
+class SubscriptionPlanBase(BaseModel):
+    tier: str
+    name: str
+    price: int
+    quota: int
+    smtp_limit: int
+    validity: str = "30 Days"
+    throttle: str = "30s update interval"
+    features: List[str]
+
+class SubscriptionPlanCreate(SubscriptionPlanBase):
+    pass
+
+class SubscriptionPlanUpdate(BaseModel):
+    name: Optional[str] = None
+    price: Optional[int] = None
+    quota: Optional[int] = None
+    smtp_limit: Optional[int] = None
+    validity: Optional[str] = None
+    throttle: Optional[str] = None
+    features: Optional[List[str]] = None
+
+
+class SubscriptionPlanResponse(SubscriptionPlanBase):
+    id: int
+    created_at: Optional[datetime] = None
+
+    class Config:
+        from_attributes = True
+
+
+

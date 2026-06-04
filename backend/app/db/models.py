@@ -278,3 +278,19 @@ class TelegramLog(Base):
     message = Column(Text, nullable=False)
 
     user = relationship("User", back_populates="telegram_logs")
+
+
+class SubscriptionPlan(Base):
+    __tablename__ = "subscription_plans"
+
+    id = Column(Integer, primary_key=True, index=True)
+    tier = Column(String, unique=True, index=True, nullable=False)
+    name = Column(String, nullable=False)
+    price = Column(Integer, nullable=False)
+    quota = Column(Integer, nullable=False)
+    smtp_limit = Column(Integer, nullable=False)
+    validity = Column(String, default="30 Days")
+    throttle = Column(String, default="30s update interval")
+    features = Column(Text, nullable=False)  # Newline-separated list of features
+    created_at = Column(DateTime, default=utc_now_naive)
+

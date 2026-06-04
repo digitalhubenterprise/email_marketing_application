@@ -34,21 +34,31 @@ async def create_smtp_server(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    # Enforce tier-based SMTP server limits
+    # Enforce dynamic tier-based SMTP server limits
     count_result = await db.execute(
         select(SMTPServer).where(SMTPServer.user_id == current_user.id)
     )
     existing_count = len(count_result.scalars().all())
 
-    if current_user.subscription_tier == "free" and existing_count >= MAX_SMTP_SERVERS_FREE:
+    from app.db.models import SubscriptionPlan
+    plan_res = await db.execute(
+        select(SubscriptionPlan).where(SubscriptionPlan.tier == current_user.subscription_tier)
+    )
+    plan = plan_res.scalars().first()
+    
+    smtp_limit = MAX_SMTP_SERVERS_FREE
+    if plan:
+        smtp_limit = plan.smtp_limit
+    else:
+        if current_user.subscription_tier == "free":
+            smtp_limit = MAX_SMTP_SERVERS_FREE
+        else:
+            smtp_limit = MAX_SMTP_SERVERS_PAID
+
+    if existing_count >= smtp_limit:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Free plan allows only 1 SMTP server. Upgrade to Pro or higher to add more.",
-        )
-    if existing_count >= MAX_SMTP_SERVERS_PAID:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f"Maximum of {MAX_SMTP_SERVERS_PAID} SMTP servers per account reached.",
+            detail=f"Your '{current_user.subscription_tier}' plan allows only {smtp_limit} SMTP server(s). Please upgrade to a higher tier.",
         )
 
     encrypted = encrypt_smtp_password(smtp_in.password)

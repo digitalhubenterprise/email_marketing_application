@@ -17,7 +17,8 @@ from app.db.models import (
     CampaignLog,
     SMTPServer,
     ContactList,
-    EmailTemplate
+    EmailTemplate,
+    SubscriptionPlan
 )
 from app.schemas.user import Token
 from app.schemas.admin import (
@@ -29,7 +30,10 @@ from app.schemas.admin import (
     PaymentLogCreate,
     PaymentLogResponse,
     AdminAuditLogResponse,
-    AdminDashboardStats
+    AdminDashboardStats,
+    SubscriptionPlanCreate,
+    SubscriptionPlanUpdate,
+    SubscriptionPlanResponse
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token, encrypt_smtp_password
@@ -625,15 +629,22 @@ async def create_payment_entry(
     if status_val == "paid" and user:
         if action_type == "add_fund":
             # Dynamic quota allocation based on plan_tier
-            quota_limit = 5000
-            if pay_in.plan_tier.lower() == "pro":
-                quota_limit = 50000
-            elif pay_in.plan_tier.lower() == "business":
-                quota_limit = 200000
-            elif pay_in.plan_tier.lower() == "enterprise":
-                quota_limit = 999999999
+            plan_tier_lower = pay_in.plan_tier.lower()
+            plan_res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.tier == plan_tier_lower))
+            plan = plan_res.scalars().first()
             
-            user.subscription_tier = pay_in.plan_tier.lower()
+            quota_limit = 5000
+            if plan:
+                quota_limit = plan.quota
+            else:
+                if plan_tier_lower == "pro":
+                    quota_limit = 50000
+                elif plan_tier_lower == "business":
+                    quota_limit = 200000
+                elif plan_tier_lower == "enterprise":
+                    quota_limit = 999999999
+            
+            user.subscription_tier = plan_tier_lower
             user.quota_limit = quota_limit
             user.is_active = True
             
@@ -700,15 +711,22 @@ async def mark_payment_paid(
     if user:
         payment.user_id = user.id
         if action_type == "add_fund":
-            quota_limit = 5000
-            if payment.plan_tier.lower() == "pro":
-                quota_limit = 50000
-            elif payment.plan_tier.lower() == "business":
-                quota_limit = 200000
-            elif payment.plan_tier.lower() == "enterprise":
-                quota_limit = 999999999
+            plan_tier_lower = payment.plan_tier.lower()
+            plan_res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.tier == plan_tier_lower))
+            plan = plan_res.scalars().first()
             
-            user.subscription_tier = payment.plan_tier.lower()
+            quota_limit = 5000
+            if plan:
+                quota_limit = plan.quota
+            else:
+                if plan_tier_lower == "pro":
+                    quota_limit = 50000
+                elif plan_tier_lower == "business":
+                    quota_limit = 200000
+                elif plan_tier_lower == "enterprise":
+                    quota_limit = 999999999
+            
+            user.subscription_tier = plan_tier_lower
             user.quota_limit = quota_limit
             user.is_active = True
             
@@ -1280,3 +1298,138 @@ async def export_audit_logs(
     )
     response.headers["Content-Disposition"] = "attachment; filename=system_audit_logs.csv"
     return response
+
+
+# ─── Subscription Plans Admin CRUD ─────────────────────────────────────
+
+@router.get("/plans", response_model=List[SubscriptionPlanResponse])
+async def list_admin_plans(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Admin-only endpoint to list all subscription plans."""
+    res = await db.execute(select(SubscriptionPlan).order_by(SubscriptionPlan.price.asc()))
+    plans = res.scalars().all()
+    result = []
+    for p in plans:
+        result.append(
+            SubscriptionPlanResponse(
+                id=p.id,
+                tier=p.tier,
+                name=p.name,
+                price=p.price,
+                quota=p.quota,
+                smtp_limit=p.smtp_limit,
+                validity=p.validity,
+                throttle=p.throttle,
+                features=p.features.split("\n") if p.features else [],
+                created_at=p.created_at
+            )
+        )
+    return result
+
+
+@router.post("/plans", response_model=SubscriptionPlanResponse, status_code=status.HTTP_201_CREATED)
+async def create_subscription_plan(
+    plan_in: SubscriptionPlanCreate,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Admin-only endpoint to define a new pricing subscription plan."""
+    tier_clean = plan_in.tier.strip().lower()
+    res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.tier == tier_clean))
+    if res.scalars().first():
+        raise HTTPException(
+            status_code=400,
+            detail=f"Subscription plan with tier code '{tier_clean}' already exists."
+        )
+
+    new_plan = SubscriptionPlan(
+        tier=tier_clean,
+        name=plan_in.name.strip(),
+        price=plan_in.price,
+        quota=plan_in.quota,
+        smtp_limit=plan_in.smtp_limit,
+        validity=plan_in.validity,
+        throttle=plan_in.throttle,
+        features="\n".join(plan_in.features)
+    )
+    db.add(new_plan)
+    await db.commit()
+    await db.refresh(new_plan)
+
+    return SubscriptionPlanResponse(
+        id=new_plan.id,
+        tier=new_plan.tier,
+        name=new_plan.name,
+        price=new_plan.price,
+        quota=new_plan.quota,
+        smtp_limit=new_plan.smtp_limit,
+        validity=new_plan.validity,
+        throttle=new_plan.throttle,
+        features=new_plan.features.split("\n") if new_plan.features else [],
+        created_at=new_plan.created_at
+    )
+
+
+@router.put("/plans/{tier}", response_model=SubscriptionPlanResponse)
+async def update_subscription_plan(
+    tier: str,
+    plan_in: SubscriptionPlanUpdate,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Admin-only endpoint to update plan parameters by tier code."""
+    res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.tier == tier.lower()))
+    plan = res.scalars().first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Subscription plan not found.")
+
+    if plan_in.name is not None:
+        plan.name = plan_in.name.strip()
+    if plan_in.price is not None:
+        plan.price = plan_in.price
+    if plan_in.quota is not None:
+        plan.quota = plan_in.quota
+    if plan_in.smtp_limit is not None:
+        plan.smtp_limit = plan_in.smtp_limit
+    if plan_in.validity is not None:
+        plan.validity = plan_in.validity
+    if plan_in.throttle is not None:
+        plan.throttle = plan_in.throttle
+    if plan_in.features is not None:
+        plan.features = "\n".join(plan_in.features)
+
+    db.add(plan)
+    await db.commit()
+    await db.refresh(plan)
+
+    return SubscriptionPlanResponse(
+        id=plan.id,
+        tier=plan.tier,
+        name=plan.name,
+        price=plan.price,
+        quota=plan.quota,
+        smtp_limit=plan.smtp_limit,
+        validity=plan.validity,
+        throttle=plan.throttle,
+        features=plan.features.split("\n") if plan.features else [],
+        created_at=plan.created_at
+    )
+
+
+@router.delete("/plans/{tier}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_subscription_plan(
+    tier: str,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Admin-only endpoint to delete subscription plan catalog."""
+    res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.tier == tier.lower()))
+    plan = res.scalars().first()
+    if not plan:
+        raise HTTPException(status_code=404, detail="Subscription plan not found.")
+
+    await db.delete(plan)
+    await db.commit()
+
