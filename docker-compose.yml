@@ -1,29 +1,99 @@
-version: "3.8"
+version: '3.8'
 
 services:
+  db:
+    image: postgres:16-alpine
+    container_name: smartcampaign_db
+    restart: always
+    environment:
+      POSTGRES_DB: smartcampaign
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      TZ: Asia/Dhaka
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./pgdata:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7-alpine
+    container_name: smartcampaign_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
-    container_name: email_backend
-    restart: unless-stopped
-    env_file:
-      - .env
+    container_name: smartcampaign_backend
+    restart: always
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    volumes:
+      - ./backend:/code
     ports:
       - "8000:8000"
-    # No internal db service; using external PostgreSQL
-    depends_on: []
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
+      - REDIS_URL=redis://redis:6379/0
+      - JWT_SECRET=supersecretjwtkeyfor_smartcampaign_sass_2026
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
+      - TRACKING_BASE_URL=http://localhost:8000
+      - TZ=Asia/Dhaka
+    depends_on:
+      - db
+      - redis
+
+  worker:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartcampaign_worker
+    restart: always
+    command: celery -A app.tasks.email_sender.celery worker --loglevel=info
+    volumes:
+      - ./backend:/code
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
+      - REDIS_URL=redis://redis:6379/0
+      - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
+      - TRACKING_BASE_URL=http://localhost:8000
+      - TZ=Asia/Dhaka
+    depends_on:
+      - db
+      - redis
+
+  beat:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartcampaign_beat
+    restart: always
+    command: celery -A app.tasks.email_sender.celery beat --loglevel=info
+    volumes:
+      - ./backend:/code
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
+      - REDIS_URL=redis://redis:6379/0
+      - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
+      - TRACKING_BASE_URL=http://localhost:8000
+      - TZ=Asia/Dhaka
+    depends_on:
+      - db
+      - redis
+
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    container_name: email_frontend
-    restart: unless-stopped
+    container_name: smartcampaign_frontend
+    restart: always
     ports:
       - "80:80"
-    # The frontend will contact backend via the same domain (proxy)
+    environment:
+      - TZ=Asia/Dhaka
+    depends_on:
+      - backend
 
-networks:
-  default:
-    name: email_app_network
-    driver: bridge
+# Local host-bound folder mapping is used, no named volumes required.
