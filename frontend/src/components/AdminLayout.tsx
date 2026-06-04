@@ -120,7 +120,7 @@ export default function AdminLayout() {
     { to: "/admin", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
     { to: "/admin/users", icon: <Users size={18} />, label: "Members" },
     { to: "/admin/campaigns", icon: <Activity size={18} />, label: "Campaign Monitoring" },
-    { to: "/admin/billing", icon: <CreditCard size={18} />, label: "Billing & Plans" },
+    { to: "/admin/billing", icon: <CreditCard size={18} />, label: "Financial Review" },
     { to: "/admin/settings", icon: <Settings size={18} />, label: "Settings & System" },
     { to: "/admin/audits", icon: <ShieldAlert size={18} />, label: "Audit Ledger" },
     { to: "/admin/register", icon: <UserPlus size={18} />, label: "Invite Admin" },

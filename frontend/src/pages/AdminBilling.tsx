@@ -31,6 +31,35 @@ interface Payment {
   created_at: string;
 }
 
+const parseStructuredNotes = (notes: string | null) => {
+  if (!notes) return null;
+  if (!notes.includes('|')) return { raw: notes };
+  
+  let cleanNotes = notes;
+  let actionPrefix = '';
+  if (notes.startsWith('[')) {
+    const closeBracketIdx = notes.indexOf(']');
+    if (closeBracketIdx !== -1) {
+      actionPrefix = notes.substring(1, closeBracketIdx);
+      cleanNotes = notes.substring(closeBracketIdx + 1).trim();
+    }
+  }
+  
+  const parts = cleanNotes.split('|').map(p => p.trim());
+  const parsed: any = { action: actionPrefix };
+  
+  parts.forEach(part => {
+    const colonIdx = part.indexOf(':');
+    if (colonIdx !== -1) {
+      const key = part.substring(0, colonIdx).trim().toLowerCase();
+      const val = part.substring(colonIdx + 1).trim();
+      parsed[key] = val;
+    }
+  });
+  
+  return parsed;
+};
+
 export default function AdminBilling() {
   const [activeTab, setActiveTab] = useState<'billing' | 'subscription'>('billing');
 
@@ -698,14 +727,75 @@ export default function AdminBilling() {
                       </div>
                     </div>
 
-                    {selectedPayment.notes && (
-                      <div className="space-y-1.5">
-                        <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Verification receipts & notes</span>
-                        <p className="text-[10px] text-slate-700 bg-slate-50 p-3 border border-slate-200/80 rounded-xl leading-relaxed font-semibold">
-                          {selectedPayment.notes}
-                        </p>
-                      </div>
-                    )}
+                    {selectedPayment.notes && (() => {
+                      const parsed = parseStructuredNotes(selectedPayment.notes);
+                      if (!parsed || parsed.raw) {
+                        return (
+                          <div className="space-y-1.5">
+                            <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Verification receipts & notes</span>
+                            <p className="text-[10px] text-slate-700 bg-slate-50 p-3 border border-slate-200/80 rounded-xl leading-relaxed font-semibold">
+                              {selectedPayment.notes}
+                            </p>
+                          </div>
+                        );
+                      }
+                      
+                      return (
+                        <div className="space-y-3 animate-fadeIn">
+                          <span className="block text-[9px] font-bold text-slate-400 uppercase tracking-wider">Verification & Metadata Review</span>
+                          <div className="bg-slate-50 p-3.5 border border-slate-200/80 rounded-xl text-[11px] font-semibold text-slate-750 space-y-2">
+                            {parsed.action && (
+                              <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                                <span className="text-slate-400 font-bold">Action Type:</span>
+                                <span className="font-extrabold uppercase text-brand-600 text-[10px]">{parsed.action}</span>
+                              </div>
+                            )}
+                            {parsed.txid && parsed.txid !== 'N/A' && (
+                              <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                                <span className="text-slate-400 font-bold">Transaction ID:</span>
+                                <span className="font-mono text-slate-900 font-extrabold">{parsed.txid}</span>
+                              </div>
+                            )}
+                            {parsed.fees && parsed.fees !== '0' && (
+                              <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                                <span className="text-slate-400 font-bold">Gateway Fees:</span>
+                                <span className="text-slate-900 font-extrabold">${parsed.fees}</span>
+                              </div>
+                            )}
+                            {parsed.validity && parsed.validity !== '0' && (
+                              <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                                <span className="text-slate-400 font-bold">Validity Period:</span>
+                                <span className="text-slate-900 font-extrabold">{parsed.validity}</span>
+                              </div>
+                            )}
+                            {parsed.due && parsed.due !== '30' && (
+                              <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                                <span className="text-slate-400 font-bold">Due Terms:</span>
+                                <span className="text-slate-900 font-extrabold">{parsed.due}</span>
+                              </div>
+                            )}
+                            {parsed.mail && (
+                              <div className="flex justify-between border-b border-slate-100 pb-1.5">
+                                <span className="text-slate-400 font-bold">Mail Sent:</span>
+                                <span className="text-slate-900 font-extrabold">{parsed.mail}</span>
+                              </div>
+                            )}
+                            {parsed['user note'] && parsed['user note'] !== 'N/A' && (
+                              <div className="space-y-1 pt-1.5">
+                                <span className="text-slate-400 font-bold block">User Note (Visible to Client):</span>
+                                <p className="text-[10px] text-slate-650 bg-white p-2 rounded border border-slate-200/60 leading-relaxed font-medium">{parsed['user note']}</p>
+                              </div>
+                            )}
+                            {parsed['admin note'] && parsed['admin note'] !== 'N/A' && (
+                              <div className="space-y-1 pt-1.5">
+                                <span className="text-slate-400 font-bold block">Internal Admin Note:</span>
+                                <p className="text-[10px] text-slate-650 bg-white p-2 rounded border border-slate-200/60 leading-relaxed font-medium">{parsed['admin note']}</p>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="space-y-2.5">
