@@ -448,7 +448,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           <div className="flex items-center gap-2">
             <button
               onClick={handleCreateGroupClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-dark-900 border border-dark-700/80 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold shadow-md transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-dark-800 dark:bg-dark-900 border border-dark-700 hover:bg-dark-700/50 dark:hover:bg-dark-800 text-dark-200 dark:text-white rounded-lg text-[10px] font-bold shadow-md transition-all animate-fadeIn"
             >
               <Plus size={12} />
               <span>+ CREATE GROUP</span>
@@ -515,7 +515,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               <div className="flex items-center justify-center gap-2 mt-3">
                 <button
                   onClick={handleCreateGroupClick}
-                  className="px-3 py-1.5 bg-dark-900 border border-dark-700/80 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
+                  className="px-3 py-1.5 bg-dark-800 dark:bg-dark-900 border border-dark-700 hover:bg-dark-700/50 dark:hover:bg-dark-800 text-dark-200 dark:text-white rounded-lg text-[10px] font-bold transition-all"
                 >
                   Create Group
                 </button>
@@ -594,7 +594,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               <div className="flex items-center justify-center gap-2 mt-3">
                 <button
                   onClick={handleCreateGroupClick}
-                  className="px-3 py-1.5 bg-dark-900 border border-dark-700/80 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
+                  className="px-3 py-1.5 bg-dark-800 dark:bg-dark-900 border border-dark-700 hover:bg-dark-700/50 dark:hover:bg-dark-800 text-dark-200 dark:text-white rounded-lg text-[10px] font-bold transition-all"
                 >
                   Create Group
                 </button>
@@ -705,8 +705,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'dashboard'
-              ? 'border-brand-500 text-white'
-              : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
+              ? 'border-brand-500 text-brand-600 dark:text-white'
+              : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
           <Layers size={13} />
@@ -716,8 +716,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/imei')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'imei'
-              ? 'border-brand-500 text-white'
-              : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
+              ? 'border-brand-500 text-brand-600 dark:text-white'
+              : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
           <Send size={13} className="rotate-[320deg]" />
@@ -727,8 +727,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/server')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'server'
-              ? 'border-brand-500 text-white'
-              : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
+              ? 'border-brand-500 text-brand-600 dark:text-white'
+              : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
           <Server size={13} />
@@ -738,8 +738,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/remote')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'remote'
-              ? 'border-brand-500 text-white'
-              : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
+              ? 'border-brand-500 text-brand-600 dark:text-white'
+              : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
           <Sliders size={13} />
@@ -749,8 +749,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/logs')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'logs'
-              ? 'border-brand-500 text-white'
-              : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
+              ? 'border-brand-500 text-brand-600 dark:text-white'
+              : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
           <ClipboardList size={13} />
@@ -760,8 +760,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/settings')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'settings'
-              ? 'border-brand-500 text-white'
-              : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
+              ? 'border-brand-500 text-brand-600 dark:text-white'
+              : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
           <Settings size={13} />
