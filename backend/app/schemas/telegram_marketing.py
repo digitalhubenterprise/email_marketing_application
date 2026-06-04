@@ -6,6 +6,7 @@ class TelegramMarketingConfigBase(BaseModel):
     telegram_channel: Optional[str] = None
     interval_hours: int = Field(default=2, ge=1, le=168)
     is_active: bool = False
+    website_url: Optional[str] = "iPhoneUnlock.org"
 
 class TelegramMarketingConfigUpdate(TelegramMarketingConfigBase):
     telegram_bot_token: Optional[str] = None

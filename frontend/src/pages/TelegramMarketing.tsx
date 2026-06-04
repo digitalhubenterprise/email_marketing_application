@@ -43,6 +43,7 @@ interface Config {
   is_active: boolean;
   has_bot_token: boolean;
   has_groq_key: boolean;
+  website_url?: string;
   last_run?: string;
   next_run?: string;
 }
@@ -79,6 +80,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
   const [channel, setChannel] = useState('');
   const [groqKey, setGroqKey] = useState('');
   const [intervalHours, setIntervalHours] = useState(2);
+  const [websiteUrl, setWebsiteUrl] = useState('iPhoneUnlock.org');
   const [schedulerActive, setSchedulerActive] = useState(false);
   const [configLoading, setConfigLoading] = useState(true);
   const [hasBotToken, setHasBotToken] = useState(false);
@@ -146,6 +148,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
         setChannel(data.telegram_channel || '');
         setIntervalHours(data.interval_hours);
         setSchedulerActive(data.is_active);
+        setWebsiteUrl(data.website_url || 'iPhoneUnlock.org');
         setHasBotToken(data.has_bot_token);
         setHasGroqKey(data.has_groq_key);
         setLastRun(data.last_run || null);
@@ -232,6 +235,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           telegram_channel: channel,
           interval_hours: Number(intervalHours),
           is_active: schedulerActive,
+          website_url: websiteUrl,
           telegram_bot_token: botToken || undefined,
           groq_api_key: groqKey || undefined
         })
@@ -1092,6 +1096,19 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                     className="w-full px-3.5 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
                   />
                 </div>
+              </div>
+
+              {/* Website URL */}
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] font-bold text-dark-400 uppercase tracking-wider">Campaign Website / Registration URL *</label>
+                <input
+                  type="text"
+                  required
+                  value={websiteUrl}
+                  onChange={(e) => setWebsiteUrl(e.target.value)}
+                  placeholder="e.g. iPhoneUnlock.org"
+                  className="w-full px-3.5 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500"
+                />
               </div>
 
               {/* Scheduler Toggle */}

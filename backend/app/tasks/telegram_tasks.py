@@ -82,13 +82,14 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
         "-------------------------------------\n\n"
         "CRITICAL RULES:\n"
         "1. Format the headline strictly as: 🚀 [Group Name] [Official Reseller] or 🚀 [Group Name] [Official Distributor] (replacing [Group Name] with the actual group name provided. Use 'Reseller' or 'Distributor' from context details/keywords, default to 'Reseller' if not specified). Do NOT include any pipe characters (|) or parentheses like ( We Are Official ... ) in the headline under any circumstances.\n"
-        "2. Do NOT write any problem descriptions or long context paragraphs. The text must only contain the headline, the services list verbatim (each service prefixed with ⚡️ and followed by the divider ------------------------------), the dynamic AI-generated short solution description paragraph, the dynamic urgency line (which you generate starting with 🔥), the registration line, the separator, and the footer.\n"
+        "2. Do NOT write any problem descriptions or long context paragraphs. The text must only contain the headline, the services list verbatim (each service prefixed with ⚡️ and followed by the divider ------------------------------), the dynamic AI-generated short solution description paragraph, the dynamic urgency line (which you generate starting with 🔥), the registration/order line (use 'Register today: [URL]' or 'SUBMIT YOUR ORDER: [URL]'), the separator, and the footer.\n"
         "3. The services list block must be output verbatim as provided. Do NOT add any extra divider lines at the end of the services list or before the solution description paragraph.\n"
         "4. Generate a dynamic, high-conversion short solution description paragraph (approx 2 sentences, e.g. '[Tool/Service] offers a powerful solution for [action]. With our [adjective] API-based system, you can quickly resolve this issue and get back to your business.') directly below the services list.\n"
         "5. Generate a dynamic, high-conversion urgency call-to-action line starting with 🔥, tailored to the service (e.g. 🔥 Don't miss out on unlocking revenue - act now) directly below the short solution description paragraph.\n"
-        "6. Do NOT include any markdown formatting like bold (**), italics, or markdown headers (#).\n"
-        "7. Do NOT output any system notes, code blocks, or intro/outro explanations.\n"
-        "8. The line '─────────────────────' (exactly 21 box-drawing horizontal lines) and the footer 'Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅' must be included verbatim at the end."
+        "6. Use either 'Register today: [URL]' or 'SUBMIT YOUR ORDER: [URL]' as the call-to-action link format, replacing [URL] with the exact Target URL / Website provided in the user prompt. Do NOT use any other domains.\n"
+        "7. Do NOT include any markdown formatting like bold (**), italics, or markdown headers (#).\n"
+        "8. Do NOT output any system notes, code blocks, or intro/outro explanations.\n"
+        "9. The line '─────────────────────' (exactly 21 box-drawing horizontal lines) and the footer 'Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅' must be included verbatim at the end."
     )
     
     service_titles_str = "\n".join([f"⚡️ {s.title}\n------------------------------" for s in group_services])
@@ -97,7 +98,8 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
         f"Service Title: {service.title}\n"
         f"Group Name: {service.group or 'General'}\n"
         f"Angle & Hook: {service.angle}\n"
-        f"Focus points & keywords (extract tool name and domain/URL if present, otherwise default to 'iPhoneUnlock.org'): {service.focus}\n\n"
+        f"Target URL / Website: {config.website_url or 'iPhoneUnlock.org'}\n"
+        f"Focus points & keywords: {service.focus}\n\n"
         f"Below is the list of active services in this group that you MUST include verbatim as the service list block:\n"
         f"{service_titles_str}"
     )

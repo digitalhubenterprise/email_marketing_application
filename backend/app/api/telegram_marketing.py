@@ -43,7 +43,8 @@ async def get_telegram_config(
         config = TelegramMarketingConfig(
             user_id=current_user.id,
             interval_hours=2,
-            is_active=False
+            is_active=False,
+            website_url="iPhoneUnlock.org"
         )
         db.add(config)
         await db.commit()
@@ -55,6 +56,7 @@ async def get_telegram_config(
         telegram_channel=config.telegram_channel,
         interval_hours=config.interval_hours,
         is_active=config.is_active,
+        website_url=config.website_url,
         last_run=config.last_run,
         next_run=config.next_run,
         created_at=config.created_at,
@@ -79,6 +81,7 @@ async def update_telegram_config(
         
     config.telegram_channel = payload.telegram_channel
     config.interval_hours = payload.interval_hours
+    config.website_url = payload.website_url
     
     # Recalculate schedule next run if toggled on
     was_active = config.is_active
@@ -102,6 +105,7 @@ async def update_telegram_config(
         telegram_channel=config.telegram_channel,
         interval_hours=config.interval_hours,
         is_active=config.is_active,
+        website_url=config.website_url,
         last_run=config.last_run,
         next_run=config.next_run,
         created_at=config.created_at,

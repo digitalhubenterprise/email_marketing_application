@@ -242,6 +242,7 @@ class TelegramMarketingConfig(Base):
     groq_api_key = Column(String, nullable=True)
     interval_hours = Column(Integer, default=2)
     is_active = Column(Boolean, default=False)
+    website_url = Column(String, default="iPhoneUnlock.org", nullable=True)
     last_run = Column(DateTime, nullable=True)
     next_run = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
