@@ -62,38 +62,42 @@ def contains_leakage(text: str, config: TelegramMarketingConfig) -> tuple[bool, 
     return False, ""
 
 # Generate promotion via Groq
-async def generate_groq_content(config: TelegramMarketingConfig, service: TelegramService) -> str:
+async def generate_groq_content(config: TelegramMarketingConfig, service: TelegramService, group_services: list[TelegramService]) -> str:
     groq_url = "https://api.groq.com/openai/v1/chat/completions"
     
     system_prompt = (
         "You are an expert copywriter. Write high-conversion, professional promotional copy "
         "suited for Telegram channels. You MUST format the output EXACTLY matching the structure and style "
-        "shown in the example below, adapting it to the specific service details provided.\n\n"
+        "shown in the example below, adapting it to the specific service details and list of group services provided.\n\n"
         "--- TEMPLATE STRUCTURE AND EXAMPLE ---\n"
-        "iOS 18.2-18.5 Hello Screen Bypass 🚀💻\n\n"
-        "Resellers and technicians struggle with iPhone XR to 16 Pro Max devices stuck on the Hello screen, "
-        "causing delays and lost revenue. This issue affects devices on iOS 18.2 to 18.5, whether they have no signal or Wi-Fi only.\n\n"
-        "✅ Fast API processing for instant bypass\n"
-        "✅ Support for iPhone XR to 16 Pro Max on iOS 18.2-18.5\n\n"
-        "iphoneunlock.org offers iRemoval Pro, a powerful tool for bypassing the Hello screen on these devices. "
-        "With our super-fast API-based unlocks, you can quickly resolve this issue and get devices back to your customers.\n\n"
-        "🔥 Don't miss out on revenue - act now\n"
-        "👉 Register today: iPhoneUnlock.org\n"
+        "Hello AIO Tool Activation | ( We Are Official Reseller )( Hello AIO Tool )\n\n"
+        "Resellers and technicians struggle with managing their IMEI services, causing delays and lost revenue. "
+        "This issue affects those who need a reliable tool for instant activations and renewals.\n\n"
+        "Hello AIO Tool Activation [ 6 Month - 1 PC ] - Digital License Activate/Renew | Instant/Auto API\n"
+        "Hello AIO Tool Activation [ 12 Month - 1 PC ] - Digital License Activate/Renew | Instant/Auto API\n\n"
+        "Hello AIO Tool offers a powerful solution for digital license activations and renewals. "
+        "With our super-fast API-based system, you can quickly resolve this issue and get back to your business.\n\n"
+        "Don't miss out on revenue - act now\n"
+        "Register today: iPhoneUnlock.org\n"
         "─────────────────────\n"
         "Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅\n"
         "-------------------------------------\n\n"
         "CRITICAL RULES:\n"
         "1. Do NOT include any markdown formatting like bold (**), italics, or markdown headers (#).\n"
         "2. Do NOT output any system notes, code blocks, or intro/outro explanations. Just output the final post text directly.\n"
-        "3. The line '─────────────────────' (exactly 21 box-drawing horizontal lines) and the footer 'Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅' must be included verbatim at the end."
+        "3. You MUST include the list of active services provided in the user prompt verbatim in the middle section of the post layout.\n"
+        "4. The line '─────────────────────' (exactly 21 box-drawing horizontal lines) and the footer 'Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅' must be included verbatim at the end."
     )
     
+    service_titles_str = "\n".join([s.title for s in group_services])
     user_prompt = (
         f"Generate a Telegram post utilizing the specified template structure.\n"
         f"Service Title: {service.title}\n"
-        f"Service Category: {service.category}\n"
+        f"Group Name: {service.group or 'General'}\n"
         f"Angle & Hook: {service.angle}\n"
-        f"Focus points & keywords (extract tool name and domain/URL if present, otherwise default to 'iPhoneUnlock.org'): {service.focus}\n"
+        f"Focus points & keywords (extract tool name and domain/URL if present, otherwise default to 'iPhoneUnlock.org'): {service.focus}\n\n"
+        f"Below is the list of active services in this group that you MUST include verbatim as the service list block:\n"
+        f"{service_titles_str}"
     )
     
     headers = {
@@ -183,7 +187,8 @@ async def execute_telegram_post_job(db, config_id: int) -> tuple[bool, str]:
         
     try:
         # 1. Generate Content
-        ai_copy = await generate_groq_content(config, service)
+        group_services = [s for s in active_services if s.group == service.group]
+        ai_copy = await generate_groq_content(config, service, group_services)
         
         # 2. Credential Leak Verification check
         has_leak, leak_desc = contains_leakage(ai_copy, config)
