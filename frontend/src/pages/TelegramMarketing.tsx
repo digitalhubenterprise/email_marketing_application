@@ -114,6 +114,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
   const [showGroupModal, setShowGroupModal] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [targetGroupCategory, setTargetGroupCategory] = useState('IMEI Service');
+  const [customGroups, setCustomGroups] = useState<{ category: string; name: string }[]>([]);
 
   const fetchStats = async () => {
     try {
@@ -364,6 +365,13 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
 
     // Group services dynamically by s.group (defaulting to "General")
     const groups: { [key: string]: typeof displayedServices } = {};
+    
+    // First, initialize empty custom groups for this category
+    customGroups.filter(cg => cg.category === targetCategory).forEach(cg => {
+      if (!groups[cg.name]) groups[cg.name] = [];
+    });
+
+    // Populate from displayedServices
     displayedServices.forEach(s => {
       const g = s.group || 'General';
       if (!groups[g]) groups[g] = [];
@@ -412,7 +420,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           </div>
         </div>
 
-        {displayedServices.length === 0 ? (
+        {Object.keys(groups).length === 0 ? (
           <div className="glass-panel p-8 text-center rounded-xl border border-dark-700/30">
             <Layers className="h-8 w-8 text-dark-500 mx-auto mb-2" />
             <p className="text-xs text-dark-400 font-semibold">No promotional {label.toLowerCase()} services found.</p>
@@ -512,8 +520,17 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                 e.preventDefault();
                 const trimmed = newGroupName.trim();
                 if (!trimmed) return;
+                
+                // Add to custom groups directly so it appears in the tab
+                setCustomGroups(prev => {
+                  if (prev.some(cg => cg.category === targetCategory && cg.name === trimmed)) {
+                    return prev;
+                  }
+                  return [...prev, { category: targetCategory, name: trimmed }];
+                });
+                
                 setShowGroupModal(false);
-                openAddServiceModal(trimmed);
+                setNewGroupName('');
               }} className="space-y-4">
                 <div className="flex flex-col gap-1">
                   <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Group Name *</label>
@@ -1045,45 +1062,31 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                 </div>
               )}
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Service Title *</label>
-                  <input
-                    type="text" required value={serviceTitle} onChange={e => setServiceTitle(e.target.value)}
-                    placeholder="e.g. GSM iPhone Unlocks"
-                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
-                  />
-                </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Service Category *</label>
-                  <select
-                    value={serviceCategory} onChange={e => setServiceCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
-                  >
-                    <option value="IMEI Service">IMEI Service</option>
-                    <option value="Server Service">Server Service</option>
-                    <option value="Remote Service">Remote Service</option>
-                  </select>
-                </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Service Title *</label>
+                <input
+                  type="text" required value={serviceTitle} onChange={e => setServiceTitle(e.target.value)}
+                  placeholder="e.g. GSM iPhone Unlocks"
+                  className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
+                />
               </div>
 
               <div className="flex flex-col gap-1">
                 <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Group Name *</label>
-                <input
-                  type="text"
-                  required
+                <select
                   value={serviceGroup}
                   onChange={e => setServiceGroup(e.target.value)}
-                  list="group-options"
-                  placeholder="e.g. USA AT&T Carrier Unlocks"
                   className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
-                />
-                <datalist id="group-options">
-                  {Array.from(new Set(services.filter(s => s.category === serviceCategory).map(s => s.group || 'General'))).map(g => (
-                    <option key={g} value={g} />
+                >
+                  {Array.from(new Set([
+                    'General',
+                    serviceGroup,
+                    ...services.filter(s => s.category === serviceCategory).map(s => s.group || 'General'),
+                    ...customGroups.filter(cg => cg.category === serviceCategory).map(cg => cg.name)
+                  ])).filter(Boolean).map(g => (
+                    <option key={g} value={g}>{g}</option>
                   ))}
-                </datalist>
+                </select>
               </div>
 
               <div className="flex flex-col gap-1">
