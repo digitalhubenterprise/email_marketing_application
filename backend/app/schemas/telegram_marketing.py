@@ -20,6 +20,8 @@ class TelegramMarketingConfigResponse(TelegramMarketingConfigBase):
     created_at: datetime
     has_bot_token: bool
     has_groq_key: bool
+    telegram_bot_token: Optional[str] = None
+    groq_api_key: Optional[str] = None
 
     class Config:
         from_attributes = True

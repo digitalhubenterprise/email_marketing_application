@@ -27,6 +27,24 @@ export default function AdminLayout() {
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'light';
   });
+  const [maintenanceMode, setMaintenanceMode] = useState(false);
+  const [togglingMaintenance, setTogglingMaintenance] = useState(false);
+
+  const fetchMaintenanceMode = async () => {
+    const token = localStorage.getItem("admin_token");
+    if (!token) return;
+    try {
+      const res = await fetch("/api/admin/settings", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setMaintenanceMode(data.maintenance_mode);
+      }
+    } catch (err) {
+      console.error("Failed to fetch maintenance mode:", err);
+    }
+  };
 
   const toggleTheme = () => {
     const nextTheme = theme === 'light' ? 'dark' : 'light';
@@ -54,8 +72,42 @@ export default function AdminLayout() {
     } else {
       setAdminEmail(email);
       setAdminRole(role);
+      fetchMaintenanceMode();
     }
   }, [location, navigate]);
+
+  const handleToggleMaintenance = async () => {
+    const token = localStorage.getItem("admin_token");
+    if (!token) return;
+
+    const nextState = !maintenanceMode;
+    const confirmMsg = nextState
+      ? "ACTIVATE GLOBAL MAINTENANCE MODE?\nStandard customers will be blocked immediately with 503 downtime responses."
+      : "LIFT SYSTEM MAINTENANCE MODE?\nRestores all public user dashboards and sending processes immediately.";
+    
+    if (!window.confirm(confirmMsg)) return;
+
+    setTogglingMaintenance(true);
+    try {
+      const res = await fetch(`/api/admin/settings/maintenance?enabled=${nextState}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      if (res.ok) {
+        setMaintenanceMode(nextState);
+        alert(`System is now ${nextState ? "OFFLINE (Maintenance)" : "ONLINE"}.`);
+      } else {
+        alert("Failed to toggle maintenance mode.");
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Network communication error.");
+    } finally {
+      setTogglingMaintenance(false);
+    }
+  };
 
   const handleSignOut = () => {
     localStorage.removeItem("admin_token");
@@ -194,6 +246,20 @@ export default function AdminLayout() {
               title={theme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
             >
               {theme === 'light' ? <Moon size={13} /> : <Sun size={13} />}
+            </button>
+
+            <button
+              onClick={handleToggleMaintenance}
+              disabled={togglingMaintenance}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all border shadow-sm ${
+                maintenanceMode
+                  ? 'bg-rose-50 border-rose-200 text-rose-600 hover:bg-rose-100'
+                  : 'bg-emerald-50 border-emerald-250 text-emerald-600 hover:bg-emerald-100'
+              }`}
+              title={maintenanceMode ? "System is Offline (Maintenance). Click to go Online." : "System is Online. Click to go Offline (Maintenance)."}
+            >
+              <div className={`h-2 w-2 rounded-full ${maintenanceMode ? 'bg-rose-500 animate-ping' : 'bg-emerald-500 animate-pulse'}`} />
+              <span>{maintenanceMode ? "Offline" : "Online"}</span>
             </button>
 
             <div className="h-6 w-[1px] bg-slate-200" />

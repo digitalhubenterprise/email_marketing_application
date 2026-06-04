@@ -811,7 +811,7 @@ export default function AdminBilling() {
                       setEditName(p.name);
                       setEditPrice(p.price);
                       setEditQuota(p.quota);
-                      setEditSmtpLimit(p.smtpLimit);
+                      setEditSmtpLimit(p.smtp_limit || p.smtpLimit || 0);
                       
                       const contactsLine = p.features.find((f: string) => f.startsWith('Contacts:')) || 'Contacts: 1,000';
                       setEditContacts(contactsLine.replace('Contacts:', '').trim());

@@ -1,32 +1,19 @@
-FROM python:3.12-slim
+FROM python:3.11-slim
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+WORKDIR /app
 
-WORKDIR /code
+# Install build dependencies
+RUN apt-get update && apt-get install -y build-essential gcc && rm -rf /var/lib/apt/lists/*
 
-# Install system dependencies needed for compiling certs, psycopg2, etc.
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential \
-    libpq-dev \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
-
-# Create a non-privileged user and group
-RUN groupadd -g 10001 appgroup && \
-    useradd -u 10001 -g appgroup -m -s /bin/bash appuser
-
-# Copy and install Python packages
-COPY requirements.txt /code/
+# Install Python dependencies
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy backend files
-COPY . /code/
+# Copy the backend source code
+COPY . .
 
-# Change ownership of working directory to the non-root user
-RUN chown -R appuser:appgroup /code
-
-# Switch to the non-root user
-USER appuser
-
+# Expose the FastAPI port
 EXPOSE 8000
+
+# Run the application
+CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]

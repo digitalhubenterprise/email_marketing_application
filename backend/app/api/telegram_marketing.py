@@ -61,7 +61,9 @@ async def get_telegram_config(
         next_run=config.next_run,
         created_at=config.created_at,
         has_bot_token=bool(config.telegram_bot_token),
-        has_groq_key=bool(config.groq_api_key)
+        has_groq_key=bool(config.groq_api_key),
+        telegram_bot_token=config.telegram_bot_token,
+        groq_api_key=config.groq_api_key
     )
 
 @router.post("/config", response_model=TelegramMarketingConfigResponse)
@@ -110,7 +112,9 @@ async def update_telegram_config(
         next_run=config.next_run,
         created_at=config.created_at,
         has_bot_token=bool(config.telegram_bot_token),
-        has_groq_key=bool(config.groq_api_key)
+        has_groq_key=bool(config.groq_api_key),
+        telegram_bot_token=config.telegram_bot_token,
+        groq_api_key=config.groq_api_key
     )
 
 # ─── Services API ──────────────────────────────────────────────────────

@@ -46,6 +46,8 @@ interface Config {
   website_url?: string;
   last_run?: string;
   next_run?: string;
+  telegram_bot_token?: string;
+  groq_api_key?: string;
 }
 
 interface TelegramMarketingProps {
@@ -159,6 +161,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
         setWebsiteUrl(data.website_url || 'iPhoneUnlock.org');
         setHasBotToken(data.has_bot_token);
         setHasGroqKey(data.has_groq_key);
+        setBotToken(data.telegram_bot_token || '');
+        setGroqKey(data.groq_api_key || '');
         setLastRun(data.last_run || null);
         setNextRun(data.next_run || null);
       }
@@ -251,8 +255,6 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
 
       if (res.ok) {
         setFormSuccess('Configuration options saved successfully!');
-        setBotToken('');
-        setGroqKey('');
         await fetchConfig();
         await fetchStats();
       } else {
