@@ -405,3 +405,58 @@ select option {
 .animate-slideInRight {
   animation: slideInRight 0.35s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* Global Border Opacity Modifier Fallbacks for Hex CSS Variables (Light & Dark modes) */
+
+/* border-dark-700 opacity overrides */
+:root .border-dark-700\/50 { border-color: rgba(241, 245, 249, 0.5) !important; }
+:root .border-dark-700\/40 { border-color: rgba(241, 245, 249, 0.4) !important; }
+:root .border-dark-700\/30 { border-color: rgba(241, 245, 249, 0.3) !important; }
+:root .border-dark-700\/20 { border-color: rgba(241, 245, 249, 0.2) !important; }
+:root .border-dark-700\/10 { border-color: rgba(241, 245, 249, 0.1) !important; }
+
+.dark .border-dark-700\/50 { border-color: rgba(65, 68, 103, 0.5) !important; }
+.dark .border-dark-700\/40 { border-color: rgba(65, 68, 103, 0.4) !important; }
+.dark .border-dark-700\/30 { border-color: rgba(65, 68, 103, 0.3) !important; }
+.dark .border-dark-700\/20 { border-color: rgba(65, 68, 103, 0.2) !important; }
+.dark .border-dark-700\/10 { border-color: rgba(65, 68, 103, 0.1) !important; }
+
+/* border-dark-800 opacity overrides */
+:root .border-dark-800\/50 { border-color: rgba(255, 255, 255, 0.5) !important; }
+:root .border-dark-800\/40 { border-color: rgba(255, 255, 255, 0.4) !important; }
+:root .border-dark-800\/30 { border-color: rgba(255, 255, 255, 0.3) !important; }
+:root .border-dark-800\/20 { border-color: rgba(255, 255, 255, 0.2) !important; }
+:root .border-dark-800\/10 { border-color: rgba(255, 255, 255, 0.1) !important; }
+
+.dark .border-dark-800\/50 { border-color: rgba(48, 51, 79, 0.5) !important; }
+.dark .border-dark-800\/40 { border-color: rgba(48, 51, 79, 0.4) !important; }
+.dark .border-dark-800\/30 { border-color: rgba(48, 51, 79, 0.3) !important; }
+.dark .border-dark-800\/20 { border-color: rgba(48, 51, 79, 0.2) !important; }
+.dark .border-dark-800\/10 { border-color: rgba(48, 51, 79, 0.1) !important; }
+
+/* border-dark-850 opacity overrides */
+:root .border-dark-850\/50 { border-color: rgba(248, 250, 252, 0.5) !important; }
+:root .border-dark-850\/40 { border-color: rgba(248, 250, 252, 0.4) !important; }
+:root .border-dark-850\/30 { border-color: rgba(248, 250, 252, 0.3) !important; }
+:root .border-dark-850\/20 { border-color: rgba(248, 250, 252, 0.2) !important; }
+:root .border-dark-850\/10 { border-color: rgba(248, 250, 252, 0.1) !important; }
+
+.dark .border-dark-850\/50 { border-color: rgba(37, 40, 69, 0.5) !important; }
+.dark .border-dark-850\/40 { border-color: rgba(37, 40, 69, 0.4) !important; }
+.dark .border-dark-850\/30 { border-color: rgba(37, 40, 69, 0.3) !important; }
+.dark .border-dark-850\/20 { border-color: rgba(37, 40, 69, 0.2) !important; }
+.dark .border-dark-850\/10 { border-color: rgba(37, 40, 69, 0.1) !important; }
+
+/* border-dark-900 opacity overrides */
+:root .border-dark-900\/50 { border-color: rgba(255, 255, 255, 0.5) !important; }
+:root .border-dark-900\/40 { border-color: rgba(255, 255, 255, 0.4) !important; }
+:root .border-dark-900\/30 { border-color: rgba(255, 255, 255, 0.3) !important; }
+:root .border-dark-900\/20 { border-color: rgba(255, 255, 255, 0.2) !important; }
+:root .border-dark-900\/10 { border-color: rgba(255, 255, 255, 0.1) !important; }
+
+.dark .border-dark-900\/50 { border-color: rgba(26, 28, 46, 0.5) !important; }
+.dark .border-dark-900\/40 { border-color: rgba(26, 28, 46, 0.4) !important; }
+.dark .border-dark-900\/30 { border-color: rgba(26, 28, 46, 0.3) !important; }
+.dark .border-dark-900\/20 { border-color: rgba(26, 28, 46, 0.2) !important; }
+.dark .border-dark-900\/10 { border-color: rgba(26, 28, 46, 0.1) !important; }
+
