@@ -66,17 +66,34 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
     groq_url = "https://api.groq.com/openai/v1/chat/completions"
     
     system_prompt = (
-        "You are an expert copywriter. Write a high-conversion, professional promotional copy "
-        "suited for Telegram channels. Limit copy strictly between 100 to 130 words. "
-        "Do not include any placeholders, HTML metadata tags, system secrets, or config variables."
+        "You are an expert copywriter. Write high-conversion, professional promotional copy "
+        "suited for Telegram channels. You MUST format the output EXACTLY matching the structure and style "
+        "shown in the example below, adapting it to the specific service details provided.\n\n"
+        "--- TEMPLATE STRUCTURE AND EXAMPLE ---\n"
+        "iOS 18.2-18.5 Hello Screen Bypass 🚀💻\n\n"
+        "Resellers and technicians struggle with iPhone XR to 16 Pro Max devices stuck on the Hello screen, "
+        "causing delays and lost revenue. This issue affects devices on iOS 18.2 to 18.5, whether they have no signal or Wi-Fi only.\n\n"
+        "✅ Fast API processing for instant bypass\n"
+        "✅ Support for iPhone XR to 16 Pro Max on iOS 18.2-18.5\n\n"
+        "iphoneunlock.org offers iRemoval Pro, a powerful tool for bypassing the Hello screen on these devices. "
+        "With our super-fast API-based unlocks, you can quickly resolve this issue and get devices back to your customers.\n\n"
+        "🔥 Don't miss out on revenue - act now\n"
+        "👉 Register today: iPhoneUnlock.org\n"
+        "─────────────────────\n"
+        "Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅\n"
+        "-------------------------------------\n\n"
+        "CRITICAL RULES:\n"
+        "1. Do NOT include any markdown formatting like bold (**), italics, or markdown headers (#).\n"
+        "2. Do NOT output any system notes, code blocks, or intro/outro explanations. Just output the final post text directly.\n"
+        "3. The line '─────────────────────' (exactly 21 box-drawing horizontal lines) and the footer 'Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅' must be included verbatim at the end."
     )
     
     user_prompt = (
-        f"Generate promotional content targeting the category '{service.category}'.\n"
-        f"Topic Title: {service.title}\n"
-        f"Focus points to cover: {service.focus}\n"
-        f"Focus angle: {service.angle}\n\n"
-        "Ensure professional readability, engaging hook, benefit highlights, and a clean call to action."
+        f"Generate a Telegram post utilizing the specified template structure.\n"
+        f"Service Title: {service.title}\n"
+        f"Service Category: {service.category}\n"
+        f"Angle & Hook: {service.angle}\n"
+        f"Focus points & keywords (extract tool name and domain/URL if present, otherwise default to 'iPhoneUnlock.org'): {service.focus}\n"
     )
     
     headers = {
