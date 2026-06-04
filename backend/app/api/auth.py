@@ -21,8 +21,18 @@ from app.api.deps import get_current_user
 
 router = APIRouter()
 
-# Rate limiter — uses client IP address as the key
-limiter = Limiter(key_func=get_remote_address)
+# Rate limiter key function to extract real client IP behind reverse proxy
+def get_real_client_ip(request: Request) -> str:
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("X-Real-IP")
+    if real_ip:
+        return real_ip
+    return get_remote_address(request)
+
+# Rate limiter — uses real client IP address as the key
+limiter = Limiter(key_func=get_real_client_ip)
 
 
 # ─── Schemas ──────────────────────────────────────────────────────────
