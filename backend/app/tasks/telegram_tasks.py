@@ -73,21 +73,23 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
         "--- TEMPLATE STRUCTURE AND EXAMPLE ---\n"
         "🚀 Hello AIO Tool Activation | ( We Are Official Reseller )\n\n"
         "⚡️Hello AIO Tool Activation [ 6 Month - 1 PC ] - Digital License Activate/Renew | Instant/Auto API\n"
+        "------------------------------\n"
         "⚡️Hello AIO Tool Activation [ 12 Month - 1 PC ] - Digital License Activate/Renew | Instant/Auto API\n\n"
-        "Don't miss out on revenue - act now\n"
+        "🔥 Don't miss out on revenue - act now\n"
         "Register today: iPhoneUnlock.org\n"
         "─────────────────────\n"
         "Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅\n"
         "-------------------------------------\n\n"
         "CRITICAL RULES:\n"
-        "1. Do NOT write any problem descriptions, explanations, or solution paragraphs. The text must only contain the headline, the services list, the urgency line, the registration line, the separator, and the footer.\n"
-        "2. Do NOT include any markdown formatting like bold (**), italics, or markdown headers (#).\n"
-        "3. Do NOT output any system notes, code blocks, or intro/outro explanations.\n"
-        "4. You MUST include the list of active services (each prefixed with ⚡️) provided in the user prompt verbatim.\n"
-        "5. The line '─────────────────────' (exactly 21 box-drawing horizontal lines) and the footer 'Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅' must be included verbatim at the end."
+        "1. Do NOT write any problem descriptions, explanations, or solution paragraphs. The text must only contain the headline, the services list divided by ------------------------------, the dynamic urgency line (which you generate starting with 🔥), the registration line, the separator, and the footer.\n"
+        "2. Generate a dynamic, high-conversion urgency call-to-action line starting with 🔥, tailored to the service (e.g. 🔥 Don't miss out on revenue - act now).\n"
+        "3. Do NOT include any markdown formatting like bold (**), italics, or markdown headers (#).\n"
+        "4. Do NOT output any system notes, code blocks, or intro/outro explanations.\n"
+        "5. You MUST include the list of active services divided by ------------------------------ as provided in the user prompt verbatim.\n"
+        "6. The line '─────────────────────' (exactly 21 box-drawing horizontal lines) and the footer 'Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅' must be included verbatim at the end."
     )
     
-    service_titles_str = "\n".join([f"⚡️{s.title}" for s in group_services])
+    service_titles_str = "\n------------------------------\n".join([f"⚡️{s.title}" for s in group_services])
     user_prompt = (
         f"Generate a Telegram post utilizing the specified template structure.\n"
         f"Service Title: {service.title}\n"
