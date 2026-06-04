@@ -286,7 +286,7 @@ export default function Dashboard() {
               </div>
 
               <div className="ml-3 flex flex-col justify-center">
-                <span className="text-[9px] font-extrabold text-dark-400 uppercase tracking-widest block transition-colors duration-300 group-hover:text-dark-300">
+                <span className="text-[9px] font-extrabold text-dark-300 dark:text-dark-400 uppercase tracking-widest block transition-colors duration-300 group-hover:text-dark-100 dark:group-hover:text-dark-300">
                   {c.title}
                 </span>
                 <div className="flex items-center gap-1.5 mt-0.5">
@@ -294,7 +294,7 @@ export default function Dashboard() {
                     {c.value}
                   </span>
                   <span className={`w-1.5 h-1.5 rounded-full ${c.indicatorColor}`} />
-                  <span className="text-[9px] text-dark-500 font-semibold lowercase tracking-wide group-hover:text-dark-400 transition-colors duration-300">
+                  <span className="text-[9px] text-dark-400 dark:text-dark-500 font-bold dark:font-semibold lowercase tracking-wide group-hover:text-dark-200 dark:group-hover:text-dark-400 transition-colors duration-300">
                     ({c.status})
                   </span>
                 </div>
@@ -373,9 +373,11 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="mt-4 p-3 bg-brand-500/5 rounded-xl border border-brand-500/10 text-[10px] text-brand-300">
-              <p className="font-semibold mb-0.5">💡 SaaS Growth Tip:</p>
-              Importing fresh, segmented contact groups can increase campaign open rates by over 14%. Try creating specialized lists.
+            <div className="mt-4 p-3 bg-brand-500/5 rounded-xl border border-brand-500/15 text-[10px]">
+              <p className="font-bold mb-0.5 text-brand-700 dark:text-brand-300">💡 SaaS Growth Tip:</p>
+              <span className="text-brand-600 dark:text-brand-400 font-semibold leading-normal">
+                Importing fresh, segmented contact groups can increase campaign open rates by over 14%. Try creating specialized lists.
+              </span>
             </div>
           </div>
 

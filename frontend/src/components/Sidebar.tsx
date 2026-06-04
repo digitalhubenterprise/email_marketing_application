@@ -75,7 +75,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
               flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
               ${isActive 
                 ? 'brand-gradient-bg text-white shadow-sm shadow-brand-500/10' 
-                : 'text-dark-400 hover:text-dark-100 hover:bg-dark-700/30'}
+                : 'text-dark-300 dark:text-dark-400 hover:text-dark-100 dark:hover:text-dark-50 hover:bg-dark-700/50 dark:hover:bg-dark-700/30'}
             `}
           >
             {item.icon}

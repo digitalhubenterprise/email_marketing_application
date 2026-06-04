@@ -251,6 +251,20 @@ select option {
 .text-brand-100 {
   color: var(--status-brand-100) !important;
 }
+
+/* Ensure text-dark-500 and text-dark-450 are readable in light mode (where dark-500/dark-450 are very light border/divider colors) */
+:root .text-dark-500 {
+  color: var(--color-dark-400) !important;
+}
+:root .text-dark-450 {
+  color: var(--color-dark-350) !important;
+}
+.dark .text-dark-500 {
+  color: var(--color-dark-500) !important;
+}
+.dark .text-dark-450 {
+  color: var(--color-dark-450) !important;
+}
 .border-emerald-500\/20 {
   border-color: rgba(16, 185, 129, 0.25) !important;
 }
