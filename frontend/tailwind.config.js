@@ -8,34 +8,34 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f0f4ff',
-          100: '#e1e9fe',
-          200: '#c8d7fd',
-          300: '#a1bcfa',
-          400: '#7295f7',
-          500: '#4c6ef5', // Primary Brand Violet-Blue
-          600: '#3b51db',
-          700: '#2f3eb3',
-          800: '#283391',
-          900: '#252e74',
-          950: '#151945',
+          50: '#f5f3ff',
+          100: '#ede9fe',
+          200: '#ddd6fe',
+          300: '#c7d2fe',
+          400: '#a5b4fc',
+          500: '#6366f1', // Primary Violet-Indigo
+          600: '#4f46e5',
+          700: '#4338ca',
+          800: '#3730a3',
+          900: '#312e81',
+          950: '#1e1b4b',
         },
         dark: {
-          50: '#f6f6f9',
-          100: '#ececf3',
-          200: '#d5d6e3',
-          300: '#b1b4cb',
-          350: '#9fa3be',
-          400: '#878cae',
-          450: '#787ca0',
-          500: '#676c96',
-          600: '#51557d',
-          700: '#414467',
-          750: '#38405d',
-          800: '#30334f', // Card background dark
-          850: '#252845',
-          900: '#1a1c2e', // Page background dark
-          950: '#0f111f',
+          50: '#0f172a',  // Deepest slate text (900)
+          100: '#0f172a', // Deep slate text
+          200: '#1e293b', // Slate-800
+          300: '#334155', // Slate-700
+          350: '#475569', // Slate-600
+          400: '#64748b', // Slate-500
+          450: '#94a3b8', // Slate-400
+          500: '#cbd5e1', // Slate-300 divider/border
+          600: '#e2e8f0', // Slate-200 border
+          700: '#f1f5f9', // Slate-100 bg/border
+          750: '#f8fafc', // Slate-50 bg
+          800: '#ffffff', // Card/sidebar background (white)
+          850: '#f8fafc', // Light slate bg
+          900: '#ffffff', // Card background (white)
+          950: '#f8fafc', // Main page body background (slate-50)
         }
       },
       fontFamily: {
