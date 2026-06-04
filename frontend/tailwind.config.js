@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -8,34 +9,34 @@ export default {
     extend: {
       colors: {
         brand: {
-          50: '#f5f3ff',
-          100: '#ede9fe',
-          200: '#ddd6fe',
-          300: '#c7d2fe',
-          400: '#a5b4fc',
-          500: '#6366f1', // Primary Violet-Indigo
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
-          950: '#1e1b4b',
+          50: 'var(--color-brand-50)',
+          100: 'var(--color-brand-100)',
+          200: 'var(--color-brand-200)',
+          300: 'var(--color-brand-300)',
+          400: 'var(--color-brand-400)',
+          500: 'var(--color-brand-500)',
+          600: 'var(--color-brand-600)',
+          700: 'var(--color-brand-700)',
+          800: 'var(--color-brand-800)',
+          900: 'var(--color-brand-900)',
+          950: 'var(--color-brand-950)',
         },
         dark: {
-          50: '#0f172a',  // Deepest slate text (900)
-          100: '#0f172a', // Deep slate text
-          200: '#1e293b', // Slate-800
-          300: '#334155', // Slate-700
-          350: '#475569', // Slate-600
-          400: '#64748b', // Slate-500
-          450: '#94a3b8', // Slate-400
-          500: '#cbd5e1', // Slate-300 divider/border
-          600: '#e2e8f0', // Slate-200 border
-          700: '#f1f5f9', // Slate-100 bg/border
-          750: '#f8fafc', // Slate-50 bg
-          800: '#ffffff', // Card/sidebar background (white)
-          850: '#f8fafc', // Light slate bg
-          900: '#ffffff', // Card background (white)
-          950: '#f8fafc', // Main page body background (slate-50)
+          50: 'var(--color-dark-50)',
+          100: 'var(--color-dark-100)',
+          200: 'var(--color-dark-200)',
+          300: 'var(--color-dark-300)',
+          350: 'var(--color-dark-350)',
+          400: 'var(--color-dark-400)',
+          450: 'var(--color-dark-450)',
+          500: 'var(--color-dark-500)',
+          600: 'var(--color-dark-600)',
+          700: 'var(--color-dark-700)',
+          750: 'var(--color-dark-750)',
+          800: 'var(--color-dark-800)',
+          850: 'var(--color-dark-850)',
+          900: 'var(--color-dark-900)',
+          950: 'var(--color-dark-950)',
         }
       },
       fontFamily: {

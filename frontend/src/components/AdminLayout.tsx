@@ -11,7 +11,9 @@ import {
   Shield,
   Activity,
   CheckCircle2,
-  Menu
+  Menu,
+  Sun,
+  Moon
 } from 'lucide-react'
 import { useAuth } from '../App'
 
@@ -22,6 +24,25 @@ export default function AdminLayout() {
   const [adminRole, setAdminRole] = useState<string | null>(null);
   const { appConfig } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'light';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+  }, []);
 
   useEffect(() => {
     const token = localStorage.getItem("admin_token");
@@ -166,6 +187,14 @@ export default function AdminLayout() {
             >
               Go to Standard Dashboard
             </Link>
+
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg border border-slate-200 bg-slate-50 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-all shadow-sm flex items-center justify-center"
+              title={theme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
+            >
+              {theme === 'light' ? <Moon size={13} /> : <Sun size={13} />}
+            </button>
 
             <div className="h-6 w-[1px] bg-slate-200" />
 

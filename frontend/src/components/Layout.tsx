@@ -1,13 +1,33 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { useAuth } from '../App'
-import { Mail, CheckCircle, Megaphone, X, AlertCircle, Menu } from 'lucide-react'
+import { Mail, CheckCircle, Megaphone, X, AlertCircle, Menu, Sun, Moon } from 'lucide-react'
 
 export default function Layout() {
   const { user, appConfig } = useAuth();
   const [announcementDismissed, setAnnouncementDismissed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('theme') || 'light';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    setTheme(nextTheme);
+    localStorage.setItem('theme', nextTheme);
+    if (nextTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  };
+
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    setTheme(savedTheme);
+  }, []);
   
   // Calculate remaining quota percentage
   const quotaUsed = user?.quota_sent || 0;
@@ -91,6 +111,14 @@ export default function Layout() {
                 />
               </div>
             </div>
+
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg border border-dark-700/50 bg-dark-800 text-dark-400 hover:text-dark-100 hover:bg-dark-750 transition-all shadow-sm"
+              title={theme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
+            >
+              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+            </button>
 
             <div className="h-6 w-[1px] bg-dark-700/40" />
 

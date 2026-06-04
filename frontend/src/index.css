@@ -2,17 +2,146 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Default Light Mode Theme Colors (Micro-CRON design) */
+  --color-brand-50: #f5f3ff;
+  --color-brand-100: #ede9fe;
+  --color-brand-200: #ddd6fe;
+  --color-brand-300: #c7d2fe;
+  --color-brand-400: #a5b4fc;
+  --color-brand-500: #6366f1; /* Primary brand violet */
+  --color-brand-600: #4f46e5;
+  --color-brand-700: #4338ca;
+  --color-brand-800: #3730a3;
+  --color-brand-900: #312e81;
+  --color-brand-950: #1e1b4b;
+
+  --color-dark-50: #0f172a;  /* Deepest slate text (900) */
+  --color-dark-100: #0f172a; /* Deep slate text */
+  --color-dark-200: #1e293b; /* Slate-800 */
+  --color-dark-300: #334155; /* Slate-700 */
+  --color-dark-350: #475569; /* Slate-600 */
+  --color-dark-400: #64748b; /* Slate-500 */
+  --color-dark-450: #94a3b8; /* Slate-400 */
+  --color-dark-500: #cbd5e1; /* Slate-300 divider/border */
+  --color-dark-600: #e2e8f0; /* Slate-200 border */
+  --color-dark-700: #f1f5f9; /* Slate-100 bg/border */
+  --color-dark-750: #f8fafc; /* Slate-50 bg */
+  --color-dark-800: #ffffff; /* Card/sidebar background (white) */
+  --color-dark-850: #f8fafc; /* Light slate bg */
+  --color-dark-900: #ffffff; /* Card background (white) */
+  --color-dark-950: #f8fafc; /* Main page body background (slate-50) */
+
+  /* Glass panel styles - Light */
+  --glass-bg: #ffffff;
+  --glass-border: #e2e8f0;
+  --glass-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  --glass-shadow-hover: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  --glass-border-hover: #cbd5e1;
+  --glass-translate-hover: translateY(-1px);
+
+  /* Brand gradients - Light */
+  --brand-gradient-start: #6366f1;
+  --brand-gradient-end: #4f46e5;
+  --brand-gradient-text-start: #a5b4fc;
+  --brand-gradient-text-end: #4f46e5;
+
+  /* Scrollbars - Light */
+  --scrollbar-track: #f8fafc;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #6366f1;
+
+  /* Heading & Placeholder text overrides - Light */
+  --header-text-color: #0f172a;
+  --placeholder-color: #94a3b8;
+  --card-text-white-override: #0f172a;
+
+  /* Status contrast levels - Light */
+  --status-emerald-text: #059669;
+  --status-rose-text: #d32f2f;
+  --status-brand-400: #4f46e5;
+  --status-brand-300: #4338ca;
+  --status-brand-200: #3730a3;
+  --status-brand-100: #312e81;
+}
+
+.dark {
+  /* Original Brand colors (Dark mode) */
+  --color-brand-50: #f0f4ff;
+  --color-brand-100: #e1e9fe;
+  --color-brand-200: #c8d7fd;
+  --color-brand-300: #a1bcfa;
+  --color-brand-400: #7295f7;
+  --color-brand-500: #4c6ef5;
+  --color-brand-600: #3b51db;
+  --color-brand-700: #2f3eb3;
+  --color-brand-800: #283391;
+  --color-brand-900: #252e74;
+  --color-brand-950: #151945;
+
+  /* Original Dark background/surface colors (Dark mode) */
+  --color-dark-50: #f6f6f9;
+  --color-dark-100: #ececf3;
+  --color-dark-200: #d5d6e3;
+  --color-dark-300: #b1b4cb;
+  --color-dark-350: #9fa3be;
+  --color-dark-400: #878cae;
+  --color-dark-450: #787ca0;
+  --color-dark-500: #676c96;
+  --color-dark-600: #51557d;
+  --color-dark-700: #414467;
+  --color-dark-750: #38405d;
+  --color-dark-800: #30334f;
+  --color-dark-850: #252845;
+  --color-dark-900: #1a1c2e;
+  --color-dark-950: #0f111f;
+
+  /* Glass panel styles - Dark */
+  --glass-bg: rgba(48, 51, 79, 0.45);
+  --glass-border: rgba(255, 255, 255, 0.06);
+  --glass-shadow: none;
+  --glass-shadow-hover: 0 10px 30px -10px rgba(76, 110, 245, 0.15);
+  --glass-border-hover: rgba(76, 110, 245, 0.35);
+  --glass-translate-hover: translateY(-2px);
+
+  /* Brand gradients - Dark */
+  --brand-gradient-start: #4c6ef5;
+  --brand-gradient-end: #3b51db;
+  --brand-gradient-text-start: #a1bcfa;
+  --brand-gradient-text-end: #2f3eb3;
+
+  /* Scrollbars - Dark */
+  --scrollbar-track: #0f111f;
+  --scrollbar-thumb: #30334f;
+  --scrollbar-thumb-hover: #4c6ef5;
+
+  /* No overrides inside dark mode */
+  --header-text-color: #f6f6f9;
+  --placeholder-color: #878cae;
+  --card-text-white-override: #ffffff;
+
+  /* Original status colors */
+  --status-emerald-text: #34d399; /* Emerald-400 */
+  --status-rose-text: #f87171; /* Rose-400 */
+  --status-brand-400: #7295f7;
+  --status-brand-300: #a1bcfa;
+  --status-brand-200: #c8d7fd;
+  --status-brand-100: #e1e9fe;
+}
+
 @layer base {
   body {
     @apply font-sans bg-dark-950 text-dark-100 antialiased selection:bg-brand-500 selection:text-white;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
 }
 
-/* Custom Premium Glassmorphism & Light Card Styles */
+/* Custom Premium Glassmorphism & Card Styles */
 .glass-panel {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05), 0 1px 2px 0 rgba(0, 0, 0, 0.03);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  box-shadow: var(--glass-shadow);
+  transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
 }
 
 .glass-panel-hover {
@@ -20,10 +149,10 @@
 }
 
 .glass-panel-hover:hover {
-  background: #ffffff;
-  border-color: #cbd5e1;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-  transform: translateY(-1px);
+  background: var(--glass-bg);
+  border-color: var(--glass-border-hover);
+  box-shadow: var(--glass-shadow-hover);
+  transform: var(--glass-translate-hover);
 }
 
 .glow-btn {
@@ -54,49 +183,51 @@
 }
 
 .brand-gradient-text {
-  background: linear-gradient(135deg, #a5b4fc 0%, #6366f1 50%, #4f46e5 100%);
+  background: linear-gradient(135deg, var(--brand-gradient-text-start) 0%, var(--brand-gradient-start) 50%, var(--brand-gradient-end) 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .brand-gradient-bg {
-  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  background: linear-gradient(135deg, var(--brand-gradient-start) 0%, var(--brand-gradient-end) 100%);
 }
 
 /* Accessibility & Light-Mode Layout Overrides */
 h1, h2, h3, h4, h5, h6 {
-  color: #0f172a !important; /* Force deep slate headers for readability */
+  color: var(--header-text-color) !important;
+  transition: color 0.3s ease;
 }
 
-/* Force placeholders to slate-400 */
+/* Force placeholders to correct style */
 ::placeholder, input::placeholder, textarea::placeholder {
-  color: #94a3b8 !important;
+  color: var(--placeholder-color) !important;
 }
 
 /* Text-white overrides inside light-mode cards & panels to keep it readable, bypassing buttons/badges */
 .glass-panel .text-white:not(.brand-gradient-bg):not([class*="bg-"]):not(button):not(a),
 [class*="bg-dark-"] .text-white:not(.brand-gradient-bg):not([class*="bg-"]):not(button):not(a) {
-  color: #0f172a !important;
+  color: var(--card-text-white-override) !important;
+  transition: color 0.3s ease;
 }
 
 /* Color accessibility contrast overrides */
 .text-emerald-400 {
-  color: #059669 !important; /* Emerald-600 */
+  color: var(--status-emerald-text) !important;
 }
 .text-rose-400 {
-  color: #d32f2f !important; /* Rose-600 */
+  color: var(--status-rose-text) !important;
 }
 .text-brand-400 {
-  color: #4f46e5 !important; /* Indigo-600 */
+  color: var(--status-brand-400) !important;
 }
 .text-brand-300 {
-  color: #4338ca !important; /* Indigo-700 */
+  color: var(--status-brand-300) !important;
 }
 .text-brand-200 {
-  color: #3730a3 !important;
+  color: var(--status-brand-200) !important;
 }
 .text-brand-100 {
-  color: #312e81 !important;
+  color: var(--status-brand-100) !important;
 }
 .border-emerald-500\/20 {
   border-color: rgba(16, 185, 129, 0.25) !important;
@@ -124,16 +255,16 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0f111f;
+  background: var(--scrollbar-track);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #30334f;
+  background: var(--scrollbar-thumb);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #4c6ef5;
+  background: var(--scrollbar-thumb-hover);
 }
 
 @keyframes fadeIn {
