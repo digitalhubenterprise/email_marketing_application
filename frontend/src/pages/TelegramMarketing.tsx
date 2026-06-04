@@ -632,7 +632,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               onClick={() => setShowGroupModal(false)}
             />
             {/* Slide-in Drawer */}
-            <div className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-dark-900/95 backdrop-blur-xl border-l border-dark-800/80 p-6 z-50 shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-white">
+            <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-dark-900/95 backdrop-blur-xl border-l border-dark-800/80 p-6 z-50 shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-white">
               <div className="space-y-6">
                 <div className="flex items-center justify-between border-b border-dark-800/80 pb-4">
                   <div className="flex items-center gap-2.5">
@@ -1224,7 +1224,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
             onClick={() => setShowServiceModal(false)}
           />
           {/* Slide-in Drawer */}
-          <div className="fixed top-0 right-0 h-full w-full sm:w-[450px] bg-dark-900/95 backdrop-blur-xl border-l border-dark-800/80 p-6 z-50 shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-white overflow-y-auto">
+          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-dark-900/95 backdrop-blur-xl border-l border-dark-800/80 p-6 z-50 shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-white overflow-y-auto">
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-dark-800/80 pb-4">
                 <div className="flex items-center gap-2.5">
