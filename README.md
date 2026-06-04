@@ -1,4 +1,4 @@
-# 🚀 SmartCampaign — Premium Email & Telegram Marketing SaaS (Version 1.3)
+# 🚀 SmartCampaign — Premium Email & Telegram Marketing SaaS (Version 1.4)
 
 SmartCampaign is an enterprise-grade, high-performance Email & Telegram AI Marketing SaaS platform designed to support robust mass email broadcasts, automated drip campaigns, and scheduled AI Telegram rotations. Equipped with an interactive glassmorphic dashboard, multi-SMTP load rotation, CSV imports, jinja-style dynamic templates, and pixel-perfect real-time engagement tracking, SmartCampaign is fully hardened for production-ready deployments.
 
@@ -30,16 +30,45 @@ SmartCampaign is an enterprise-grade, high-performance Email & Telegram AI Marke
 
 ## 🔐 Enterprise-Grade Security Implementation
 
+For full auditing specifics, references, and scanning configurations, check the [SECURITY_AUDIT_REPORT.md](SECURITY_AUDIT_REPORT.md) ledger.
+
 | Security Control | Implementation Detail | Purpose |
 |------------------|-----------------------|---------|
+| **OOM Protection** | Stream files in **1MB chunks**; immediate termination if file > 5MB before buffering payload. | Prevents memory exhaustion attacks (OOM) via massive CSV lists. |
 | **Brute-Force Shield** | SlowAPI per-IP rate limits: Login (20/min), Register (10/min), Change PW (5/min). | Blocks automated credential stuffing and bot registrations. |
 | **Data Encryption** | AES-256 Fernet symmetric encryption at rest. | Encrypts external custom SMTP credentials before writing to DB. |
 | **JWT Compliance** | Explicit claims enforcement (`exp`, `sub`, `iat`, `iss`). | Blocks forged or modified authentication tokens. |
 | **HTTP Security Headers** | `HSTS`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`. | Mitigates XSS, clickjacking, MIME sniffing, and MITM. |
 | **API Shielding** | Swagger UI (`/api/docs`), openapi JSON, and ReDoc disabled when `ENVIRONMENT=production`. | Prevents bad actors from scanning the backend API schema. |
 | **Strict CORS Gateways** | Explicit domain allowlist (localhost filters automatically disabled in production). | Prevents browser-based cross-origin credential stealing. |
-| **IDOR Signature Guard** | HMAC-SHA256 tokens using system `JWT_SECRET` for mass unsubscribes. | Blocks sequential key enumeration/unauthorized subscriber opt-outs. |
+| **IDOR Signature Guard** | HMAC-SHA256 tokens using system `JWT_SECRET` for unsubscribe redirection. | Blocks sequential key enumeration/unauthorized subscriber opt-outs. |
 | **Fail-Safe Key Guard** | Regex parser screening generated AI posts before telegram delivery. | Prevents leakage of DB URLs, JWT secrets, and Telegram tokens to public channels. |
+
+---
+
+## 🧪 Running Automated Verification Tests
+
+SmartCampaign includes a comprehensive unit and integration testing suite utilizing **Pytest**, **pytest-asyncio**, and **HTTPX** against an async, in-memory **SQLite database (`aiosqlite`)** to ensure test isolations from development or production environments.
+
+### Setup and Running Tests Natively:
+1. Navigate to the `backend` directory:
+   ```bash
+   cd backend
+   ```
+2. Activate your virtual environment and install test dependencies (if not already installed):
+   ```bash
+   venv\Scripts\activate
+   pip install pytest httpx pytest-asyncio aiosqlite
+   ```
+3. Execute the full test runner:
+   ```bash
+   python -m pytest tests/
+   ```
+
+### Tested Components:
+* **Authentication & Upgrades (`test_auth.py`)**: Tests account creation, duplicate constraints, login handlers, secure token parsing, password updates, and billing upgrades logs.
+* **Contacts & CSV Imports (`test_contacts_csv.py`)**: Tests mailing list creations, CSV parsing mapping, deduplication validation, and OOM 5MB payload block limits.
+* **Queuing & Dispatch Tasks (`test_email_dispatch.py`)**: Tests merge tag interpolation fallbacks, link click wrap redirects, tracking pixel insertions, open-redirect verification, and Celery worker bounce handler triggers.
 
 ---
 
@@ -63,11 +92,11 @@ To spin up the entire container orchestration (FastAPI API server, PostgreSQL Da
 
 ```bash
 # Start all local containers
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ### Access Portals:
-- **Client Panel & Dashboard**: [http://localhost](http://localhost) (Proxy port 80)
+- **Client Console & Dashboard**: [http://localhost](http://localhost) (Proxy port 80)
 - **FastAPI Documentation (Swagger UI)**: [http://localhost:8000/api/docs](http://localhost:8000/api/docs) (Only available in development environment)
 - **Email Tracking Node**: [http://localhost:8000/api/track](http://localhost:8000/api/track)
 
@@ -76,7 +105,7 @@ docker-compose up -d --build
 ## 📊 Live Email Analytics & Campaigns
 
 - **Blast Campaigns Wizard**: Select SMTP routing profiles, contact lists, templates, and configure:
-  - **Schedule Time**: Precise delivery dates (automatically parsed to naive UTC to prevent timezone offset warnings).
+  - **Schedule Time**: Precise delivery dates (automatically parsed to UTC to prevent timezone warnings).
   - **Auto-Resend Hours**: Define drip reminders or resends for un-engaged lists.
   - **Sending Mode**: Toggle between **Auto (automated Celery dispatch)** and **Manual (requires trigger)**.
 - **Open Tracking**: Appends a transparent `1x1.gif` pixel before the `</body>` tag of HTML emails. Mail clients request `/api/track/open/{log_id}`, atomically logging reads.
@@ -97,4 +126,3 @@ The **Telegram Marketing Console** enables users to automate marketing rotations
 - **Flexible Scheduling Intervals**: Supports delivery check intervals in both **Minutes** and **Hours** (1 to 60).
 - **Audit Console Logs**: Real-time log monitoring screen showing timestamp details, service topics, and raw generation contents.
 - **Dynamic Campaign Website URL**: Allows users to configure custom target landing pages injected dynamically into generated posts.
-
