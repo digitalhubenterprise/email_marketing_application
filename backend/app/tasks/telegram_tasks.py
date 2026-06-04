@@ -70,11 +70,11 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
         "suited for Telegram channels. You MUST format the output EXACTLY matching the structure and style "
         "shown in the example below, adapting it to the specific service details and list of group services provided.\n\n"
         "--- TEMPLATE STRUCTURE AND EXAMPLE ---\n"
-        "Hello AIO Tool Activation | ( We Are Official Reseller )( Hello AIO Tool )\n\n"
+        "🚀 Hello AIO Tool Activation | ( We Are Official Reseller )\n\n"
         "Resellers and technicians struggle with managing their IMEI services, causing delays and lost revenue. "
         "This issue affects those who need a reliable tool for instant activations and renewals.\n\n"
-        "Hello AIO Tool Activation [ 6 Month - 1 PC ] - Digital License Activate/Renew | Instant/Auto API\n"
-        "Hello AIO Tool Activation [ 12 Month - 1 PC ] - Digital License Activate/Renew | Instant/Auto API\n\n"
+        "⚡️Hello AIO Tool Activation [ 6 Month - 1 PC ] - Digital License Activate/Renew | Instant/Auto API\n"
+        "⚡️Hello AIO Tool Activation [ 12 Month - 1 PC ] - Digital License Activate/Renew | Instant/Auto API\n\n"
         "Hello AIO Tool offers a powerful solution for digital license activations and renewals. "
         "With our super-fast API-based system, you can quickly resolve this issue and get back to your business.\n\n"
         "Don't miss out on revenue - act now\n"
@@ -85,11 +85,11 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
         "CRITICAL RULES:\n"
         "1. Do NOT include any markdown formatting like bold (**), italics, or markdown headers (#).\n"
         "2. Do NOT output any system notes, code blocks, or intro/outro explanations. Just output the final post text directly.\n"
-        "3. You MUST include the list of active services provided in the user prompt verbatim in the middle section of the post layout.\n"
+        "3. You MUST include the list of active services (each prefixed with ⚡️) provided in the user prompt verbatim in the middle section of the post layout.\n"
         "4. The line '─────────────────────' (exactly 21 box-drawing horizontal lines) and the footer 'Best Price ⚡️ Fast Delivery ⚡️ Global Access International Unlocking Server ✅' must be included verbatim at the end."
     )
     
-    service_titles_str = "\n".join([s.title for s in group_services])
+    service_titles_str = "\n".join([f"⚡️{s.title}" for s in group_services])
     user_prompt = (
         f"Generate a Telegram post utilizing the specified template structure.\n"
         f"Service Title: {service.title}\n"
