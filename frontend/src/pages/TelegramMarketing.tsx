@@ -117,6 +117,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
   const [targetGroupCategory, setTargetGroupCategory] = useState('IMEI Service');
   const [customGroups, setCustomGroups] = useState<{ category: string; name: string }[]>([]);
   const [viewMode, setViewMode] = useState<'all' | 'groups'>('all');
+  const [selectedGroupFilter, setSelectedGroupFilter] = useState('all');
 
   const fetchStats = async () => {
     try {
@@ -208,6 +209,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
       fetchLogs();
     }
     setViewMode('all');
+    setSelectedGroupFilter('all');
   }, [page, limit, statusFilter, searchFilter, activeTab]);
 
   // Handle settings config update
@@ -326,6 +328,28 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
     }
   };
 
+  const handleDeleteGroup = async (groupName: string, category: string) => {
+    const servicesInGroup = services.filter(s => s.category === category && (s.group || 'General') === groupName);
+    if (servicesInGroup.length > 0) {
+      if (!confirm(`Warning: This group contains ${servicesInGroup.length} service(s). Deleting the group will delete all of these services. Are you sure you want to proceed?`)) {
+        return;
+      }
+      for (const s of servicesInGroup) {
+        try {
+          await fetch(`/api/telegram-marketing/services/${s.id}`, {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+        } catch (err) {
+          console.error("Failed to delete service", s.id, err);
+        }
+      }
+      await fetchServices();
+      await fetchStats();
+    }
+    setCustomGroups(prev => prev.filter(cg => !(cg.category === category && cg.name === groupName)));
+  };
+
   // Trigger AI Generator manually
   const handleTriggerAIPost = async () => {
     setActionLoading(true);
@@ -381,6 +405,16 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
       groups[g].push(s);
     });
 
+    const uniqueGroups = Array.from(new Set([
+      'General',
+      ...displayedServices.map(s => s.group || 'General'),
+      ...customGroups.filter(cg => cg.category === targetCategory).map(cg => cg.name)
+    ])).filter(Boolean);
+
+    const filteredServices = selectedGroupFilter === 'all'
+      ? displayedServices
+      : displayedServices.filter(s => (s.group || 'General') === selectedGroupFilter);
+
     const openAddServiceModal = (presetGroup = 'General') => {
       setEditingServiceId(null);
       setServiceTitle('');
@@ -423,8 +457,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           </div>
         </div>
 
-        {/* Toggle view control menu */}
-        <div className="pb-1 border-b border-dark-800/40">
+        {/* Toggle view control menu & group filter */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-dark-800/40">
           <div className="flex items-center gap-1 p-1 bg-dark-950/60 border border-dark-800/50 rounded-lg max-w-max">
             <button
               type="button"
@@ -449,13 +483,29 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               ALL SERVICE GROUP
             </button>
           </div>
+
+          {viewMode === 'all' && (
+            <div className="flex items-center gap-2 bg-dark-900/60 border border-dark-800 rounded-lg px-3 py-1.5 text-xs">
+              <span className="text-[10px] font-black text-dark-500 uppercase tracking-wider">Group Filter:</span>
+              <select
+                value={selectedGroupFilter}
+                onChange={(e) => setSelectedGroupFilter(e.target.value)}
+                className="bg-transparent border-none text-white focus:outline-none cursor-pointer font-bold"
+              >
+                <option value="all" className="bg-dark-900 text-white">All Groups</option>
+                {uniqueGroups.map(g => (
+                  <option key={g} value={g} className="bg-dark-900 text-white">{g}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
 
         {viewMode === 'all' ? (
-          displayedServices.length === 0 ? (
+          filteredServices.length === 0 ? (
             <div className="glass-panel p-8 text-center rounded-xl border border-dark-700/30">
               <Layers className="h-8 w-8 text-dark-500 mx-auto mb-2" />
-              <p className="text-xs text-dark-400 font-semibold">No promotional {label.toLowerCase()} services found.</p>
+              <p className="text-xs text-dark-400 font-semibold">No services found.</p>
               <div className="flex items-center justify-center gap-2 mt-3">
                 <button
                   onClick={handleCreateGroupClick}
@@ -472,133 +522,41 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-              {displayedServices.map((s) => (
-                <div key={s.id} className="glass-panel p-4 rounded-xl border border-dark-700/30 flex flex-col justify-between hover:border-brand-500/30 transition-all duration-200">
-                  <div className="space-y-2.5">
-                    <div className="flex items-center justify-between gap-2 border-b border-dark-850 pb-2">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                          {s.category}
-                        </span>
-                        {s.group && s.group !== 'General' && (
+            <div className="glass-panel rounded-xl overflow-hidden border border-dark-700/30">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead className="bg-dark-900/60 border-b border-dark-800 text-[10px] font-black uppercase text-dark-400 tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3 w-16 text-center">Status</th>
+                      <th className="px-4 py-3">Service Title</th>
+                      <th className="px-4 py-3">Group Name</th>
+                      <th className="px-4 py-3">Angle & Hook</th>
+                      <th className="px-4 py-3">Details & Key Words</th>
+                      <th className="px-4 py-3 w-28 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-850/60">
+                    {filteredServices.map((s) => (
+                      <tr key={s.id} className="hover:bg-dark-900/30 transition-colors">
+                        <td className="px-4 py-3.5 text-center">
+                          <span className={`inline-block h-2 w-2 rounded-full ${s.active ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-dark-600'}`} />
+                        </td>
+                        <td className="px-4 py-3.5 font-bold text-white max-w-xs truncate" title={s.title}>
+                          {s.title}
+                        </td>
+                        <td className="px-4 py-3.5">
                           <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-dark-900 text-dark-300 border border-dark-700/40">
-                            {s.group}
+                            {s.group || 'General'}
                           </span>
-                        )}
-                      </div>
-                      <span className={`h-1.5 w-1.5 rounded-full ${s.active ? 'bg-emerald-500' : 'bg-dark-600'}`} />
-                    </div>
-
-                    <h4 className="text-sm font-extrabold text-white truncate">{s.title}</h4>
-                    
-                    <div className="space-y-1">
-                      <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Focus Angle</span>
-                      <p className="text-[10px] text-dark-300 leading-relaxed line-clamp-2">{s.angle}</p>
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Details</span>
-                      <p className="text-[10px] text-dark-400 leading-relaxed font-semibold font-mono line-clamp-3">{s.focus}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-1.5 border-t border-dark-850 pt-3 mt-4">
-                    <button
-                      onClick={() => handleEditServiceClick(s)}
-                      className="p-1.5 text-dark-400 hover:text-white bg-dark-900/60 hover:bg-dark-800 rounded-lg border border-dark-800 transition-colors"
-                      title="Edit Service"
-                    >
-                      <Edit size={11} />
-                    </button>
-                    <button
-                      onClick={() => handleDeleteService(s.id)}
-                      className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
-                      title="Delete Service"
-                    >
-                      <Trash2 size={11} />
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )
-        ) : (
-          Object.keys(groups).length === 0 ? (
-            <div className="glass-panel p-8 text-center rounded-xl border border-dark-700/30">
-              <Layers className="h-8 w-8 text-dark-500 mx-auto mb-2" />
-              <p className="text-xs text-dark-400 font-semibold">No promotional {label.toLowerCase()} services found.</p>
-              <div className="flex items-center justify-center gap-2 mt-3">
-                <button
-                  onClick={handleCreateGroupClick}
-                  className="px-3 py-1.5 bg-dark-900 border border-dark-700/80 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
-                >
-                  Create Group
-                </button>
-                <button
-                  onClick={() => openAddServiceModal('General')}
-                  className="px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold shadow-md shadow-brand-500/15"
-                >
-                  Create Service
-                </button>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {Object.keys(groups).map(groupName => (
-                <div key={groupName} className="space-y-3">
-                  <div className="flex items-center justify-between border-b border-dark-800 pb-1.5">
-                    <div className="flex items-center gap-2">
-                      <span className="h-2 w-2 rounded-full bg-brand-500" />
-                      <h4 className="text-xs font-black text-white uppercase tracking-wider">{groupName}</h4>
-                      <span className="text-[10px] text-dark-500">({groups[groupName].length})</span>
-                    </div>
-                    <button
-                      onClick={() => openAddServiceModal(groupName)}
-                      className="text-[9px] font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1"
-                    >
-                      <Plus size={10} />
-                      <span>Create Service in Group</span>
-                    </button>
-                  </div>
-                  
-                  {groups[groupName].length === 0 ? (
-                    <div className="p-4 bg-dark-900/30 rounded-xl border border-dark-800/40 text-center">
-                      <p className="text-[10px] text-dark-500 font-semibold">No services added under this group yet.</p>
-                      <button
-                        onClick={() => openAddServiceModal(groupName)}
-                        className="text-[9px] font-bold text-brand-400 hover:text-brand-300 mt-1.5 inline-flex items-center gap-1"
-                      >
-                        <Plus size={10} />
-                        <span>Add First Service</span>
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                      {groups[groupName].map((s) => (
-                        <div key={s.id} className="glass-panel p-4 rounded-xl border border-dark-700/30 flex flex-col justify-between hover:border-brand-500/30 transition-all duration-200">
-                          <div className="space-y-2.5">
-                            <div className="flex items-center justify-between gap-2 border-b border-dark-850 pb-2">
-                              <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                                {s.category}
-                              </span>
-                              <span className={`h-1.5 w-1.5 rounded-full ${s.active ? 'bg-emerald-500' : 'bg-dark-600'}`} />
-                            </div>
-
-                            <h4 className="text-sm font-extrabold text-white truncate">{s.title}</h4>
-                            
-                            <div className="space-y-1">
-                              <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Focus Angle</span>
-                              <p className="text-[10px] text-dark-300 leading-relaxed line-clamp-2">{s.angle}</p>
-                            </div>
-
-                            <div className="space-y-1">
-                              <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Details</span>
-                              <p className="text-[10px] text-dark-400 leading-relaxed font-semibold font-mono line-clamp-3">{s.focus}</p>
-                            </div>
-                          </div>
-
-                          <div className="flex items-center justify-end gap-1.5 border-t border-dark-850 pt-3 mt-4">
+                        </td>
+                        <td className="px-4 py-3.5 text-dark-300 font-semibold max-w-sm truncate" title={s.angle}>
+                          {s.angle}
+                        </td>
+                        <td className="px-4 py-3.5 text-dark-400 font-semibold font-mono max-w-xs truncate" title={s.focus}>
+                          {s.focus}
+                        </td>
+                        <td className="px-4 py-3.5 text-right">
+                          <div className="flex items-center justify-end gap-1.5">
                             <button
                               onClick={() => handleEditServiceClick(s)}
                               className="p-1.5 text-dark-400 hover:text-white bg-dark-900/60 hover:bg-dark-800 rounded-lg border border-dark-800 transition-colors"
@@ -614,16 +572,83 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                               <Trash2 size={11} />
                             </button>
                           </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              ))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )
+        ) : (
+          uniqueGroups.length === 0 ? (
+            <div className="glass-panel p-8 text-center rounded-xl border border-dark-700/30">
+              <Layers className="h-8 w-8 text-dark-500 mx-auto mb-2" />
+              <p className="text-xs text-dark-400 font-semibold">No service groups found.</p>
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <button
+                  onClick={handleCreateGroupClick}
+                  className="px-3 py-1.5 bg-dark-900 border border-dark-700/80 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
+                >
+                  Create Group
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="glass-panel rounded-xl overflow-hidden border border-dark-700/30">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse text-left text-xs">
+                  <thead className="bg-dark-900/60 border-b border-dark-800 text-[10px] font-black uppercase text-dark-400 tracking-wider">
+                    <tr>
+                      <th className="px-4 py-3">Group Name</th>
+                      <th className="px-4 py-3 text-center">Total Services</th>
+                      <th className="px-4 py-3 w-48 text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-850/60">
+                    {uniqueGroups.map((groupName) => {
+                      const count = groups[groupName]?.length || 0;
+                      return (
+                        <tr key={groupName} className="hover:bg-dark-900/30 transition-colors">
+                          <td className="px-4 py-3.5 font-bold text-white flex items-center gap-2">
+                            <Folder size={14} className="text-brand-400 shrink-0" />
+                            <span>{groupName}</span>
+                          </td>
+                          <td className="px-4 py-3.5 text-center font-bold text-white">
+                            <span className="px-2 py-0.5 bg-dark-950 border border-dark-850 text-dark-400 rounded-md text-[10px]">
+                              {count}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <button
+                                onClick={() => openAddServiceModal(groupName)}
+                                className="flex items-center gap-1 px-2.5 py-1.5 bg-dark-900 border border-dark-800 hover:bg-brand-500/10 hover:border-brand-500/30 text-brand-400 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all"
+                                title="Create Service in Group"
+                              >
+                                <Plus size={10} />
+                                <span>Add Service</span>
+                              </button>
+                              {groupName !== 'General' && (
+                                <button
+                                  onClick={() => handleDeleteGroup(groupName, targetCategory)}
+                                  className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
+                                  title="Delete Group"
+                                >
+                                  <Trash2 size={11} />
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           )
         )}
-
       </div>
     );
   };
