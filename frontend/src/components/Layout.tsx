@@ -86,7 +86,7 @@ export default function Layout() {
         )}
 
         {/* Top navbar */}
-        <header className="h-14 bg-dark-950/80 backdrop-blur-md border-b border-dark-700/30 px-6 flex items-center justify-between sticky top-0 z-30">
+        <header className="h-14 bg-dark-950/80 backdrop-blur-md border-b border-dark-700 px-6 flex items-center justify-between sticky top-0 z-30">
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setSidebarOpen(true)}

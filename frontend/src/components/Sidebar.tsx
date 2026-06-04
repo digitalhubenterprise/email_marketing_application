@@ -33,13 +33,13 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
 
   return (
     <aside className={`
-      w-64 bg-dark-800 dark:bg-dark-900/70 dark:backdrop-blur-md border-r border-dark-700/50 flex flex-col h-screen fixed top-0 z-50
+      w-64 bg-dark-800 dark:bg-dark-900/70 dark:backdrop-blur-md border-r border-dark-700 flex flex-col h-screen fixed top-0 z-50
       transition-transform duration-300 ease-in-out
       ${isOpen ? "translate-x-0" : "-translate-x-full"}
       lg:translate-x-0 lg:left-0 lg:z-40
     `}>
       {/* Platform Title Logo */}
-      <div className="py-3.5 px-4 border-b border-dark-700/50 flex items-center justify-between gap-2.5">
+      <div className="py-3.5 px-4 border-b border-dark-700 flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5">
           {appConfig?.logo_url ? (
             <img src={appConfig.logo_url} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
@@ -85,7 +85,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
       </nav>
 
       {/* User profile & logout footer */}
-      <div className="p-3 border-t border-dark-700/50 space-y-2">
+      <div className="p-3 border-t border-dark-700 space-y-2">
         <div className="flex items-center gap-2.5 px-1 py-0.5">
           <div className="h-8 w-8 rounded-full bg-brand-800 text-brand-300 font-bold flex items-center justify-center uppercase text-xs border border-brand-700">
             {user?.email?.substring(0, 2)}
