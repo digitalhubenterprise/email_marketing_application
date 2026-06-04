@@ -79,7 +79,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
   const [botToken, setBotToken] = useState('');
   const [channel, setChannel] = useState('');
   const [groqKey, setGroqKey] = useState('');
-  const [intervalHours, setIntervalHours] = useState(2);
+  const [intervalValue, setIntervalValue] = useState(2);
+  const [intervalUnit, setIntervalUnit] = useState<'minutes' | 'hours'>('hours');
   const [websiteUrl, setWebsiteUrl] = useState('iPhoneUnlock.org');
   const [schedulerActive, setSchedulerActive] = useState(false);
   const [configLoading, setConfigLoading] = useState(true);
@@ -146,7 +147,14 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
       if (res.ok) {
         const data: Config = await res.json();
         setChannel(data.telegram_channel || '');
-        setIntervalHours(data.interval_hours);
+        const totalMinutes = data.interval_hours;
+        if (totalMinutes % 60 === 0) {
+          setIntervalValue(totalMinutes / 60);
+          setIntervalUnit('hours');
+        } else {
+          setIntervalValue(totalMinutes);
+          setIntervalUnit('minutes');
+        }
         setSchedulerActive(data.is_active);
         setWebsiteUrl(data.website_url || 'iPhoneUnlock.org');
         setHasBotToken(data.has_bot_token);
@@ -233,7 +241,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
         },
         body: JSON.stringify({
           telegram_channel: channel,
-          interval_hours: Number(intervalHours),
+          interval_hours: intervalUnit === 'hours' ? Number(intervalValue) * 60 : Number(intervalValue),
           is_active: schedulerActive,
           website_url: websiteUrl,
           telegram_bot_token: botToken || undefined,
@@ -1085,16 +1093,26 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
 
                 {/* Interval Frequency */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-dark-400 uppercase tracking-wider">Interval Hours (1-168) *</label>
-                  <input
-                    type="number"
-                    required
-                    min="1"
-                    max="168"
-                    value={intervalHours}
-                    onChange={(e) => setIntervalHours(Number(e.target.value))}
-                    className="w-full px-3.5 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
-                  />
+                  <label className="text-[10px] font-bold text-dark-400 uppercase tracking-wider">Interval (1-60) *</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      required
+                      min="1"
+                      max="60"
+                      value={intervalValue}
+                      onChange={(e) => setIntervalValue(Number(e.target.value))}
+                      className="flex-1 px-3.5 py-2 bg-dark-750 dark:bg-dark-950/45 border border-dark-600 dark:border-dark-700/40 rounded-lg text-xs text-dark-100 dark:text-white focus:outline-none focus:border-brand-500 font-semibold"
+                    />
+                    <select
+                      value={intervalUnit}
+                      onChange={(e) => setIntervalUnit(e.target.value as 'minutes' | 'hours')}
+                      className="w-32 px-3 py-2 bg-dark-750 dark:bg-dark-950/45 border border-dark-600 dark:border-dark-700/40 rounded-lg text-xs text-dark-100 dark:text-white focus:outline-none focus:border-brand-500 font-semibold cursor-pointer"
+                    >
+                      <option value="minutes" className="bg-white dark:bg-dark-900 text-dark-100 dark:text-white">Minutes</option>
+                      <option value="hours" className="bg-white dark:bg-dark-900 text-dark-100 dark:text-white">Hours</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
@@ -1125,7 +1143,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                     Enable Automatic AI Scheduling
                   </label>
                   <p className="text-[10px] text-dark-400 leading-tight">
-                    When active, the celery engine checks and posts updates at the specified hourly interval.
+                    When active, the celery engine checks and posts updates at the specified interval.
                   </p>
                 </div>
               </div>

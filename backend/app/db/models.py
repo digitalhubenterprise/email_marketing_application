@@ -240,7 +240,7 @@ class TelegramMarketingConfig(Base):
     telegram_bot_token = Column(String, nullable=True)
     telegram_channel = Column(String, nullable=True)
     groq_api_key = Column(String, nullable=True)
-    interval_hours = Column(Integer, default=2)
+    interval_hours = Column(Integer, default=120)
     is_active = Column(Boolean, default=False)
     website_url = Column(String, default="iPhoneUnlock.org", nullable=True)
     last_run = Column(DateTime, nullable=True)

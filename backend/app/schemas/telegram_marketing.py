@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 
 class TelegramMarketingConfigBase(BaseModel):
     telegram_channel: Optional[str] = None
-    interval_hours: int = Field(default=2, ge=1, le=168)
+    interval_hours: int = Field(default=120, ge=1, le=3600)
     is_active: bool = False
     website_url: Optional[str] = "iPhoneUnlock.org"
 

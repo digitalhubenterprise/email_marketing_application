@@ -291,7 +291,7 @@ async def execute_telegram_post_job(db, config_id: int) -> tuple[bool, str]:
         # Update last run/next run timers
         now = utc_now_naive()
         config.last_run = now
-        config.next_run = now + timedelta(hours=config.interval_hours)
+        config.next_run = now + timedelta(minutes=config.interval_hours)
         db.add(config)
         
         await db.commit()

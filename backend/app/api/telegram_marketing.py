@@ -42,7 +42,7 @@ async def get_telegram_config(
         # Seed default config
         config = TelegramMarketingConfig(
             user_id=current_user.id,
-            interval_hours=2,
+            interval_hours=120,
             is_active=False,
             website_url="iPhoneUnlock.org"
         )
