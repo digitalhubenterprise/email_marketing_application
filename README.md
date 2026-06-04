@@ -1,6 +1,6 @@
-# 🚀 SmartCampaign — Premium Email Marketing SaaS (Version 1.0)
+# 🚀 SmartCampaign — Premium Email & Telegram Marketing SaaS (Version 1.3)
 
-SmartCampaign is an enterprise-grade, high-performance Email Marketing SaaS platform designed to support robust mass broadcast sequences, drip automations, and CRM segments. Equipped with an interactive glassmorphic dashboard, multi-SMTP load rotation, CSV imports, jinja-style dynamic templates, and pixel-perfect real-time engagement tracking, SmartCampaign is fully hardened for production-ready deployments.
+SmartCampaign is an enterprise-grade, high-performance Email & Telegram AI Marketing SaaS platform designed to support robust mass email broadcasts, automated drip campaigns, and scheduled AI Telegram rotations. Equipped with an interactive glassmorphic dashboard, multi-SMTP load rotation, CSV imports, jinja-style dynamic templates, and pixel-perfect real-time engagement tracking, SmartCampaign is fully hardened for production-ready deployments.
 
 ---
 
@@ -38,6 +38,8 @@ SmartCampaign is an enterprise-grade, high-performance Email Marketing SaaS plat
 | **HTTP Security Headers** | `HSTS`, `X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `X-XSS-Protection`. | Mitigates XSS, clickjacking, MIME sniffing, and MITM. |
 | **API Shielding** | Swagger UI (`/api/docs`), openapi JSON, and ReDoc disabled when `ENVIRONMENT=production`. | Prevents bad actors from scanning the backend API schema. |
 | **Strict CORS Gateways** | Explicit domain allowlist (localhost filters automatically disabled in production). | Prevents browser-based cross-origin credential stealing. |
+| **IDOR Signature Guard** | HMAC-SHA256 tokens using system `JWT_SECRET` for mass unsubscribes. | Blocks sequential key enumeration/unauthorized subscriber opt-outs. |
+| **Fail-Safe Key Guard** | Regex parser screening generated AI posts before telegram delivery. | Prevents leakage of DB URLs, JWT secrets, and Telegram tokens to public channels. |
 
 ---
 
@@ -50,6 +52,8 @@ SmartCampaign uses a database-driven background Celery Beat daemon to run missio
    - Automatically transitions status to `"sending"` and spawns worker threads, ensuring scheduled email blasts execute even if servers or workers restart.
 2. **Monthly User Quota Reset (1st of every month at 00:00 UTC)**:
    - Resets all users' `quota_sent` counters back to `0`, renewing monthly subscription allocations atomically.
+3. **Telegram AI Marketing Dispatch Daemon (Every 60 seconds)**:
+   - Evaluates active setups to run posts based on category rotation rules (2 IMEI -> 3 Server -> 2 Remote). Calls LLaMA-3 dynamically via Groq Cloud API, checks output against credential filters, and sends content to Telegram.
 
 ---
 
@@ -78,3 +82,19 @@ docker-compose up -d --build
 - **Open Tracking**: Appends a transparent `1x1.gif` pixel before the `</body>` tag of HTML emails. Mail clients request `/api/track/open/{log_id}`, atomically logging reads.
 - **Click Tracking**: HTML links are parsed in Celery threads and rewritten to route through `/api/track/click/{log_id}?url={target_url}`, logging engagement before safe redirecting.
 - **SaaS Credit Wallet**: Fund mock accounts in the `Billing Wallet` page using Binance Pay / USDT, upgrade plans, and deduct balance persistently via the `/api/auth/upgrade` database gateway.
+
+---
+
+## 🤖 Telegram AI Marketing Dispatcher
+
+The **Telegram Marketing Console** enables users to automate marketing rotations using AI LLM generation directly into Telegram channels:
+
+- **AI Post Generator**: Integrates LLaMA-3 models on Groq Cloud via async connections. Generates posts containing group headings, service lists, promotional text, urgency call-to-actions, order buttons, and footers automatically.
+- **Service Pools**: CRUD interfaces to manage service topics sorted by categories (IMEI Service, Server Service, Remote Service).
+- **Group Categorization**: Organize services under folders (groups) with dynamic selection dropdowns and autocomplete.
+- **Category Rotation Cycle**: Sequential dispatcher alternates dispatches by category modulo index loops: `2 IMEI Service -> 3 Server Service -> 2 Remote Service` runs. Graces to fallback categories if a target segment is empty.
+- **Settings Configuration & Validation**: Masked bot tokens and API keys with visibility toggles and active `✓ Configured` status checkmarks.
+- **Flexible Scheduling Intervals**: Supports delivery check intervals in both **Minutes** and **Hours** (1 to 60).
+- **Audit Console Logs**: Real-time log monitoring screen showing timestamp details, service topics, and raw generation contents.
+- **Dynamic Campaign Website URL**: Allows users to configure custom target landing pages injected dynamically into generated posts.
+
