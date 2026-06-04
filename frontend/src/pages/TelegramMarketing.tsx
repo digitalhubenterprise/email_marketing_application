@@ -115,6 +115,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
   const [newGroupName, setNewGroupName] = useState('');
   const [targetGroupCategory, setTargetGroupCategory] = useState('IMEI Service');
   const [customGroups, setCustomGroups] = useState<{ category: string; name: string }[]>([]);
+  const [viewMode, setViewMode] = useState<'all' | 'groups'>('all');
 
   const fetchStats = async () => {
     try {
@@ -205,6 +206,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
     if (token && activeTab === 'logs') {
       fetchLogs();
     }
+    setViewMode('all');
   }, [page, limit, statusFilter, searchFilter, activeTab]);
 
   // Handle settings config update
@@ -420,149 +422,284 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           </div>
         </div>
 
-        {Object.keys(groups).length === 0 ? (
-          <div className="glass-panel p-8 text-center rounded-xl border border-dark-700/30">
-            <Layers className="h-8 w-8 text-dark-500 mx-auto mb-2" />
-            <p className="text-xs text-dark-400 font-semibold">No promotional {label.toLowerCase()} services found.</p>
-            <div className="flex items-center justify-center gap-2 mt-3">
-              <button
-                onClick={handleCreateGroupClick}
-                className="px-3 py-1.5 bg-dark-900 border border-dark-700/80 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
-              >
-                Create Group
-              </button>
-              <button
-                onClick={() => openAddServiceModal('General')}
-                className="px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold shadow-md shadow-brand-500/15"
-              >
-                Create Service
-              </button>
-            </div>
+        {/* Toggle view control menu */}
+        <div className="pb-1 border-b border-dark-800/40">
+          <div className="flex items-center gap-1 p-1 bg-dark-950/60 border border-dark-800/50 rounded-lg max-w-max">
+            <button
+              type="button"
+              onClick={() => setViewMode('all')}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${
+                viewMode === 'all'
+                  ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/10'
+                  : 'text-dark-400 hover:text-white'
+              }`}
+            >
+              ALL {label}
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewMode('groups')}
+              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${
+                viewMode === 'groups'
+                  ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/10'
+                  : 'text-dark-400 hover:text-white'
+              }`}
+            >
+              ALL SERVICE GROUP
+            </button>
           </div>
-        ) : (
-          <div className="space-y-6">
-            {Object.keys(groups).map(groupName => (
-              <div key={groupName} className="space-y-3">
-                <div className="flex items-center justify-between border-b border-dark-800 pb-1.5">
-                  <div className="flex items-center gap-2">
-                    <span className="h-2 w-2 rounded-full bg-brand-500" />
-                    <h4 className="text-xs font-black text-white uppercase tracking-wider">{groupName}</h4>
-                    <span className="text-[10px] text-dark-500">({groups[groupName].length})</span>
-                  </div>
-                  <button
-                    onClick={() => openAddServiceModal(groupName)}
-                    className="text-[9px] font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1"
-                  >
-                    <Plus size={10} />
-                    <span>Create Service in Group</span>
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
-                  {groups[groupName].map((s) => (
-                    <div key={s.id} className="glass-panel p-4 rounded-xl border border-dark-700/30 flex flex-col justify-between hover:border-brand-500/30 transition-all duration-200">
-                      <div className="space-y-2.5">
-                        <div className="flex items-center justify-between gap-2 border-b border-dark-850 pb-2">
-                          <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-brand-500/10 text-brand-400 border border-brand-500/20">
-                            {s.category}
-                          </span>
-                          <span className={`h-1.5 w-1.5 rounded-full ${s.active ? 'bg-emerald-500' : 'bg-dark-600'}`} />
-                        </div>
+        </div>
 
-                        <h4 className="text-sm font-extrabold text-white truncate">{s.title}</h4>
-                        
-                        <div className="space-y-1">
-                          <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Focus Angle</span>
-                          <p className="text-[10px] text-dark-300 leading-relaxed line-clamp-2">{s.angle}</p>
-                        </div>
-
-                        <div className="space-y-1">
-                          <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Details</span>
-                          <p className="text-[10px] text-dark-400 leading-relaxed font-semibold font-mono line-clamp-3">{s.focus}</p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-end gap-1.5 border-t border-dark-850 pt-3 mt-4">
-                        <button
-                          onClick={() => handleEditServiceClick(s)}
-                          className="p-1.5 text-dark-400 hover:text-white bg-dark-900/60 hover:bg-dark-800 rounded-lg border border-dark-800 transition-colors"
-                          title="Edit Service"
-                        >
-                          <Edit size={11} />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteService(s.id)}
-                          className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
-                          title="Delete Service"
-                        >
-                          <Trash2 size={11} />
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        {viewMode === 'all' ? (
+          displayedServices.length === 0 ? (
+            <div className="glass-panel p-8 text-center rounded-xl border border-dark-700/30">
+              <Layers className="h-8 w-8 text-dark-500 mx-auto mb-2" />
+              <p className="text-xs text-dark-400 font-semibold">No promotional {label.toLowerCase()} services found.</p>
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <button
+                  onClick={handleCreateGroupClick}
+                  className="px-3 py-1.5 bg-dark-900 border border-dark-700/80 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
+                >
+                  Create Group
+                </button>
+                <button
+                  onClick={() => openAddServiceModal('General')}
+                  className="px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold shadow-md shadow-brand-500/15"
+                >
+                  Create Service
+                </button>
               </div>
-            ))}
-          </div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+              {displayedServices.map((s) => (
+                <div key={s.id} className="glass-panel p-4 rounded-xl border border-dark-700/30 flex flex-col justify-between hover:border-brand-500/30 transition-all duration-200">
+                  <div className="space-y-2.5">
+                    <div className="flex items-center justify-between gap-2 border-b border-dark-850 pb-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                          {s.category}
+                        </span>
+                        {s.group && s.group !== 'General' && (
+                          <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-dark-900 text-dark-300 border border-dark-700/40">
+                            {s.group}
+                          </span>
+                        )}
+                      </div>
+                      <span className={`h-1.5 w-1.5 rounded-full ${s.active ? 'bg-emerald-500' : 'bg-dark-600'}`} />
+                    </div>
+
+                    <h4 className="text-sm font-extrabold text-white truncate">{s.title}</h4>
+                    
+                    <div className="space-y-1">
+                      <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Focus Angle</span>
+                      <p className="text-[10px] text-dark-300 leading-relaxed line-clamp-2">{s.angle}</p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Details</span>
+                      <p className="text-[10px] text-dark-400 leading-relaxed font-semibold font-mono line-clamp-3">{s.focus}</p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-end gap-1.5 border-t border-dark-850 pt-3 mt-4">
+                    <button
+                      onClick={() => handleEditServiceClick(s)}
+                      className="p-1.5 text-dark-400 hover:text-white bg-dark-900/60 hover:bg-dark-800 rounded-lg border border-dark-800 transition-colors"
+                      title="Edit Service"
+                    >
+                      <Edit size={11} />
+                    </button>
+                    <button
+                      onClick={() => handleDeleteService(s.id)}
+                      className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
+                      title="Delete Service"
+                    >
+                      <Trash2 size={11} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        ) : (
+          Object.keys(groups).length === 0 ? (
+            <div className="glass-panel p-8 text-center rounded-xl border border-dark-700/30">
+              <Layers className="h-8 w-8 text-dark-500 mx-auto mb-2" />
+              <p className="text-xs text-dark-400 font-semibold">No promotional {label.toLowerCase()} services found.</p>
+              <div className="flex items-center justify-center gap-2 mt-3">
+                <button
+                  onClick={handleCreateGroupClick}
+                  className="px-3 py-1.5 bg-dark-900 border border-dark-700/80 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
+                >
+                  Create Group
+                </button>
+                <button
+                  onClick={() => openAddServiceModal('General')}
+                  className="px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold shadow-md shadow-brand-500/15"
+                >
+                  Create Service
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {Object.keys(groups).map(groupName => (
+                <div key={groupName} className="space-y-3">
+                  <div className="flex items-center justify-between border-b border-dark-800 pb-1.5">
+                    <div className="flex items-center gap-2">
+                      <span className="h-2 w-2 rounded-full bg-brand-500" />
+                      <h4 className="text-xs font-black text-white uppercase tracking-wider">{groupName}</h4>
+                      <span className="text-[10px] text-dark-500">({groups[groupName].length})</span>
+                    </div>
+                    <button
+                      onClick={() => openAddServiceModal(groupName)}
+                      className="text-[9px] font-bold text-brand-400 hover:text-brand-300 flex items-center gap-1"
+                    >
+                      <Plus size={10} />
+                      <span>Create Service in Group</span>
+                    </button>
+                  </div>
+                  
+                  {groups[groupName].length === 0 ? (
+                    <div className="p-4 bg-dark-900/30 rounded-xl border border-dark-800/40 text-center">
+                      <p className="text-[10px] text-dark-500 font-semibold">No services added under this group yet.</p>
+                      <button
+                        onClick={() => openAddServiceModal(groupName)}
+                        className="text-[9px] font-bold text-brand-400 hover:text-brand-300 mt-1.5 inline-flex items-center gap-1"
+                      >
+                        <Plus size={10} />
+                        <span>Add First Service</span>
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
+                      {groups[groupName].map((s) => (
+                        <div key={s.id} className="glass-panel p-4 rounded-xl border border-dark-700/30 flex flex-col justify-between hover:border-brand-500/30 transition-all duration-200">
+                          <div className="space-y-2.5">
+                            <div className="flex items-center justify-between gap-2 border-b border-dark-850 pb-2">
+                              <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-brand-500/10 text-brand-400 border border-brand-500/20">
+                                {s.category}
+                              </span>
+                              <span className={`h-1.5 w-1.5 rounded-full ${s.active ? 'bg-emerald-500' : 'bg-dark-600'}`} />
+                            </div>
+
+                            <h4 className="text-sm font-extrabold text-white truncate">{s.title}</h4>
+                            
+                            <div className="space-y-1">
+                              <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Focus Angle</span>
+                              <p className="text-[10px] text-dark-300 leading-relaxed line-clamp-2">{s.angle}</p>
+                            </div>
+
+                            <div className="space-y-1">
+                              <span className="text-[8px] font-black text-dark-500 uppercase tracking-widest block">Details</span>
+                              <p className="text-[10px] text-dark-400 leading-relaxed font-semibold font-mono line-clamp-3">{s.focus}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center justify-end gap-1.5 border-t border-dark-850 pt-3 mt-4">
+                            <button
+                              onClick={() => handleEditServiceClick(s)}
+                              className="p-1.5 text-dark-400 hover:text-white bg-dark-900/60 hover:bg-dark-800 rounded-lg border border-dark-800 transition-colors"
+                              title="Edit Service"
+                            >
+                              <Edit size={11} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteService(s.id)}
+                              className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
+                              title="Delete Service"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )
         )}
 
         {showGroupModal && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4">
-            <div className="glass-panel w-full max-w-md rounded-xl border border-dark-700/30 p-5 space-y-4 shadow-2xl relative">
-              <h3 className="text-sm font-bold text-white border-b border-dark-800 pb-2">
-                Create New Group
-              </h3>
-              <p className="text-[10px] text-dark-400">
-                Create a new group in <span className="text-brand-400 font-semibold">{targetCategory}</span> to group your services.
-              </p>
-              
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                const trimmed = newGroupName.trim();
-                if (!trimmed) return;
-                
-                // Add to custom groups directly so it appears in the tab
-                setCustomGroups(prev => {
-                  if (prev.some(cg => cg.category === targetCategory && cg.name === trimmed)) {
-                    return prev;
-                  }
-                  return [...prev, { category: targetCategory, name: trimmed }];
-                });
-                
-                setShowGroupModal(false);
-                setNewGroupName('');
-              }} className="space-y-4">
-                <div className="flex flex-col gap-1">
-                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Group Name *</label>
-                  <input
-                    type="text"
-                    required
-                    autoFocus
-                    value={newGroupName}
-                    onChange={(e) => setNewGroupName(e.target.value)}
-                    placeholder="e.g. USA AT&T Carrier Unlocks"
-                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
-                  />
-                </div>
-                
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-dark-800">
-                  <button
+          <>
+            {/* Backdrop */}
+            <div 
+              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300"
+              onClick={() => setShowGroupModal(false)}
+            />
+            {/* Slide-in Drawer */}
+            <div className="fixed top-0 right-0 h-full w-full sm:w-[50%] bg-dark-850 border-l border-dark-750 p-6 z-50 shadow-2xl flex flex-col justify-between animate-slideInFromRight text-white">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between border-b border-dark-800 pb-3">
+                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                    Create New Group
+                  </h3>
+                  <button 
                     type="button"
                     onClick={() => setShowGroupModal(false)}
-                    className="px-3.5 py-1.5 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
+                    className="text-dark-400 hover:text-white text-xs font-bold p-1 rounded hover:bg-dark-800 transition-colors"
                   >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-3.5 py-1.5 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold"
-                  >
-                    Create Group
+                    ✕
                   </button>
                 </div>
-              </form>
+                <p className="text-[10px] text-dark-400">
+                  Create a new group folder in <span className="text-brand-400 font-semibold">{targetCategory}</span> to organize your services.
+                </p>
+                
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const trimmed = newGroupName.trim();
+                  if (!trimmed) return;
+                  
+                  // Add to custom groups directly so it appears in the tab
+                  setCustomGroups(prev => {
+                    if (prev.some(cg => cg.category === targetCategory && cg.name === trimmed)) {
+                      return prev;
+                    }
+                    return [...prev, { category: targetCategory, name: trimmed }];
+                  });
+                  
+                  setShowGroupModal(false);
+                  setNewGroupName('');
+                }} className="space-y-4">
+                  <div className="flex flex-col gap-1">
+                    <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Group Name *</label>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      placeholder="e.g. USA AT&T Carrier Unlocks"
+                      className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
+                    />
+                  </div>
+                  
+                  <div className="flex items-center gap-2 pt-4">
+                    <button
+                      type="button"
+                      onClick={() => setShowGroupModal(false)}
+                      className="flex-1 py-2 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold transition-all"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-2 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold transition-all shadow-md shadow-brand-500/10"
+                    >
+                      Create Group
+                    </button>
+                  </div>
+                </form>
+              </div>
+              <div className="text-[8px] text-dark-500 text-center border-t border-dark-850 pt-3">
+                SmartCampaign Dispatch Node Group Management
+              </div>
             </div>
-          </div>
+          </>
         )}
       </div>
     );
@@ -570,6 +707,15 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
 
   return (
     <div className="space-y-4 animate-fadeIn">
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes slideInFromRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+        .animate-slideInFromRight {
+          animation: slideInFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}} />
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-dark-700/20">
         <div>
@@ -1047,95 +1193,115 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
         </div>
       )}
 
-      {/* SERVICE MODAL */}
+      {/* SERVICE MODAL -> SERVICE DRAWER */}
       {showServiceModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-lg rounded-xl border border-dark-700/30 p-5 space-y-4 shadow-2xl relative">
-            <h3 className="text-sm font-bold text-white border-b border-dark-800 pb-2">
-              {editingServiceId ? 'Edit Service' : 'Add Service'}
-            </h3>
-
-            <form onSubmit={handleSaveService} className="space-y-3.5">
-              {formError && (
-                <div className="p-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] rounded-lg">
-                  {formError}
-                </div>
-              )}
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Service Title *</label>
-                <input
-                  type="text" required value={serviceTitle} onChange={e => setServiceTitle(e.target.value)}
-                  placeholder="e.g. GSM iPhone Unlocks"
-                  className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Group Name *</label>
-                <select
-                  value={serviceGroup}
-                  onChange={e => setServiceGroup(e.target.value)}
-                  className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
-                >
-                  {Array.from(new Set([
-                    'General',
-                    serviceGroup,
-                    ...services.filter(s => s.category === serviceCategory).map(s => s.group || 'General'),
-                    ...customGroups.filter(cg => cg.category === serviceCategory).map(cg => cg.name)
-                  ])).filter(Boolean).map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Angle & Hook *</label>
-                <input
-                  type="text" required value={serviceAngle} onChange={e => setServiceAngle(e.target.value)}
-                  placeholder="e.g. Instant remote bypass with permanent unlocking keys"
-                  className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
-                />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Details & Key Words *</label>
-                <textarea
-                  required value={serviceFocus} onChange={e => setServiceFocus(e.target.value)} rows={3}
-                  placeholder="Provide focus points for the AI, e.g.: support iOS 17/18, permanent server bypass, clean unlocks, official unlock portal url: https://unlock.org"
-                  className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500 font-sans"
-                />
-              </div>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox" id="serviceActive" checked={serviceIsActive} onChange={e => setServiceIsActive(e.target.checked)}
-                  className="w-3.5 h-3.5 text-brand-500 bg-dark-950 border-dark-750 rounded"
-                />
-                <label htmlFor="serviceActive" className="text-[10px] font-bold text-dark-300 cursor-pointer">
-                  Activate in rotation queue
-                </label>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-2 border-t border-dark-800">
-                <button
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300"
+            onClick={() => setShowServiceModal(false)}
+          />
+          {/* Slide-in Drawer */}
+          <div className="fixed top-0 right-0 h-full w-full sm:w-[50%] bg-dark-900 border-l border-dark-800 p-6 z-50 shadow-2xl flex flex-col justify-between animate-slideInFromRight text-white overflow-y-auto">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-dark-800 pb-3">
+                <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                  {editingServiceId ? 'Edit Service' : 'Add Service'}
+                </h3>
+                <button 
                   type="button"
                   onClick={() => setShowServiceModal(false)}
-                  className="px-3.5 py-1.5 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold"
+                  className="text-dark-400 hover:text-white text-xs font-bold p-1 rounded hover:bg-dark-800 transition-colors"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={actionLoading}
-                  className="px-3.5 py-1.5 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold flex items-center gap-1.5"
-                >
-                  {actionLoading ? <Loader2 className="animate-spin h-3 w-3" /> : 'Save Service'}
+                  ✕
                 </button>
               </div>
-            </form>
+
+              <form onSubmit={handleSaveService} className="space-y-4">
+                {formError && (
+                  <div className="p-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] rounded-lg">
+                    {formError}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Service Title *</label>
+                  <input
+                    type="text" required value={serviceTitle} onChange={e => setServiceTitle(e.target.value)}
+                    placeholder="e.g. GSM iPhone Unlocks"
+                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Group Name *</label>
+                  <select
+                    value={serviceGroup}
+                    onChange={e => setServiceGroup(e.target.value)}
+                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
+                  >
+                    {Array.from(new Set([
+                      'General',
+                      serviceGroup,
+                      ...services.filter(s => s.category === serviceCategory).map(s => s.group || 'General'),
+                      ...customGroups.filter(cg => cg.category === serviceCategory).map(cg => cg.name)
+                    ])).filter(Boolean).map(g => (
+                      <option key={g} value={g}>{g}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Angle & Hook *</label>
+                  <input
+                    type="text" required value={serviceAngle} onChange={e => setServiceAngle(e.target.value)}
+                    placeholder="e.g. Instant remote bypass with permanent unlocking keys"
+                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Details & Key Words *</label>
+                  <textarea
+                    required value={serviceFocus} onChange={e => setServiceFocus(e.target.value)} rows={4}
+                    placeholder="Provide focus points for the AI, e.g.: support iOS 17/18, permanent server bypass, clean unlocks, official unlock portal url: https://unlock.org"
+                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500 font-sans"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox" id="serviceActive" checked={serviceIsActive} onChange={e => setServiceIsActive(e.target.checked)}
+                    className="w-3.5 h-3.5 text-brand-500 bg-dark-950 border-dark-750 rounded"
+                  />
+                  <label htmlFor="serviceActive" className="text-[10px] font-bold text-dark-300 cursor-pointer select-none">
+                    Activate in rotation queue
+                  </label>
+                </div>
+
+                <div className="flex items-center gap-2 pt-4 border-t border-dark-850">
+                  <button
+                    type="button"
+                    onClick={() => setShowServiceModal(false)}
+                    className="flex-1 py-2 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white rounded-lg text-[10px] font-bold transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actionLoading}
+                    className="flex-1 py-2 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold transition-all flex items-center justify-center gap-1.5 shadow-md shadow-brand-500/10"
+                  >
+                    {actionLoading ? <Loader2 className="animate-spin h-3.5 w-3.5" /> : 'Save Service'}
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div className="text-[8px] text-dark-500 text-center border-t border-dark-850 pt-3 mt-6">
+              SmartCampaign Dispatch Service Drawer
+            </div>
           </div>
-        </div>
+        </>
       )}
 
       {/* DIAGNOSTIC TRIGGER POST MODAL */}
