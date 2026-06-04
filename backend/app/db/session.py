@@ -181,6 +181,9 @@ async def create_db_tables() -> None:
             await conn.execute(text("ALTER TABLE campaign_logs ADD COLUMN IF NOT EXISTS device_type VARCHAR DEFAULT 'Desktop'"))
             await conn.execute(text("ALTER TABLE campaign_logs ADD COLUMN IF NOT EXISTS link_clicks TEXT DEFAULT '{}'"))
             await conn.execute(text("ALTER TABLE campaign_logs ADD COLUMN IF NOT EXISTS error_code VARCHAR"))
+            
+            # telegram_services group column upgrade
+            await conn.execute(text("ALTER TABLE telegram_services ADD COLUMN IF NOT EXISTS \"group\" VARCHAR DEFAULT 'General'"))
     except Exception as e:
         print(f"DB feature upgrades migration warning (non-fatal): {e}")
 

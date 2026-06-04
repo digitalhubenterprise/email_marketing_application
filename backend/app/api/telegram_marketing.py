@@ -135,6 +135,7 @@ async def create_service(
         user_id=current_user.id,
         title=payload.title.strip(),
         category=payload.category.strip(),
+        group=payload.group.strip() if payload.group else "General",
         focus=payload.focus.strip(),
         angle=payload.angle.strip(),
         active=payload.active

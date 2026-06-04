@@ -256,6 +256,7 @@ class TelegramService(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     title = Column(String, nullable=False)
     category = Column(String, nullable=False)
+    group = Column(String, default="General", nullable=True)
     focus = Column(Text, nullable=False)
     angle = Column(String, nullable=False)
     active = Column(Boolean, default=True)

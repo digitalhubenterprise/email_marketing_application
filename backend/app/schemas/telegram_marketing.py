@@ -26,6 +26,7 @@ class TelegramMarketingConfigResponse(TelegramMarketingConfigBase):
 class TelegramServiceBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
     category: str = Field(..., min_length=1, max_length=50)
+    group: Optional[str] = "General"
     focus: str = Field(..., min_length=1)
     angle: str = Field(..., min_length=1, max_length=255)
     active: bool = True
@@ -36,6 +37,7 @@ class TelegramServiceCreate(TelegramServiceBase):
 class TelegramServiceUpdate(BaseModel):
     title: Optional[str] = None
     category: Optional[str] = None
+    group: Optional[str] = None
     focus: Optional[str] = None
     angle: Optional[str] = None
     active: Optional[bool] = None
