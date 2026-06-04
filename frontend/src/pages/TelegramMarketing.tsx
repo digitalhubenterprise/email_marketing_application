@@ -1172,15 +1172,15 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
             onClick={() => setShowServiceModal(false)}
           />
           {/* Slide-in Drawer */}
-          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-dark-900/95 backdrop-blur-xl border-l border-dark-800/80 p-6 z-50 shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-white overflow-y-auto">
+          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-white dark:bg-dark-900 border-l border-dark-600 dark:border-dark-800/80 p-6 z-50 shadow-2xl dark:shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-dark-100 dark:text-white overflow-y-auto">
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-dark-800/80 pb-4">
+              <div className="flex items-center justify-between border-b border-dark-600 dark:border-dark-800/80 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 border border-brand-500/20 shadow-inner">
                     <Sliders size={16} />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                    <h3 className="text-xs font-black text-dark-100 dark:text-white uppercase tracking-wider">
                       {editingServiceId ? 'Edit Service' : 'Add Service'}
                     </h3>
                     <p className="text-[8px] font-bold text-dark-500 uppercase tracking-widest mt-0.5">
@@ -1191,7 +1191,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                 <button 
                   type="button"
                   onClick={() => setShowServiceModal(false)}
-                  className="text-dark-400 hover:text-white p-1.5 rounded-lg hover:bg-dark-850 transition-colors"
+                  className="text-dark-400 hover:text-dark-100 dark:hover:text-white p-1.5 rounded-lg hover:bg-dark-700/50 dark:hover:bg-dark-850 transition-colors"
                 >
                   ✕
                 </button>
@@ -1213,7 +1213,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                     <input
                       type="text" required value={serviceTitle} onChange={e => setServiceTitle(e.target.value)}
                       placeholder="e.g. GSM iPhone Unlocks"
-                      className="w-full pl-10 pr-4 py-2.5 bg-dark-950/45 border border-dark-700/40 rounded-xl text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 bg-dark-750 dark:bg-dark-950/40 border border-dark-600 dark:border-dark-700/40 rounded-xl text-xs text-dark-100 dark:text-white placeholder:text-dark-400 dark:placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all"
                     />
                   </div>
                 </div>
@@ -1227,7 +1227,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                     <select
                       value={serviceGroup}
                       onChange={e => setServiceGroup(e.target.value)}
-                      className="w-full pl-10 pr-9 py-2.5 bg-dark-950/45 border border-dark-700/40 rounded-xl text-xs text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all appearance-none cursor-pointer"
+                      className="w-full pl-10 pr-9 py-2.5 bg-dark-750 dark:bg-dark-950/40 border border-dark-600 dark:border-dark-700/40 rounded-xl text-xs text-dark-100 dark:text-white focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all appearance-none cursor-pointer"
                     >
                       {Array.from(new Set([
                         'General',
@@ -1235,7 +1235,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                         ...services.filter(s => s.category === serviceCategory).map(s => s.group || 'General'),
                         ...customGroups.filter(cg => cg.category === serviceCategory).map(cg => cg.name)
                       ])).filter(Boolean).map(g => (
-                        <option key={g} value={g}>{g}</option>
+                        <option key={g} value={g} className="bg-white dark:bg-dark-900 text-dark-100 dark:text-white">{g}</option>
                       ))}
                     </select>
                     <span className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dark-500 pointer-events-none text-[8px] font-black">
@@ -1253,7 +1253,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                     <input
                       type="text" required value={serviceAngle} onChange={e => setServiceAngle(e.target.value)}
                       placeholder="e.g. Instant remote bypass with permanent unlocking keys"
-                      className="w-full pl-10 pr-4 py-2.5 bg-dark-950/45 border border-dark-700/40 rounded-xl text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 bg-dark-750 dark:bg-dark-950/40 border border-dark-600 dark:border-dark-700/40 rounded-xl text-xs text-dark-100 dark:text-white placeholder:text-dark-400 dark:placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all"
                     />
                   </div>
                 </div>
@@ -1263,25 +1263,25 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                   <textarea
                     required value={serviceFocus} onChange={e => setServiceFocus(e.target.value)} rows={4}
                     placeholder="Provide focus points for the AI, e.g.: support iOS 17/18, permanent server bypass, clean unlocks, official unlock portal url: https://unlock.org"
-                    className="w-full px-4 py-2.5 bg-dark-950/45 border border-dark-700/40 rounded-xl text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-sans font-semibold transition-all"
+                    className="w-full px-4 py-2.5 bg-dark-750 dark:bg-dark-950/40 border border-dark-600 dark:border-dark-700/40 rounded-xl text-xs text-dark-100 dark:text-white placeholder:text-dark-400 dark:placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-sans font-semibold transition-all"
                   />
                 </div>
 
-                <div className="flex items-center gap-2.5 p-3.5 bg-dark-950/30 border border-dark-850 rounded-xl">
+                <div className="flex items-center gap-2.5 p-3.5 bg-dark-750/50 dark:bg-dark-950/30 border border-dark-600 dark:border-dark-850 rounded-xl">
                   <input
                     type="checkbox" id="serviceActive" checked={serviceIsActive} onChange={e => setServiceIsActive(e.target.checked)}
-                    className="w-4 h-4 text-brand-500 bg-dark-950 border-dark-750 rounded focus:ring-brand-500/20 cursor-pointer"
+                    className="w-4 h-4 text-brand-500 bg-white dark:bg-dark-950 border-dark-600 dark:border-dark-750 rounded focus:ring-brand-500/20 cursor-pointer"
                   />
-                  <label htmlFor="serviceActive" className="text-[10px] font-bold text-dark-300 cursor-pointer select-none">
+                  <label htmlFor="serviceActive" className="text-[10px] font-bold text-dark-200 dark:text-dark-300 cursor-pointer select-none">
                     Activate in rotation queue
                   </label>
                 </div>
 
-                <div className="flex items-center gap-3 pt-6 border-t border-dark-850">
+                <div className="flex items-center gap-3 pt-6 border-t border-dark-600 dark:border-dark-850">
                   <button
                     type="button"
                     onClick={() => setShowServiceModal(false)}
-                    className="flex-1 py-2.5 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white rounded-xl text-[10px] font-bold transition-all"
+                    className="flex-1 py-2.5 bg-dark-750 dark:bg-dark-900 border border-dark-600 dark:border-dark-800 hover:bg-dark-700/60 dark:hover:bg-dark-800 text-dark-100 dark:text-white rounded-xl text-[10px] font-bold transition-all"
                   >
                     Cancel
                   </button>
@@ -1300,7 +1300,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                 </div>
               </form>
             </div>
-            <div className="text-[8px] text-dark-500 text-center border-t border-dark-850/60 pt-3 mt-6 uppercase tracking-wider font-semibold">
+            <div className="text-[8px] text-dark-500 text-center border-t border-dark-600 dark:border-dark-850/60 pt-3 mt-6 uppercase tracking-wider font-semibold">
               SmartCampaign Dispatch Service Drawer
             </div>
           </div>
@@ -1316,15 +1316,15 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
             onClick={() => setShowGroupModal(false)}
           />
           {/* Slide-in Drawer */}
-          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-dark-900/95 backdrop-blur-xl border-l border-dark-800/80 p-6 z-50 shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-white">
+          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-white dark:bg-dark-900 border-l border-dark-600 dark:border-dark-800/80 p-6 z-50 shadow-2xl dark:shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-dark-100 dark:text-white">
             <div className="space-y-6">
-              <div className="flex items-center justify-between border-b border-dark-800/80 pb-4">
+              <div className="flex items-center justify-between border-b border-dark-600 dark:border-dark-800/80 pb-4">
                 <div className="flex items-center gap-2.5">
                   <div className="h-8 w-8 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 border border-brand-500/20 shadow-inner">
                     <FolderPlus size={16} />
                   </div>
                   <div>
-                    <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                    <h3 className="text-xs font-black text-dark-100 dark:text-white uppercase tracking-wider">
                       Create New Group
                     </h3>
                     <p className="text-[8px] font-bold text-dark-500 uppercase tracking-widest mt-0.5">
@@ -1335,16 +1335,16 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                 <button 
                   type="button"
                   onClick={() => setShowGroupModal(false)}
-                  className="text-dark-400 hover:text-white p-1.5 rounded-lg hover:bg-dark-850 transition-colors"
+                  className="text-dark-400 hover:text-dark-100 dark:hover:text-white p-1.5 rounded-lg hover:bg-dark-700/50 dark:hover:bg-dark-850 transition-colors"
                 >
                   ✕
                 </button>
               </div>
 
-              <div className="p-3.5 bg-brand-500/5 border border-brand-500/10 rounded-xl flex gap-3 text-[10px] items-start leading-relaxed text-dark-300">
+              <div className="p-3.5 bg-brand-500/5 border border-brand-500/10 rounded-xl flex gap-3 text-[10px] items-start leading-relaxed text-dark-200 dark:text-dark-300">
                 <Info size={14} className="shrink-0 text-brand-400 mt-0.5" />
                 <div>
-                  <span className="font-bold text-white block">Group Folder Scope</span>
+                  <span className="font-bold text-dark-100 dark:text-white block">Group Folder Scope</span>
                   This folder categorizes rotation service items inside the <strong className="text-brand-400 font-extrabold">{targetGroupCategory}</strong> category tab.
                 </div>
               </div>
@@ -1378,16 +1378,16 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                       value={newGroupName}
                       onChange={(e) => setNewGroupName(e.target.value)}
                       placeholder="e.g. USA AT&T Carrier Unlocks"
-                      className="w-full pl-10 pr-4 py-2.5 bg-dark-950/45 border border-dark-700/40 rounded-xl text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all"
+                      className="w-full pl-10 pr-4 py-2.5 bg-dark-750 dark:bg-dark-950/40 border border-dark-600 dark:border-dark-700/40 rounded-xl text-xs text-dark-100 dark:text-white placeholder:text-dark-400 dark:placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all"
                     />
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-3 pt-6 border-t border-dark-850">
+                <div className="flex items-center gap-3 pt-6 border-t border-dark-600 dark:border-dark-850">
                   <button
                     type="button"
                     onClick={() => setShowGroupModal(false)}
-                    className="flex-1 py-2.5 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white rounded-xl text-[10px] font-bold transition-all"
+                    className="flex-1 py-2.5 bg-dark-750 dark:bg-dark-900 border border-dark-600 dark:border-dark-800 hover:bg-dark-700/60 dark:hover:bg-dark-800 text-dark-100 dark:text-white rounded-xl text-[10px] font-bold transition-all"
                   >
                     Cancel
                   </button>
@@ -1401,7 +1401,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                 </div>
               </form>
             </div>
-            <div className="text-[8px] text-dark-500 text-center border-t border-dark-850/60 pt-3 uppercase tracking-wider font-semibold">
+            <div className="text-[8px] text-dark-500 text-center border-t border-dark-600 dark:border-dark-850/60 pt-3 uppercase tracking-wider font-semibold">
               SmartCampaign Dispatch Node Group Management
             </div>
           </div>
