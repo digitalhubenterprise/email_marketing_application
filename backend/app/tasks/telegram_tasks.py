@@ -17,26 +17,91 @@ async def get_next_service(db, user_id: int, active_services: list) -> TelegramS
     if not active_services:
         return None
         
-    # Get last successful dispatch log to find which service was run last
+    # Group active services by category (case-insensitive check)
+    imei_services = [s for s in active_services if s.category.lower() == "imei service"]
+    server_services = [s for s in active_services if s.category.lower() == "server service"]
+    remote_services = [s for s in active_services if s.category.lower() == "remote service"]
+
+    # 1. Fetch total count of successful Telegram posts for this user
+    count_query = (
+        select(func.count())
+        .select_from(TelegramLog)
+        .where(TelegramLog.user_id == user_id, TelegramLog.status == "Success")
+    )
+    count_res = await db.execute(count_query)
+    total_success = count_res.scalar() or 0
+
+    # 2. Sequence definition: 2 IMEI, 3 Server, 2 Remote (total cycle length = 7)
+    CYCLE_CATEGORIES = [
+        "IMEI Service",   # 0
+        "IMEI Service",   # 1
+        "Server Service", # 2
+        "Server Service", # 3
+        "Server Service", # 4
+        "Remote Service", # 5
+        "Remote Service"  # 6
+    ]
+
+    cycle_index = total_success % 7
+    target_category = None
+
+    # Check for active services in categories, falling back to the next in the cycle if empty
+    for i in range(7):
+        candidate_idx = (cycle_index + i) % 7
+        candidate_cat = CYCLE_CATEGORIES[candidate_idx]
+        
+        if candidate_cat == "IMEI Service" and imei_services:
+            target_category = "IMEI Service"
+            break
+        elif candidate_cat == "Server Service" and server_services:
+            target_category = "Server Service"
+            break
+        elif candidate_cat == "Remote Service" and remote_services:
+            target_category = "Remote Service"
+            break
+
+    # If all targeted categories are empty, check if we have any other active services
+    if not target_category:
+        if active_services:
+            # Fallback to the first active service if none matches the standard categories
+            return active_services[0]
+        return None
+
+    # Determine which services list to use
+    if target_category == "IMEI Service":
+        cat_services = imei_services
+    elif target_category == "Server Service":
+        cat_services = server_services
+    else:
+        cat_services = remote_services
+
+    # Sort the services to ensure deterministic rotation order
+    cat_services = sorted(cat_services, key=lambda s: (s.id or 0, s.title.lower()))
+
+    # 3. Find the last successfully posted service in this specific category to decide next
     last_log_query = (
         select(TelegramLog)
-        .where(TelegramLog.user_id == user_id, TelegramLog.status == "Success")
+        .where(
+            TelegramLog.user_id == user_id,
+            TelegramLog.status == "Success",
+            func.lower(TelegramLog.category) == target_category.lower()
+        )
         .order_by(TelegramLog.timestamp.desc())
         .limit(1)
     )
     res = await db.execute(last_log_query)
     last_log = res.scalars().first()
-    
+
     if not last_log:
-        return active_services[0]
-        
-    # Attempt to match title of last run
-    for idx, s in enumerate(active_services):
+        return cat_services[0]
+
+    # Attempt to match title of last run within this category
+    for idx, s in enumerate(cat_services):
         if s.title.lower() == last_log.service_title.lower():
-            next_idx = (idx + 1) % len(active_services)
-            return active_services[next_idx]
-            
-    return active_services[0]
+            next_idx = (idx + 1) % len(cat_services)
+            return cat_services[next_idx]
+
+    return cat_services[0]
 
 # Security Guard - inspect copy for leakage
 def contains_leakage(text: str, config: TelegramMarketingConfig) -> tuple[bool, str]:
