@@ -33,7 +33,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
 
   return (
     <aside className={`
-      w-64 bg-dark-800 border-r border-dark-700/50 flex flex-col h-screen fixed top-0 z-50
+      w-64 bg-dark-800 dark:bg-dark-900/70 dark:backdrop-blur-md border-r border-dark-700/50 flex flex-col h-screen fixed top-0 z-50
       transition-transform duration-300 ease-in-out
       ${isOpen ? "translate-x-0" : "-translate-x-full"}
       lg:translate-x-0 lg:left-0 lg:z-40
@@ -74,7 +74,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
             className={({ isActive }) => `
               flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
               ${isActive 
-                ? 'brand-gradient-bg text-white shadow-sm shadow-brand-500/10' 
+                ? 'brand-gradient-bg text-white shadow-sm shadow-brand-500/10 dark:shadow-md dark:shadow-brand-500/25' 
                 : 'text-dark-300 dark:text-dark-400 hover:text-dark-100 dark:hover:text-dark-50 hover:bg-dark-700/50 dark:hover:bg-dark-700/30'}
             `}
           >

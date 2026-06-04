@@ -36,7 +36,12 @@ export default function Layout() {
   const isNudgeActive = quotaPercent >= 80;
 
   return (
-    <div className="flex min-h-screen bg-dark-950 relative overflow-x-hidden">
+    <div className="flex min-h-screen bg-dark-950 relative overflow-x-hidden z-0">
+      {/* Ambient background glow blobs - Only visible in dark mode */}
+      <div className="hidden dark:block absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] rounded-full bg-brand-500/8 blur-[150px] pointer-events-none -z-10" />
+      <div className="hidden dark:block absolute bottom-[-15%] left-[-10%] w-[50vw] h-[50vw] rounded-full bg-indigo-500/5 blur-[130px] pointer-events-none -z-10" />
+      <div className="hidden dark:block absolute top-[40%] left-[30%] w-[35vw] h-[35vw] rounded-full bg-emerald-500/3 blur-[120px] pointer-events-none -z-10" />
+
       {/* Side bar */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
