@@ -460,3 +460,22 @@ select option {
 .dark .border-dark-900\/20 { border-color: rgba(26, 28, 46, 0.2) !important; }
 .dark .border-dark-900\/10 { border-color: rgba(26, 28, 46, 0.1) !important; }
 
+/* Additional border-dark-700/25 overrides */
+:root .border-dark-700\/25 { border-color: rgba(241, 245, 249, 0.25) !important; }
+.dark .border-dark-700\/25 { border-color: rgba(65, 68, 103, 0.25) !important; }
+
+/* divide-y layout table border opacity overrides */
+:root .divide-dark-750\/30 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(248, 250, 252, 0.3) !important; }
+.dark .divide-dark-750\/30 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(56, 64, 93, 0.3) !important; }
+
+:root .divide-dark-700\/10 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(241, 245, 249, 0.1) !important; }
+.dark .divide-dark-700\/10 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(65, 68, 103, 0.1) !important; }
+
+:root .divide-dark-850\/60 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(248, 250, 252, 0.6) !important; }
+.dark .divide-dark-850\/60 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(37, 40, 69, 0.6) !important; }
+
+:root .divide-dark-800\/30 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.3) !important; }
+.dark .divide-dark-800\/30 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(48, 51, 79, 0.3) !important; }
+
+:root .divide-dark-800\/20 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.2) !important; }
+.dark .divide-dark-800\/20 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(48, 51, 79, 0.2) !important; }
