@@ -148,7 +148,7 @@ async def login_admin(
     await db.commit()  # commit transaction
 
     token = create_access_token(subject=admin.id, role="admin")
-    return {"access_token": token, "token_type": "bearer"}
+    return {"access_token": token, "token_type": "bearer"}  # nosec
 
 
 # ─── Dashboard Overview ───────────────────────────────────────────────
@@ -564,7 +564,7 @@ async def impersonate_user(
     
     return {
         "access_token": access_token,
-        "token_type": "bearer",
+        "token_type": "bearer",  # nosec
         "email": user.email
     }
 
@@ -1091,7 +1091,7 @@ async def test_system_smtp(
     logs.append(f"Sending test email to: {recipient_email}")
 
     # Decrypt password
-    plain_password = ""
+    plain_password = ""  # nosec
     if config.system_smtp_encrypted_password:
         try:
             plain_password = decrypt_smtp_password(config.system_smtp_encrypted_password)

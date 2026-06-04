@@ -47,11 +47,11 @@ class Settings(BaseSettings):
         # Detect production environment
         is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
         if is_production:
-            if self.JWT_SECRET == "supersecretjwtkeyfor_smartcampaign_sass_2026":
+            if self.JWT_SECRET == "supersecretjwtkeyfor_smartcampaign_sass_2026":  # nosec
                 raise ValueError("JWT_SECRET must be changed from default value in production environment.")
-            if self.ENCRYPTION_KEY == "gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=":
+            if self.ENCRYPTION_KEY == "gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=":  # nosec
                 raise ValueError("ENCRYPTION_KEY must be changed from default value in production environment.")
-            if self.ADMIN_REGISTRATION_SECRET == "supersecretadmininvitekey2026":
+            if self.ADMIN_REGISTRATION_SECRET == "supersecretadmininvitekey2026":  # nosec
                 raise ValueError("ADMIN_REGISTRATION_SECRET must be changed from default value in production environment.")
         return self
 

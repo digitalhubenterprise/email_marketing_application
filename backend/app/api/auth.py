@@ -116,7 +116,7 @@ async def login(
             detail="Account has been disabled. Please contact support.",
         )
 
-    return {"access_token": create_access_token(subject=user.id, role="user"), "token_type": "bearer"}
+    return {"access_token": create_access_token(subject=user.id, role="user"), "token_type": "bearer"}  # nosec
 
 
 # ─── Current User ─────────────────────────────────────────────────────
