@@ -624,111 +624,13 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           )
         )}
 
-        {showGroupModal && (
-          <>
-            {/* Backdrop */}
-            <div 
-              className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300"
-              onClick={() => setShowGroupModal(false)}
-            />
-            {/* Slide-in Drawer */}
-            <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-dark-900/95 backdrop-blur-xl border-l border-dark-800/80 p-6 z-50 shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-white">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between border-b border-dark-800/80 pb-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="h-8 w-8 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 border border-brand-500/20 shadow-inner">
-                      <FolderPlus size={16} />
-                    </div>
-                    <div>
-                      <h3 className="text-xs font-black text-white uppercase tracking-wider">
-                        Create New Group
-                      </h3>
-                      <p className="text-[8px] font-bold text-dark-500 uppercase tracking-widest mt-0.5">
-                        Dynamic Categorization
-                      </p>
-                    </div>
-                  </div>
-                  <button 
-                    type="button"
-                    onClick={() => setShowGroupModal(false)}
-                    className="text-dark-400 hover:text-white p-1.5 rounded-lg hover:bg-dark-850 transition-colors"
-                  >
-                    ✕
-                  </button>
-                </div>
-
-                <div className="p-3.5 bg-brand-500/5 border border-brand-500/10 rounded-xl flex gap-3 text-[10px] items-start leading-relaxed text-dark-300">
-                  <Info size={14} className="shrink-0 text-brand-400 mt-0.5" />
-                  <div>
-                    <span className="font-bold text-white block">Group Folder Scope</span>
-                    This folder categorizes rotation service items inside the <strong className="text-brand-400 font-extrabold">{targetCategory}</strong> category tab.
-                  </div>
-                </div>
-                
-                <form onSubmit={(e) => {
-                  e.preventDefault();
-                  const trimmed = newGroupName.trim();
-                  if (!trimmed) return;
-                  
-                  // Add to custom groups directly so it appears in the tab
-                  setCustomGroups(prev => {
-                    if (prev.some(cg => cg.category === targetCategory && cg.name === trimmed)) {
-                      return prev;
-                    }
-                    return [...prev, { category: targetCategory, name: trimmed }];
-                  });
-                  
-                  setShowGroupModal(false);
-                  setNewGroupName('');
-                }} className="space-y-4">
-                  <div className="space-y-1">
-                    <label className="text-[9px] font-bold text-dark-400 uppercase tracking-widest block">Group Name *</label>
-                    <div className="relative">
-                      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dark-500">
-                        <Folder size={14} />
-                      </span>
-                      <input
-                        type="text"
-                        required
-                        autoFocus
-                        value={newGroupName}
-                        onChange={(e) => setNewGroupName(e.target.value)}
-                        placeholder="e.g. USA AT&T Carrier Unlocks"
-                        className="w-full pl-10 pr-4 py-2.5 bg-dark-950/45 border border-dark-700/40 rounded-xl text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center gap-3 pt-6 border-t border-dark-850">
-                    <button
-                      type="button"
-                      onClick={() => setShowGroupModal(false)}
-                      className="flex-1 py-2.5 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white rounded-xl text-[10px] font-bold transition-all"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 py-2.5 brand-gradient-bg hover:opacity-95 text-white rounded-xl text-[10px] font-bold shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all flex items-center justify-center gap-1.5"
-                    >
-                      <FolderPlus size={12} />
-                      <span>Create Group</span>
-                    </button>
-                  </div>
-                </form>
-              </div>
-              <div className="text-[8px] text-dark-500 text-center border-t border-dark-850/60 pt-3 uppercase tracking-wider font-semibold">
-                SmartCampaign Dispatch Node Group Management
-              </div>
-            </div>
-          </>
-        )}
       </div>
     );
   };
 
   return (
-    <div className="space-y-4 animate-fadeIn">
+    <>
+      <div className="space-y-4 animate-fadeIn">
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes slideInFromRight {
           from { transform: translateX(100%); }
@@ -1215,6 +1117,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
         </div>
       )}
 
+      </div>
+
       {/* SERVICE MODAL -> SERVICE DRAWER */}
       {showServiceModal && (
         <>
@@ -1359,6 +1263,107 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
         </>
       )}
 
+      {/* GROUP MODAL -> GROUP DRAWER */}
+      {showGroupModal && (
+        <>
+          {/* Backdrop */}
+          <div 
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 transition-opacity duration-300"
+            onClick={() => setShowGroupModal(false)}
+          />
+          {/* Slide-in Drawer */}
+          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-dark-900/95 backdrop-blur-xl border-l border-dark-800/80 p-6 z-50 shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-white">
+            <div className="space-y-6">
+              <div className="flex items-center justify-between border-b border-dark-800/80 pb-4">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 border border-brand-500/20 shadow-inner">
+                    <FolderPlus size={16} />
+                  </div>
+                  <div>
+                    <h3 className="text-xs font-black text-white uppercase tracking-wider">
+                      Create New Group
+                    </h3>
+                    <p className="text-[8px] font-bold text-dark-500 uppercase tracking-widest mt-0.5">
+                      Dynamic Categorization
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  type="button"
+                  onClick={() => setShowGroupModal(false)}
+                  className="text-dark-400 hover:text-white p-1.5 rounded-lg hover:bg-dark-850 transition-colors"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="p-3.5 bg-brand-500/5 border border-brand-500/10 rounded-xl flex gap-3 text-[10px] items-start leading-relaxed text-dark-300">
+                <Info size={14} className="shrink-0 text-brand-400 mt-0.5" />
+                <div>
+                  <span className="font-bold text-white block">Group Folder Scope</span>
+                  This folder categorizes rotation service items inside the <strong className="text-brand-400 font-extrabold">{targetGroupCategory}</strong> category tab.
+                </div>
+              </div>
+              
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                const trimmed = newGroupName.trim();
+                if (!trimmed) return;
+                
+                // Add to custom groups directly so it appears in the tab
+                setCustomGroups(prev => {
+                  if (prev.some(cg => cg.category === targetGroupCategory && cg.name === trimmed)) {
+                    return prev;
+                  }
+                  return [...prev, { category: targetGroupCategory, name: trimmed }];
+                });
+                
+                setShowGroupModal(false);
+                setNewGroupName('');
+              }} className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-widest block">Group Name *</label>
+                  <div className="relative">
+                    <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-dark-500">
+                      <Folder size={14} />
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      autoFocus
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      placeholder="e.g. USA AT&T Carrier Unlocks"
+                      className="w-full pl-10 pr-4 py-2.5 bg-dark-950/45 border border-dark-700/40 rounded-xl text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/20 font-semibold transition-all"
+                    />
+                  </div>
+                </div>
+                
+                <div className="flex items-center gap-3 pt-6 border-t border-dark-850">
+                  <button
+                    type="button"
+                    onClick={() => setShowGroupModal(false)}
+                    className="flex-1 py-2.5 bg-dark-900 border border-dark-800 hover:bg-dark-800 text-white rounded-xl text-[10px] font-bold transition-all"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="flex-1 py-2.5 brand-gradient-bg hover:opacity-95 text-white rounded-xl text-[10px] font-bold shadow-md shadow-brand-500/10 hover:shadow-brand-500/25 transition-all flex items-center justify-center gap-1.5"
+                  >
+                    <FolderPlus size={12} />
+                    <span>Create Group</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+            <div className="text-[8px] text-dark-500 text-center border-t border-dark-850/60 pt-3 uppercase tracking-wider font-semibold">
+              SmartCampaign Dispatch Node Group Management
+            </div>
+          </div>
+        </>
+      )}
+
       {/* DIAGNOSTIC TRIGGER POST MODAL */}
       {showTriggerModal && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -1408,6 +1413,6 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
