@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../App'
 import { 
   Send, Plus, Trash2, Edit, Shield, Play, Eye, EyeOff, 
@@ -52,6 +53,7 @@ interface TelegramMarketingProps {
 
 export default function TelegramMarketing({ defaultTab = 'dashboard' }: TelegramMarketingProps) {
   const { token } = useAuth();
+  const navigate = useNavigate();
   
   // Page Tab state
   const [activeTab, setActiveTab] = useState<'dashboard' | 'imei' | 'server' | 'remote' | 'logs' | 'settings'>(defaultTab);
@@ -694,10 +696,10 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
       </div>
 
       {/* Tabs Menu Navigation */}
-      <div className="flex border-b border-dark-800 gap-1.5">
+      <div className="flex border-b border-dark-800 gap-1.5 overflow-x-auto scrollbar-none pb-px">
         <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 ${
+          onClick={() => navigate('/telegram-marketing')}
+          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'dashboard'
               ? 'border-brand-500 text-white'
               : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
@@ -707,8 +709,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           <span>Dashboard</span>
         </button>
         <button
-          onClick={() => setActiveTab('imei')}
-          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 ${
+          onClick={() => navigate('/telegram-marketing/imei')}
+          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'imei'
               ? 'border-brand-500 text-white'
               : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
@@ -718,8 +720,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           <span>IMEI Service</span>
         </button>
         <button
-          onClick={() => setActiveTab('server')}
-          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 ${
+          onClick={() => navigate('/telegram-marketing/server')}
+          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'server'
               ? 'border-brand-500 text-white'
               : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
@@ -729,8 +731,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           <span>Server Service</span>
         </button>
         <button
-          onClick={() => setActiveTab('remote')}
-          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 ${
+          onClick={() => navigate('/telegram-marketing/remote')}
+          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'remote'
               ? 'border-brand-500 text-white'
               : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
@@ -740,8 +742,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           <span>Remote Service</span>
         </button>
         <button
-          onClick={() => setActiveTab('logs')}
-          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 ${
+          onClick={() => navigate('/telegram-marketing/logs')}
+          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'logs'
               ? 'border-brand-500 text-white'
               : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'
@@ -751,8 +753,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           <span>Logs & Trace</span>
         </button>
         <button
-          onClick={() => setActiveTab('settings')}
-          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 ${
+          onClick={() => navigate('/telegram-marketing/settings')}
+          className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'settings'
               ? 'border-brand-500 text-white'
               : 'border-transparent text-dark-400 hover:text-white hover:border-dark-700'

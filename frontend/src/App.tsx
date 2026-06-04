@@ -277,6 +277,8 @@ export default function App() {
           <Route path="telegram-marketing/imei" element={<TelegramMarketing defaultTab="imei" />} />
           <Route path="telegram-marketing/server" element={<TelegramMarketing defaultTab="server" />} />
           <Route path="telegram-marketing/remote" element={<TelegramMarketing defaultTab="remote" />} />
+          <Route path="telegram-marketing/logs" element={<TelegramMarketing defaultTab="logs" />} />
+          <Route path="telegram-marketing/settings" element={<TelegramMarketing defaultTab="settings" />} />
         </Route>
 
         {/* Super Admin Center Protected Routes */}
