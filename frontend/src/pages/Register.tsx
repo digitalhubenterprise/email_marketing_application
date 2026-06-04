@@ -64,8 +64,22 @@ export default function Register() {
           navigate("/login");
         }
       } else {
-        const errData = await regResponse.json();
-        setError(errData.detail || "Registration failed. Try a different email.");
+        let errorMsg = "Registration failed. Try a different email.";
+        try {
+          const errData = await regResponse.json();
+          if (errData && errData.detail) {
+            if (typeof errData.detail === "string") {
+              errorMsg = errData.detail;
+            } else if (Array.isArray(errData.detail)) {
+              errorMsg = errData.detail.map((err: any) => err.msg).join(", ");
+            } else {
+              errorMsg = String(errData.detail);
+            }
+          }
+        } catch (e) {
+          errorMsg = `Server error (${regResponse.status}). Please try again later.`;
+        }
+        setError(errorMsg);
       }
     } catch (err) {
       setError("Network connection issue. Please check API server status.");

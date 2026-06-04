@@ -32,8 +32,22 @@ export default function Login() {
         const data = await response.json();
         await login(data.access_token);
       } else {
-        const errData = await response.json();
-        setError(errData.detail || "Incorrect email or password");
+        let errorMsg = "Incorrect email or password";
+        try {
+          const errData = await response.json();
+          if (errData && errData.detail) {
+            if (typeof errData.detail === "string") {
+              errorMsg = errData.detail;
+            } else if (Array.isArray(errData.detail)) {
+              errorMsg = errData.detail.map((err: any) => err.msg).join(", ");
+            } else {
+              errorMsg = String(errData.detail);
+            }
+          }
+        } catch (e) {
+          errorMsg = `Server error (${response.status}). Please try again later.`;
+        }
+        setError(errorMsg);
       }
     } catch (err) {
       setError("Network connection issue. Please check API server status.");

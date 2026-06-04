@@ -28,15 +28,36 @@ export default function AdminLogin() {
         body: formData,
       });
 
-      const data = await response.json();
-
       if (response.ok) {
+        let data;
+        try {
+          data = await response.json();
+        } catch (e) {
+          setError("Failed to parse server response.");
+          setLoading(false);
+          return;
+        }
         localStorage.setItem('admin_token', data.access_token);
         localStorage.setItem('admin_email', email);
         localStorage.setItem('admin_role', email === 'admin@gmail.com' ? 'master_admin' : 'support');
         navigate('/admin');
       } else {
-        setError(data.detail || 'Access Denied: Invalid credentials.');
+        let errorMsg = 'Access Denied: Invalid credentials.';
+        try {
+          const errData = await response.json();
+          if (errData && errData.detail) {
+            if (typeof errData.detail === "string") {
+              errorMsg = errData.detail;
+            } else if (Array.isArray(errData.detail)) {
+              errorMsg = errData.detail.map((err: any) => err.msg).join(", ");
+            } else {
+              errorMsg = String(errData.detail);
+            }
+          }
+        } catch (e) {
+          errorMsg = `Server error (${response.status}).`;
+        }
+        setError(errorMsg);
       }
     } catch (err) {
       console.error(err);
