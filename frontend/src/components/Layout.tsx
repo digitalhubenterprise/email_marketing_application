@@ -98,6 +98,16 @@ export default function Layout() {
 
           {/* Quota Indicators */}
           <div className="flex items-center gap-5">
+            <button
+              onClick={toggleTheme}
+              className="p-1.5 rounded-lg border border-dark-700/50 bg-dark-800 text-dark-400 hover:text-dark-100 hover:bg-dark-750 transition-all shadow-sm"
+              title={theme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
+            >
+              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+            </button>
+
+            <div className="h-6 w-[1px] bg-dark-700/40" />
+
             <div className="flex flex-col items-end gap-1">
               <div className="flex items-center gap-1.5 text-[10px] text-dark-400">
                 <Mail size={10} className="text-brand-400" />
@@ -111,14 +121,6 @@ export default function Layout() {
                 />
               </div>
             </div>
-
-            <button
-              onClick={toggleTheme}
-              className="p-1.5 rounded-lg border border-dark-700/50 bg-dark-800 text-dark-400 hover:text-dark-100 hover:bg-dark-750 transition-all shadow-sm"
-              title={theme === 'light' ? "Switch to Dark Mode" : "Switch to Light Mode"}
-            >
-              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
-            </button>
 
             <div className="h-6 w-[1px] bg-dark-700/40" />
 
