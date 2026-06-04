@@ -69,3 +69,10 @@ logs/
 htmlcov/
 .pytest_cache/
 .mypy_cache/
+
+# ─── Celery ─────────────────────────────────────────────────
+celerybeat-schedule
+celerybeat-schedule.db
+backend/celerybeat-schedule
+backend/celerybeat-schedule.db
+

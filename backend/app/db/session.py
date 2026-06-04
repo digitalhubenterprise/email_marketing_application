@@ -197,8 +197,9 @@ async def create_db_tables() -> None:
             await conn.execute(
                 text("CREATE RULE block_admin_audit_logs_delete AS ON DELETE TO admin_audit_logs DO INSTEAD NOTHING")
             )
-    except Exception:
-        pass
+    except Exception as e:
+        # Expected duplicate rule exception if already created
+        _ = e
 
     try:
         async with engine.begin() as conn:
@@ -206,8 +207,9 @@ async def create_db_tables() -> None:
             await conn.execute(
                 text("CREATE RULE block_admin_audit_logs_update AS ON UPDATE TO admin_audit_logs DO INSTEAD NOTHING")
             )
-    except Exception:
-        pass
+    except Exception as e:
+        # Expected duplicate rule exception if already created
+        _ = e
 
     # Auto-insert default system configuration (id=1) if not exists
     try:

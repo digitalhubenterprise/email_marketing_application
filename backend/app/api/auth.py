@@ -189,7 +189,8 @@ async def verify_bep20_transaction(tx_hash: str, expected_amount: float) -> tupl
     if tx_hash.startswith("MOCK_TXN_") or tx_hash.startswith("TXN-") or not tx_hash:
         return True, expected_amount, "Simulated BEP20 receipt accepted."
         
-    import urllib.request
+    import aiohttp
+    import asyncio
     import json
     
     rpc_urls = [
@@ -203,42 +204,46 @@ async def verify_bep20_transaction(tx_hash: str, expected_amount: float) -> tupl
     
     for url in rpc_urls:
         try:
-            req = urllib.request.Request(
-                url,
-                data=json.dumps({
-                    "jsonrpc": "2.0",
-                    "method": "eth_getTransactionReceipt",
-                    "params": [tx_hash],
-                    "id": 1
-                }).encode("utf-8"),
-                headers={"Content-Type": "application/json"},
-                method="POST"
-            )
-            with urllib.request.urlopen(req, timeout=5) as response:
-                res_data = json.loads(response.read().decode())
-                if res_data and "result" in res_data and res_data["result"]:
-                    receipt = res_data["result"]
-                    if receipt.get("status") != "0x1":
-                        return False, 0.0, "Transaction was reverted on the blockchain."
-                    
-                    logs = receipt.get("logs", [])
-                    transfer_log = None
-                    for log in logs:
-                        topics = log.get("topics", [])
-                        if (log.get("address", "").lower() == usdt_contract.lower() and
-                            len(topics) >= 3 and
-                            topics[0] == transfer_topic and
-                            topics[2].lower() == merchant_topic.lower()):
-                            transfer_log = log
-                            break
-                    
-                    if transfer_log:
-                        raw_val = int(transfer_log.get("data", "0x0"), 16)
-                        amount = raw_val / 1e18
-                        return True, amount, f"Verified transfer of {amount} USDT."
-                    else:
-                        return False, 0.0, "Transaction does not match merchant address transfer log."
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    url,
+                    json={
+                        "jsonrpc": "2.0",
+                        "method": "eth_getTransactionReceipt",
+                        "params": [tx_hash],
+                        "id": 1
+                    },
+                    timeout=aiohttp.ClientTimeout(total=5)
+                ) as response:
+                    if response.status == 200:
+                        res_data = await response.json()
+                        if res_data and "result" in res_data and res_data["result"]:
+                            receipt = res_data["result"]
+                            if receipt.get("status") != "0x1":
+                                return False, 0.0, "Transaction was reverted on the blockchain."
+                            
+                            logs = receipt.get("logs", [])
+                            transfer_log = None
+                            for log in logs:
+                                topics = log.get("topics", [])
+                                if (log.get("address", "").lower() == usdt_contract.lower() and
+                                    len(topics) >= 3 and
+                                    topics[0] == transfer_topic and
+                                    topics[2].lower() == merchant_topic.lower()):
+                                    transfer_log = log
+                                    break
+                            
+                            if transfer_log:
+                                raw_val = int(transfer_log.get("data", "0x0"), 16)
+                                amount = raw_val / 1e18
+                                return True, amount, f"Verified transfer of {amount} USDT."
+                            else:
+                                return False, 0.0, "Transaction does not match merchant address transfer log."
+        except (aiohttp.ClientError, asyncio.TimeoutError):
+            continue
         except Exception as e:
+            import logging
+            logging.getLogger("app.api.auth").warning("Unexpected transaction check error: %s", e)
             continue
             
     return False, 0.0, "Transaction could not be verified on the BSC network."
@@ -372,16 +377,19 @@ async def setup_two_factor(
     db: AsyncSession = Depends(get_db)
 ):
     """Generates a secure offline TOTP seed and mock QR code URI for authenticator linkage."""
-    secret = "SMARTCAMPAIGNSECRET2026BASE32KEY"
     try:
         import pyotp
-        secret = pyotp.random_base32()
-        provision_url = pyotp.totp.TOTP(secret).provisioning_uri(
-            name=current_user.email,
-            issuer_name="SmartCampaign"
-        )
     except ImportError:
-        provision_url = f"otpauth://totp/SmartCampaign:{current_user.email}?secret={secret}&issuer=SmartCampaign"
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="MFA library (pyotp) is not installed on the server."
+        )
+    
+    secret = pyotp.random_base32()
+    provision_url = pyotp.totp.TOTP(secret).provisioning_uri(
+        name=current_user.email,
+        issuer_name="SmartCampaign"
+    )
 
     return {
         "secret": secret,
@@ -396,15 +404,16 @@ async def enable_two_factor(
     db: AsyncSession = Depends(get_db)
 ):
     """Verifies the TOTP code and turns on MFA protection on the account."""
-    verified = False
     try:
         import pyotp
-        totp = pyotp.TOTP(payload.secret)
-        verified = totp.verify(payload.code)
     except ImportError:
-        verified = payload.code.isdigit() and len(payload.code) == 6
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="MFA library (pyotp) is not installed on the server."
+        )
 
-    if not verified:
+    totp = pyotp.TOTP(payload.secret)
+    if not totp.verify(payload.code):
         raise HTTPException(status_code=400, detail="Invalid 2FA verification token.")
 
     current_user.two_factor_secret = payload.secret
@@ -413,6 +422,7 @@ async def enable_two_factor(
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
 
 
 @router.post("/2fa/disable", response_model=UserResponse)

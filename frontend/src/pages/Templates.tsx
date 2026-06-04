@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react'
+import DOMPurify from 'dompurify'
 import { useAuth } from '../App'
 import { 
   FileText, 
@@ -763,7 +764,7 @@ export default function Templates() {
                         {/* Block preview rendering content */}
                         <div className="text-[11px] text-white">
                           {b.type === "text" && (
-                            <div dangerouslySetInnerHTML={{ __html: b.content || "<p style='color:#a0aec0;'>[Double-click right editor to write text...]</p>" }} />
+                            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(b.content || "<p style='color:#a0aec0;'>[Double-click right editor to write text...]</p>") }} />
                           )}
                           {b.type === "button" && (
                             <div className="flex justify-center my-1.5">
@@ -798,15 +799,15 @@ export default function Templates() {
                           )}
                           {b.type === "two-col" && (
                             <div className="grid grid-cols-2 gap-2 bg-dark-900/30 p-2 rounded-lg border border-dark-800">
-                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col1Content || "Column 1" }} />
-                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col2Content || "Column 2" }} />
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(b.col1Content || "Column 1") }} />
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(b.col2Content || "Column 2") }} />
                             </div>
                           )}
                           {b.type === "three-col" && (
                             <div className="grid grid-cols-3 gap-2 bg-dark-900/30 p-2 rounded-lg border border-dark-800">
-                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col1Content || "Column 1" }} />
-                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col2Content || "Column 2" }} />
-                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: b.col3Content || "Column 3" }} />
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(b.col1Content || "Column 1") }} />
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(b.col2Content || "Column 2") }} />
+                              <div className="p-1 border border-dashed border-dark-750/30 rounded text-[9.5px]" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(b.col3Content || "Column 3") }} />
                             </div>
                           )}
                         </div>

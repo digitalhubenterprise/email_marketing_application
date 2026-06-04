@@ -42,7 +42,7 @@ def parse_merge_tags(template: str, contact: Contact) -> str:
     if contact.custom_fields:
         try:
             custom_data = json.loads(contact.custom_fields)
-        except Exception:
+        except json.JSONDecodeError:
             pass
 
     # Match {{key}} or {{key | "fallback"}} or {{key | 'fallback'}}
@@ -122,7 +122,7 @@ async def handle_bounce(db, contact: Contact, smtp_server: SMTPServer, code: int
         if contact.custom_fields:
             try:
                 custom_data = json.loads(contact.custom_fields)
-            except Exception:
+            except json.JSONDecodeError:
                 pass
         soft_bounces = custom_data.get("soft_bounces", 0) + 1
         custom_data["soft_bounces"] = soft_bounces
@@ -245,8 +245,9 @@ async def async_send_campaign(campaign_id: int) -> None:
                 await db.refresh(campaign)
                 if campaign.status != "sending":
                     break
-            except Exception:
-                pass
+            except Exception as e:
+                import logging
+                logging.getLogger("app.tasks.email_sender").warning("Could not refresh campaign status during loop: %s", e)
 
             # Global hourly rate limit throttle guard (check on startup and every 10 sends)
             if processed_in_run == 0 or processed_in_run % 10 == 0:
@@ -355,8 +356,9 @@ async def async_send_campaign(campaign_id: int) -> None:
         # 8. Clean disconnect
         try:
             await smtp_client.quit()
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger("app.tasks.email_sender").debug("SMTP client connection close error: %s", e)
 
         # If we successfully sent the A/B testing subset, pause and schedule evaluator in 2 hours
         if is_ab_test and campaign.status == "sending":

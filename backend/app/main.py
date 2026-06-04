@@ -106,8 +106,9 @@ async def check_maintenance_mode(request: Request, call_next) -> Response:
                             "maintenance": True
                         }
                     )
-            except Exception:
-                pass
+            except Exception as e:
+                # Fallback to normal behavior if DB connection fails during check
+                _ = e
 
     return await call_next(request)
 

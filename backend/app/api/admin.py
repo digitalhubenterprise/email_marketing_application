@@ -920,8 +920,9 @@ async def force_cancel_campaign(
     # Revoke active tasks from celery workers pool if possible
     try:
         celery.control.purge()
-    except Exception:
-        pass
+    except Exception as e:
+        import logging
+        logging.getLogger("app.api.admin").warning("Failed to purge celery control queue: %s", e)
 
     await log_audit(
         db,
@@ -957,8 +958,9 @@ async def flag_campaign_spam(
     # Revoke Celery tasks
     try:
         celery.control.purge()
-    except Exception:
-        pass
+    except Exception as e:
+        import logging
+        logging.getLogger("app.api.admin").warning("Failed to purge celery tasks on spam flag: %s", e)
 
     await log_audit(
         db,
@@ -1159,8 +1161,9 @@ async def test_system_smtp(
 
         try:
             await smtp_client.quit()
-        except Exception:
-            pass
+        except Exception as e:
+            import logging
+            logging.getLogger("app.api.admin").debug("SMTP client connection close error: %s", e)
 
         return {"success": False, "logs": logs, "error": error_msg}
 
@@ -1229,8 +1232,9 @@ async def get_system_diagnostics(
             diagnostics["redis"]["ping_latency_ms"] = round(latency, 2)
             try:
                 diagnostics["redis"]["dbsize"] = r_client.dbsize()
-            except Exception:
-                pass
+            except Exception as e:
+                import logging
+                logging.getLogger("app.api.admin").warning("Failed to query Redis dbsize: %s", e)
         else:
             diagnostics["redis"]["error"] = "Redis server ping failed."
     except Exception as e:

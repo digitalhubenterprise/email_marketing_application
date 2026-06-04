@@ -103,7 +103,7 @@ async def track_email_click(
             if log.link_clicks:
                 try:
                     clicks = json.loads(log.link_clicks)
-                except Exception:
+                except json.JSONDecodeError:
                     pass
             clicks[url] = clicks.get(url, 0) + 1
             log.link_clicks = json.dumps(clicks)
