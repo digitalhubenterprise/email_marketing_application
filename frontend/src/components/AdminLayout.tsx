@@ -118,7 +118,7 @@ export default function AdminLayout() {
 
   const menuItems = [
     { to: "/admin", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
-    { to: "/admin/users", icon: <Users size={18} />, label: "CRM Users Control" },
+    { to: "/admin/users", icon: <Users size={18} />, label: "Members" },
     { to: "/admin/campaigns", icon: <Activity size={18} />, label: "Campaign Monitoring" },
     { to: "/admin/billing", icon: <CreditCard size={18} />, label: "Billing & Plans" },
     { to: "/admin/settings", icon: <Settings size={18} />, label: "Settings & System" },
