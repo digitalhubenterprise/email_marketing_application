@@ -1036,19 +1036,24 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Bot Token */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-dark-400 uppercase tracking-wider">Telegram Bot Token</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-dark-400 uppercase tracking-wider">Telegram Bot Token</label>
+                    {hasBotToken && (
+                      <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wider">✓ Configured</span>
+                    )}
+                  </div>
                   <div className="relative">
                     <input
                       type={showBotToken ? "text" : "password"}
                       value={botToken}
                       onChange={(e) => setBotToken(e.target.value)}
                       placeholder={hasBotToken ? "••••••••••••••••••••••••" : "e.g. 123456:ABC-DEF..."}
-                      className="w-full pl-3.5 pr-9 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500"
+                      className="w-full pl-3.5 pr-9 py-2 bg-dark-750 dark:bg-dark-950/45 border border-dark-600 dark:border-dark-700/40 rounded-lg text-xs text-dark-100 dark:text-white placeholder:text-dark-400 dark:placeholder:text-dark-600 focus:outline-none focus:border-brand-500 font-semibold"
                     />
                     <button
                       type="button"
                       onClick={() => setShowBotToken(prev => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-100 dark:hover:text-white"
                     >
                       {showBotToken ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
@@ -1057,19 +1062,24 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
 
                 {/* Groq Key */}
                 <div className="flex flex-col gap-1">
-                  <label className="text-[10px] font-bold text-dark-400 uppercase tracking-wider">Groq Cloud API Key</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-[10px] font-bold text-dark-400 uppercase tracking-wider">Groq Cloud API Key</label>
+                    {hasGroqKey && (
+                      <span className="text-[8px] font-black text-emerald-500 uppercase tracking-wider">✓ Configured</span>
+                    )}
+                  </div>
                   <div className="relative">
                     <input
                       type={showGroqKey ? "text" : "password"}
                       value={groqKey}
                       onChange={(e) => setGroqKey(e.target.value)}
                       placeholder={hasGroqKey ? "••••••••••••••••••••••••" : "e.g. gsk_abc123..."}
-                      className="w-full pl-3.5 pr-9 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500"
+                      className="w-full pl-3.5 pr-9 py-2 bg-dark-750 dark:bg-dark-950/45 border border-dark-600 dark:border-dark-700/40 rounded-lg text-xs text-dark-100 dark:text-white placeholder:text-dark-400 dark:placeholder:text-dark-600 focus:outline-none focus:border-brand-500 font-semibold"
                     />
                     <button
                       type="button"
                       onClick={() => setShowGroqKey(prev => !prev)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-100 dark:hover:text-white"
                     >
                       {showGroqKey ? <EyeOff size={13} /> : <Eye size={13} />}
                     </button>
@@ -1087,7 +1097,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                     value={channel}
                     onChange={(e) => setChannel(e.target.value)}
                     placeholder="e.g. @my_carrier_unlocks"
-                    className="w-full px-3.5 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500"
+                    className="w-full px-3.5 py-2 bg-dark-750 dark:bg-dark-950/45 border border-dark-600 dark:border-dark-700/40 rounded-lg text-xs text-dark-100 dark:text-white placeholder:text-dark-400 dark:placeholder:text-dark-600 focus:outline-none focus:border-brand-500 font-semibold"
                   />
                 </div>
 
@@ -1125,7 +1135,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                   value={websiteUrl}
                   onChange={(e) => setWebsiteUrl(e.target.value)}
                   placeholder="e.g. iPhoneUnlock.org"
-                  className="w-full px-3.5 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500"
+                  className="w-full px-3.5 py-2 bg-dark-750 dark:bg-dark-950/45 border border-dark-600 dark:border-dark-700/40 rounded-lg text-xs text-dark-100 dark:text-white placeholder:text-dark-400 dark:placeholder:text-dark-600 focus:outline-none focus:border-brand-500 font-semibold"
                 />
               </div>
 
