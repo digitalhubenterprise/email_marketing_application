@@ -38,7 +38,24 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailTab, setDetailTab] = useState<'campaigns' | 'payments'>('campaigns');
-  const [drawerTab, setDrawerTab] = useState<'details' | 'logs' | 'actions'>('details');
+  const [drawerTab, setDrawerTab] = useState<'details' | 'logs' | 'financial' | 'actions'>('details');
+
+  // Financial page/tab states
+  const [txType, setTxType] = useState<'add_fund' | 'rebate' | 'overdrive'>('add_fund');
+  const [txAmount, setTxAmount] = useState('0');
+  const [txPlanTier, setTxPlanTier] = useState('pro');
+  const [txStatus, setTxStatus] = useState<'pending' | 'paid'>('paid');
+  const [txDueDays, setTxDueDays] = useState('30');
+  const [txCustomDate, setTxCustomDate] = useState('');
+  const [txCustomDays, setTxCustomDays] = useState('');
+  const [txGateway, setTxGateway] = useState('Stripe');
+  const [txId, setTxId] = useState('');
+  const [txFees, setTxFees] = useState('0');
+  const [txValidity, setTxValidity] = useState('0');
+  const [txAdminNote, setTxAdminNote] = useState('');
+  const [txUserNote, setTxUserNote] = useState('');
+  const [txSendMail, setTxSendMail] = useState(false);
+  const [submittingFinancial, setSubmittingFinancial] = useState(false);
 
   const [showOverrideModal, setShowOverrideModal] = useState(false);
   const [overrideTier, setOverrideTier] = useState('pro');
@@ -131,6 +148,21 @@ export default function AdminUsers() {
   const handleUserClick = async (userId: number) => {
     setDetailsLoading(true);
     setDrawerTab('details');
+    // Reset financial states
+    setTxType('add_fund');
+    setTxAmount('0');
+    setTxStatus('paid');
+    setTxDueDays('30');
+    setTxCustomDate('');
+    setTxCustomDays('');
+    setTxGateway('Stripe');
+    setTxId('');
+    setTxFees('0');
+    setTxValidity('0');
+    setTxAdminNote('');
+    setTxUserNote('');
+    setTxSendMail(false);
+
     const token = localStorage.getItem("admin_token");
     try {
       const res = await fetch(`/api/admin/users/${userId}`, {
@@ -139,11 +171,72 @@ export default function AdminUsers() {
       if (res.ok) {
         const data = await res.json();
         setSelectedUser(data);
+        setTxPlanTier(data.subscription_tier || 'pro');
       }
     } catch (err) {
       console.error(err);
     } finally {
       setDetailsLoading(false);
+    }
+  };
+
+  const handleFinancialSubmit = async () => {
+    if (!selectedUser) return;
+    const amountVal = parseInt(txAmount, 10);
+    if (isNaN(amountVal) || amountVal <= 0) {
+      alert("Please enter a valid positive amount.");
+      return;
+    }
+
+    setSubmittingFinancial(true);
+    const token = localStorage.getItem("admin_token");
+    
+    // Calculate due days display string
+    let dueDaysStr = txDueDays;
+    if (txDueDays === 'custom_date') {
+      dueDaysStr = `Date: ${txCustomDate}`;
+    } else if (txDueDays === 'custom_days') {
+      dueDaysStr = `${txCustomDays} days`;
+    }
+
+    // Build structured notes
+    const formattedNotes = `User Note: ${txUserNote || 'N/A'} | Admin Note: ${txAdminNote || 'N/A'} | TXID: ${txId || 'N/A'} | Fees: ${txFees || '0'} | Validity: ${txValidity === '0' ? 'Lifetime' : txValidity + ' days'} | Due: ${dueDaysStr} | Mail: ${txSendMail ? 'Yes' : 'No'}`;
+
+    try {
+      const payload = {
+        user_email: selectedUser.email,
+        amount: amountVal,
+        currency: "USD",
+        plan_tier: txPlanTier,
+        gateway: txGateway,
+        status: txStatus,
+        action_type: txType,
+        notes: formattedNotes
+      };
+
+      const res = await fetch("/api/admin/payments", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        alert("Financial transaction recorded successfully.");
+        // Refresh selected user data to reload payments list and update current balance
+        await handleUserClick(selectedUser.id);
+        fetchUsers();
+      } else {
+        const errorData = await res.json();
+        alert(`Error: ${errorData.detail || "Failed to record transaction."}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to submit financial transaction.");
+    } finally {
+      setSubmittingFinancial(false);
     }
   };
 
@@ -291,7 +384,8 @@ export default function AdminUsers() {
   const totalPages = Math.ceil(total / limit);
 
   return (
-    <div className="space-y-2 animate-fadeIn text-slate-800">
+    <>
+      <div className="space-y-2 animate-fadeIn text-slate-800">
       {/* Directory Filter Cockpit */}
       <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end -mt-3">
         {/* Search */}
@@ -468,19 +562,21 @@ export default function AdminUsers() {
         </div>
       </div>
 
+      </div>
+
       {/* Drawer Panel */}
       {(selectedUser || detailsLoading) && (
         <>
           {/* Backdrop */}
           <div 
-            className="fixed -top-8 -right-8 -bottom-8 -left-8 bg-slate-900/40 backdrop-blur-[2px] z-[42] animate-fadeIn" 
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] z-[42] animate-fadeIn" 
             onClick={() => {
               if (!detailsLoading) setSelectedUser(null);
             }} 
           />
           
           {/* Drawer container */}
-          <div className="fixed -top-8 -right-8 -bottom-8 w-full md:w-3/4 bg-white shadow-2xl z-[45] border-l border-slate-200 flex flex-col justify-between p-6 animate-slideInRight text-slate-800">
+          <div className="absolute top-0 right-0 bottom-0 w-full md:w-3/4 bg-white shadow-2xl z-[45] border-l border-slate-200 flex flex-col justify-between p-6 animate-slideInRight text-slate-800">
             {/* Close Button */}
             <button 
               onClick={() => setSelectedUser(null)} 
@@ -527,6 +623,14 @@ export default function AdminUsers() {
                       }`}
                     >
                       Logs
+                    </button>
+                    <button
+                      onClick={() => setDrawerTab('financial')}
+                      className={`pb-2 transition-all relative ${
+                        drawerTab === 'financial' ? 'text-brand-600 border-b-2 border-brand-500 font-extrabold' : 'hover:text-slate-700'
+                      }`}
+                    >
+                      Financial
                     </button>
                     <button
                       onClick={() => setDrawerTab('actions')}
@@ -634,6 +738,329 @@ export default function AdminUsers() {
                         </div>
                       </div>
                     )}
+
+                    {drawerTab === 'financial' && (() => {
+                      const paidPayments = selectedUser.payments || [];
+                      const currentBalance = 25.40 + paidPayments
+                        .filter((p: any) => p.status === 'paid' && p.notes && !p.notes.startsWith("[OVERDRIVE]"))
+                        .reduce((sum: number, p: any) => sum + p.amount, 0);
+
+                      return (
+                        <div className="space-y-4 py-2 animate-fadeIn text-slate-800">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Financial Actions</h4>
+                          
+                          {/* Transaction Type Selector */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Transaction Type
+                            </label>
+                            <div className="grid grid-cols-3 gap-2 bg-slate-100 p-1 rounded-xl">
+                              <button
+                                type="button"
+                                onClick={() => setTxType('add_fund')}
+                                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                  txType === 'add_fund'
+                                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                              >
+                                Add Credit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTxType('rebate')}
+                                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                  txType === 'rebate'
+                                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                              >
+                                Rebate Credit
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setTxType('overdrive')}
+                                className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                  txType === 'overdrive'
+                                    ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                                    : 'text-slate-500 hover:text-slate-800'
+                                }`}
+                              >
+                                Overdrive
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Amount and Target Plan Tier */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                {txType === 'overdrive' ? 'Overdrive Amount' : txType === 'rebate' ? 'Rebate Amount' : 'Add Amount'} (USD)
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                required
+                                value={txAmount}
+                                onChange={(e) => setTxAmount(e.target.value)}
+                                placeholder="0"
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Target Plan Tier
+                              </label>
+                              <select
+                                value={txPlanTier}
+                                onChange={(e) => setTxPlanTier(e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              >
+                                <option value="free">Free</option>
+                                <option value="pro">Pro</option>
+                                <option value="business">Business</option>
+                                <option value="enterprise">Enterprise</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Real-time Overdrive calculation display */}
+                          <div className="bg-slate-50 p-3.5 border border-slate-150 rounded-xl space-y-1.5 text-xs text-slate-600 font-medium">
+                            <div className="flex justify-between items-center">
+                              <span>Credit (Current Balance):</span>
+                              <span className="font-mono font-bold text-slate-900">${currentBalance.toFixed(2)}</span>
+                            </div>
+                            <div className="flex justify-between items-center mt-1">
+                              <span>{txType === 'rebate' ? 'Deduct Amount' : 'Put Amount'}:</span>
+                              <span className={`font-mono font-bold ${txType === 'rebate' ? 'text-rose-600' : 'text-brand-600'}`}>
+                                {txType === 'rebate' ? '-' : '+'}${(parseFloat(txAmount) || 0).toFixed(2)}
+                              </span>
+                            </div>
+                            <div className="border-t border-slate-200/80 my-2 pt-2 flex justify-between items-center text-slate-900 font-bold">
+                              <span>Total Balance:</span>
+                              <span className="font-mono text-sm text-emerald-600">
+                                ${(currentBalance + (txType === 'rebate' ? -(parseFloat(txAmount) || 0) : (parseFloat(txAmount) || 0))).toFixed(2)}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Invoice & Status Selection */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Invoice Status
+                              </label>
+                              <div className="grid grid-cols-2 gap-2 bg-slate-100 p-1 rounded-xl">
+                                <button
+                                  type="button"
+                                  onClick={() => setTxStatus('pending')}
+                                  className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    txStatus === 'pending'
+                                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                                      : 'text-slate-500 hover:text-slate-800'
+                                  }`}
+                                >
+                                  Generate Invoice
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setTxStatus('paid')}
+                                  className={`py-1.5 text-xs font-bold rounded-lg transition-all ${
+                                    txStatus === 'paid'
+                                      ? 'bg-white text-slate-900 shadow-sm border border-slate-200'
+                                      : 'text-slate-500 hover:text-slate-800'
+                                  }`}
+                                >
+                                  Paid
+                                </button>
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Due Days
+                              </label>
+                              <select
+                                value={txDueDays}
+                                onChange={(e) => setTxDueDays(e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              >
+                                <option value="1">1 Day</option>
+                                <option value="2">2 Days</option>
+                                <option value="5">5 Days</option>
+                                <option value="7">7 Days</option>
+                                <option value="15">15 Days</option>
+                                <option value="30">30 Days</option>
+                                <option value="custom_date">Custom Date</option>
+                                <option value="custom_days">Custom Days</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          {/* Custom date/days input */}
+                          {txDueDays === 'custom_date' && (
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Custom Due Date
+                              </label>
+                              <input
+                                type="date"
+                                required
+                                value={txCustomDate}
+                                onChange={(e) => setTxCustomDate(e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              />
+                            </div>
+                          )}
+
+                          {txDueDays === 'custom_days' && (
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Custom Due Days
+                              </label>
+                              <input
+                                type="number"
+                                min="1"
+                                required
+                                value={txCustomDays}
+                                onChange={(e) => setTxCustomDays(e.target.value)}
+                                placeholder="Enter days..."
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              />
+                            </div>
+                          )}
+
+                          {/* Payment Gateway and Transaction ID */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Payment Gateway
+                              </label>
+                              <select
+                                value={txGateway}
+                                onChange={(e) => setTxGateway(e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              >
+                                <option value="Stripe">Stripe</option>
+                                <option value="bKash">bKash</option>
+                                <option value="Nagad">Nagad</option>
+                                <option value="Rocket">Rocket</option>
+                                <option value="Binance Pay">Binance Pay</option>
+                                <option value="USDT TRC20">USDT TRC20</option>
+                                <option value="USDT BEP20">USDT BEP20</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Transaction ID
+                              </label>
+                              <input
+                                type="text"
+                                value={txId}
+                                onChange={(e) => setTxId(e.target.value)}
+                                placeholder="Enter transaction reference ID..."
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              />
+                            </div>
+                          </div>
+
+                          {/* Fees and Validity */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Fees (USD)
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                value={txFees}
+                                onChange={(e) => setTxFees(e.target.value)}
+                                placeholder="0"
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                Credit Balance Validity
+                              </label>
+                              <input
+                                type="number"
+                                min="0"
+                                required
+                                value={txValidity}
+                                onChange={(e) => setTxValidity(e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              />
+                              <span className="text-[9px] text-slate-400 font-semibold block mt-1">
+                                0 - (Life Time) , # - No of days
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Notes */}
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Admin Note
+                            </label>
+                            <textarea
+                              value={txAdminNote}
+                              onChange={(e) => setTxAdminNote(e.target.value)}
+                              placeholder="Internal administrative note..."
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold font-sans"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              User Note
+                            </label>
+                            <textarea
+                              value={txUserNote}
+                              onChange={(e) => setTxUserNote(e.target.value)}
+                              placeholder="Notes visible to the user..."
+                              rows={2}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold font-sans"
+                            />
+                          </div>
+
+                          {/* Mail Notification */}
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              id="sendMail"
+                              checked={txSendMail}
+                              onChange={(e) => setTxSendMail(e.target.checked)}
+                              className="rounded text-brand-600 focus:ring-brand-500 h-4 w-4 bg-slate-50 border-slate-300"
+                            />
+                            <label htmlFor="sendMail" className="text-xs font-bold text-slate-700 select-none">
+                              Send Financial Information Via Mail
+                            </label>
+                          </div>
+
+                          {/* Submit Button */}
+                          <button
+                            type="button"
+                            onClick={handleFinancialSubmit}
+                            disabled={submittingFinancial}
+                            className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-500/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                          >
+                            {submittingFinancial ? (
+                              <>
+                                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                                Adding...
+                              </>
+                            ) : (
+                              'Add'
+                            )}
+                          </button>
+                        </div>
+                      );
+                    })()}
 
                     {drawerTab === 'actions' && (
                       <div className="space-y-3 py-2 animate-fadeIn">
@@ -948,6 +1375,6 @@ export default function AdminUsers() {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 }
