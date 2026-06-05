@@ -98,7 +98,11 @@ export default function Wallet() {
               const isOverdrive = p.notes && p.notes.startsWith("[OVERDRIVE]");
               return isPaid && !isOverdrive;
             })
-            .reduce((sum: number, p: any) => sum + p.amount, 0);
+            .reduce((sum: number, p: any) => {
+              const isRebate = p.notes && p.notes.startsWith("[REBATE]");
+              const amt = isRebate ? -Math.abs(p.amount) : p.amount;
+              return sum + amt;
+            }, 0);
 
           setBalance(25.40 + paidSum);
 

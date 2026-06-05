@@ -768,7 +768,7 @@ export default function AdminBilling() {
                                 <span className="text-slate-900 font-extrabold">{parsed.validity}</span>
                               </div>
                             )}
-                            {parsed.due && parsed.due !== '30' && (
+                             {parsed.due && parsed.due !== '30' && parsed.due !== 'N/A' && (
                               <div className="flex justify-between border-b border-slate-100 pb-1.5">
                                 <span className="text-slate-400 font-bold">Due Terms:</span>
                                 <span className="text-slate-900 font-extrabold">{parsed.due}</span>

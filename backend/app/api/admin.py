@@ -612,10 +612,14 @@ async def create_payment_entry(
     # Store dynamic details in notes
     notes_val = f"[{action_type.upper()}] {pay_in.notes or ''}".strip()
 
+    amount_val = pay_in.amount
+    if action_type == "rebate":
+        amount_val = -abs(amount_val)
+
     new_payment = PaymentLog(
         user_id=user_id,
         user_email=pay_in.user_email,
-        amount=pay_in.amount,
+        amount=amount_val,
         currency=pay_in.currency,
         plan_tier=pay_in.plan_tier,
         gateway=pay_in.gateway,

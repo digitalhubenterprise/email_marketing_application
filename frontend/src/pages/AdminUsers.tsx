@@ -746,7 +746,11 @@ export default function AdminUsers() {
                       const paidPayments = selectedUser.payments || [];
                       const currentBalance = 25.40 + paidPayments
                         .filter((p: any) => p.status === 'paid' && p.notes && !p.notes.startsWith("[OVERDRIVE]"))
-                        .reduce((sum: number, p: any) => sum + p.amount, 0);
+                        .reduce((sum: number, p: any) => {
+                          const isRebate = p.notes && p.notes.startsWith("[REBATE]");
+                          const amt = isRebate ? -Math.abs(p.amount) : p.amount;
+                          return sum + amt;
+                        }, 0);
 
                       return (
                         <div className="space-y-4 py-2 animate-fadeIn text-slate-800">
