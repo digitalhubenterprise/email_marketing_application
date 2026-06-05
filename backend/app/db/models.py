@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, Float, String, Boolean, DateTime, ForeignKey, Text
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -223,7 +223,7 @@ class PaymentLog(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     user_email = Column(String, nullable=False)
-    amount = Column(Integer, nullable=False)  # flat BDT or USD amount
+    amount = Column(Float, nullable=False)  # flat BDT or USD amount
     currency = Column(String, default="USD")  # USD, BDT
     plan_tier = Column(String, nullable=False)
     gateway = Column(String, default="bKash")  # bKash, Stripe, Bank Transfer

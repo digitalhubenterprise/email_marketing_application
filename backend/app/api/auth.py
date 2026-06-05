@@ -324,7 +324,7 @@ async def submit_payment(
     new_payment = PaymentLog(
         user_id=current_user.id,
         user_email=current_user.email,
-        amount=int(payload.amount),
+        amount=float(payload.amount),
         currency=payload.currency,
         plan_tier=payload.plan_tier,
         gateway=payload.gateway,

@@ -182,7 +182,7 @@ export default function AdminUsers() {
 
   const handleFinancialSubmit = async () => {
     if (!selectedUser) return;
-    const rawAmount = parseInt(txAmount, 10);
+    const rawAmount = parseFloat(txAmount);
     if (isNaN(rawAmount) || rawAmount <= 0) {
       alert("Please enter a valid positive amount.");
       return;
@@ -806,11 +806,12 @@ export default function AdminUsers() {
                               </label>
                               <input
                                 type="number"
-                                min="1"
+                                min="0.01"
+                                step="any"
                                 required
                                 value={txAmount}
                                 onChange={(e) => setTxAmount(e.target.value)}
-                                placeholder="0"
+                                placeholder="0.00"
                                 className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
                               />
                             </div>

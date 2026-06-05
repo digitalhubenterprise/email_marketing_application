@@ -1170,9 +1170,11 @@ export default function AdminBilling() {
                   </label>
                   <input
                     type="number"
+                    min="0.01"
+                    step="any"
                     required
                     value={fundAmount}
-                    onChange={(e) => setFundAmount(parseInt(e.target.value))}
+                    onChange={(e) => setFundAmount(parseFloat(e.target.value))}
                     placeholder="Enter transaction volume..."
                     className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-emerald-500 font-semibold"
                   />

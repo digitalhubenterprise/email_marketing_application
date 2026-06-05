@@ -97,7 +97,7 @@ class SystemConfigUpdate(BaseModel):
 
 class PaymentLogBase(BaseModel):
     user_email: EmailStr
-    amount: int
+    amount: float
     currency: str = "USD"
     plan_tier: str = "pro"
     gateway: str = "bKash"
