@@ -38,7 +38,21 @@ export default function AdminUsers() {
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [detailTab, setDetailTab] = useState<'campaigns' | 'payments'>('campaigns');
-  const [drawerTab, setDrawerTab] = useState<'details' | 'logs' | 'financial' | 'actions'>('details');
+  const [drawerTab, setDrawerTab] = useState<'profile' | 'details' | 'logs' | 'financial' | 'actions'>('profile');
+
+  // Profile page/tab states
+  const [profileUsername, setProfileUsername] = useState("");
+  const [profilePassword, setProfilePassword] = useState("");
+  const [profileSendPasswordMail, setProfileSendPasswordMail] = useState(false);
+  const [profileEmail, setProfileEmail] = useState("");
+  const [profileCompany, setProfileCompany] = useState("");
+  const [profileAddress, setProfileAddress] = useState("");
+  const [profileCountry, setProfileCountry] = useState("");
+  const [profilePhone, setProfilePhone] = useState("");
+  const [profileLanguage, setProfileLanguage] = useState("English");
+  const [profileSendProfileMail, setProfileSendProfileMail] = useState(false);
+  const [profileTimezone, setProfileTimezone] = useState("UTC");
+  const [savingProfile, setSavingProfile] = useState(false);
 
   // Financial page/tab states
   const [txType, setTxType] = useState<'add_fund' | 'rebate' | 'overdrive'>('add_fund');
@@ -147,7 +161,7 @@ export default function AdminUsers() {
 
   const handleUserClick = async (userId: number) => {
     setDetailsLoading(true);
-    setDrawerTab('details');
+    setDrawerTab('profile');
     // Reset financial states
     setTxType('add_fund');
     setTxAmount('0');
@@ -172,6 +186,19 @@ export default function AdminUsers() {
         const data = await res.json();
         setSelectedUser(data);
         setTxPlanTier(data.subscription_tier || 'pro');
+
+        // Populate profile form states
+        setProfileUsername(data.username || '');
+        setProfilePassword('');
+        setProfileSendPasswordMail(false);
+        setProfileEmail(data.email || '');
+        setProfileCompany(data.company || '');
+        setProfileAddress(data.address || '');
+        setProfileCountry(data.country || '');
+        setProfilePhone(data.phone_number || '');
+        setProfileLanguage(data.language || 'English');
+        setProfileSendProfileMail(data.send_profile_email || false);
+        setProfileTimezone(data.timezone || 'UTC');
       }
     } catch (err) {
       console.error(err);
@@ -240,6 +267,54 @@ export default function AdminUsers() {
       alert("Failed to submit financial transaction.");
     } finally {
       setSubmittingFinancial(false);
+    }
+  };
+
+  const handleProfileSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedUser) return;
+
+    setSavingProfile(true);
+    const token = localStorage.getItem("admin_token");
+    try {
+      const payload = {
+        username: profileUsername,
+        email: profileEmail,
+        password: profilePassword,
+        company: profileCompany,
+        address: profileAddress,
+        country: profileCountry,
+        phone_number: profilePhone,
+        language: profileLanguage,
+        timezone: profileTimezone,
+        send_password_mail: profileSendPasswordMail,
+        send_profile_email: profileSendProfileMail
+      };
+
+      const res = await fetch(`/api/admin/users/${selectedUser.id}/profile`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (res.ok) {
+        alert("User profile updated successfully.");
+        setProfilePassword('');
+        setProfileSendPasswordMail(false);
+        await handleUserClick(selectedUser.id);
+        fetchUsers();
+      } else {
+        const errorData = await res.json();
+        alert(`Error: ${errorData.detail || "Failed to update profile."}`);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update profile details.");
+    } finally {
+      setSavingProfile(false);
     }
   };
 
@@ -612,6 +687,14 @@ export default function AdminUsers() {
                   {/* Horizontal Interactive Sliding Menu */}
                   <div className="flex border-b border-slate-200 mt-2 mb-4 gap-6 text-[10px] sm:text-xs font-bold uppercase tracking-wider text-slate-400">
                     <button
+                      onClick={() => setDrawerTab('profile')}
+                      className={`pb-2 transition-all relative ${
+                        drawerTab === 'profile' ? 'text-brand-600 border-b-2 border-brand-500 font-extrabold' : 'hover:text-slate-700'
+                      }`}
+                    >
+                      Profile
+                    </button>
+                    <button
                       onClick={() => setDrawerTab('details')}
                       className={`pb-2 transition-all relative ${
                         drawerTab === 'details' ? 'text-brand-600 border-b-2 border-brand-500 font-extrabold' : 'hover:text-slate-700'
@@ -647,6 +730,201 @@ export default function AdminUsers() {
 
                   {/* Tab Body Contents */}
                   <div className="flex-1">
+                    {drawerTab === 'profile' && selectedUser && (
+                      <form onSubmit={handleProfileSubmit} className="space-y-4 py-2 animate-fadeIn text-slate-800">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-wider mb-2">Personal Information</h4>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Username
+                            </label>
+                            <input
+                              type="text"
+                              value={profileUsername}
+                              onChange={(e) => setProfileUsername(e.target.value)}
+                              placeholder="e.g. jdoe"
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Registered E-mail
+                            </label>
+                            <input
+                              type="email"
+                              required
+                              value={profileEmail}
+                              onChange={(e) => setProfileEmail(e.target.value)}
+                              placeholder="e.g. user@domain.com"
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Password Section */}
+                        <div className="bg-slate-50 p-4 border border-slate-150 rounded-xl space-y-3">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Update Password
+                            </label>
+                            <input
+                              type="password"
+                              value={profilePassword}
+                              onChange={(e) => setProfilePassword(e.target.value)}
+                              placeholder="••••••••"
+                              className="w-full px-3 py-2 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            />
+                            <span className="text-[9px] text-slate-400 font-medium block mt-1">
+                              Leave blank to keep current password.
+                            </span>
+                          </div>
+
+                          {profilePassword.trim().length > 0 && (
+                            <div className="flex items-center gap-2 animate-fadeIn">
+                              <input
+                                type="checkbox"
+                                id="sendPasswordMail"
+                                checked={profileSendPasswordMail}
+                                onChange={(e) => setProfileSendPasswordMail(e.target.checked)}
+                                className="rounded text-brand-600 focus:ring-brand-500 h-4 w-4 bg-white border-slate-350"
+                              />
+                              <label htmlFor="sendPasswordMail" className="text-xs font-bold text-slate-700 select-none">
+                                Send Password Reset E-mail to User
+                              </label>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Company & Phone Number */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Company Name
+                            </label>
+                            <input
+                              type="text"
+                              value={profileCompany}
+                              onChange={(e) => setProfileCompany(e.target.value)}
+                              placeholder="e.g. Acme Corp"
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Phone Number
+                            </label>
+                            <input
+                              type="text"
+                              value={profilePhone}
+                              onChange={(e) => setProfilePhone(e.target.value)}
+                              placeholder="e.g. +1 555-0199"
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Address */}
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                            Address
+                          </label>
+                          <input
+                            type="text"
+                            value={profileAddress}
+                            onChange={(e) => setProfileAddress(e.target.value)}
+                            placeholder="e.g. 123 Main St, Suite 400"
+                            className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                          />
+                        </div>
+
+                        {/* Country, Language & Timezone */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Country
+                            </label>
+                            <input
+                              type="text"
+                              value={profileCountry}
+                              onChange={(e) => setProfileCountry(e.target.value)}
+                              placeholder="e.g. United States"
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Language
+                            </label>
+                            <select
+                              value={profileLanguage}
+                              onChange={(e) => setProfileLanguage(e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            >
+                              <option value="English">English</option>
+                              <option value="Bengali">Bengali</option>
+                              <option value="Spanish">Spanish</option>
+                              <option value="French">French</option>
+                              <option value="German">German</option>
+                              <option value="Arabic">Arabic</option>
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                              Time Zone
+                            </label>
+                            <select
+                              value={profileTimezone}
+                              onChange={(e) => setProfileTimezone(e.target.value)}
+                              className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                            >
+                              <option value="UTC">UTC (GMT+0)</option>
+                              <option value="Asia/Dhaka">Asia/Dhaka (GMT+6)</option>
+                              <option value="America/New_York">America/New York (GMT-5)</option>
+                              <option value="Europe/London">Europe/London (GMT+0)</option>
+                              <option value="Europe/Paris">Europe/Paris (GMT+1)</option>
+                              <option value="Asia/Dubai">Asia/Dubai (GMT+4)</option>
+                              <option value="Asia/Singapore">Asia/Singapore (GMT+8)</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        {/* Send Profile Email Check */}
+                        <div className="flex items-center gap-2 pt-2">
+                          <input
+                            type="checkbox"
+                            id="sendProfileMail"
+                            checked={profileSendProfileMail}
+                            onChange={(e) => setProfileSendProfileMail(e.target.checked)}
+                            className="rounded text-brand-600 focus:ring-brand-500 h-4 w-4 bg-slate-50 border-slate-300"
+                          />
+                          <label htmlFor="sendProfileMail" className="text-xs font-bold text-slate-700 select-none">
+                            Send Profile E-mail to User (Configuration details)
+                          </label>
+                        </div>
+
+                        {/* Save Button */}
+                        <button
+                          type="submit"
+                          disabled={savingProfile}
+                          className="w-full py-2.5 bg-brand-600 hover:bg-brand-700 text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-500/10 transition-all flex items-center justify-center gap-2 disabled:opacity-50 mt-2"
+                        >
+                          {savingProfile ? (
+                            <>
+                              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white" />
+                              Saving Profile...
+                            </>
+                          ) : (
+                            'Save'
+                          )}
+                        </button>
+                      </form>
+                    )}
+
                     {drawerTab === 'details' && (
                       <div className="space-y-5 py-2 animate-fadeIn">
                         {/* Sub Stats counts */}

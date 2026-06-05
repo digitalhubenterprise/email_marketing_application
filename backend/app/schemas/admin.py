@@ -173,4 +173,18 @@ class SubscriptionPlanResponse(SubscriptionPlanBase):
         from_attributes = True
 
 
+class UserProfileUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
+    password: Optional[str] = None
+    company: Optional[str] = None
+    address: Optional[str] = None
+    country: Optional[str] = None
+    phone_number: Optional[str] = None
+    language: Optional[str] = None
+    timezone: Optional[str] = None
+    send_password_mail: Optional[bool] = False
+    send_profile_email: Optional[bool] = False
+
+
 

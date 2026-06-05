@@ -33,7 +33,8 @@ from app.schemas.admin import (
     AdminDashboardStats,
     SubscriptionPlanCreate,
     SubscriptionPlanUpdate,
-    SubscriptionPlanResponse
+    SubscriptionPlanResponse,
+    UserProfileUpdate
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token, encrypt_smtp_password
@@ -298,6 +299,14 @@ async def get_user_details(
     return {
         "id": user.id,
         "email": user.email,
+        "username": user.username,
+        "company": user.company,
+        "address": user.address,
+        "country": user.country,
+        "phone_number": user.phone_number,
+        "language": user.language or "English",
+        "timezone": user.timezone or "UTC",
+        "send_profile_email": user.send_profile_email or False,
         "is_active": user.is_active,
         "subscription_tier": user.subscription_tier,
         "quota_limit": user.quota_limit,
@@ -535,6 +544,129 @@ async def reset_user_password(
         "email": user.email,
         "temp_password": temp_pass,
         "message": f"Password reset successfully for {user.email}."
+    }
+
+
+@router.post("/users/{user_id}/profile")
+async def update_user_profile(
+    user_id: int,
+    payload: UserProfileUpdate,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Updates user's personal profile information, handles optional email notifications and password updates."""
+    res = await db.execute(select(User).where(User.id == user_id))
+    user = res.scalars().first()
+    if not user:
+        raise HTTPException(status_code=404, detail="User account not found.")
+
+    audit_details = []
+
+    # Update basic profile details
+    if payload.username is not None:
+        user.username = payload.username
+        audit_details.append(f"username={payload.username}")
+    if payload.email is not None:
+        user.email = payload.email
+        audit_details.append(f"email={payload.email}")
+    if payload.company is not None:
+        user.company = payload.company
+        audit_details.append(f"company={payload.company}")
+    if payload.address is not None:
+        user.address = payload.address
+        audit_details.append(f"address={payload.address}")
+    if payload.country is not None:
+        user.country = payload.country
+        audit_details.append(f"country={payload.country}")
+    if payload.phone_number is not None:
+        user.phone_number = payload.phone_number
+        audit_details.append(f"phone={payload.phone_number}")
+    if payload.language is not None:
+        user.language = payload.language
+        audit_details.append(f"language={payload.language}")
+    if payload.timezone is not None:
+        user.timezone = payload.timezone
+        audit_details.append(f"timezone={payload.timezone}")
+    if payload.send_profile_email is not None:
+        user.send_profile_email = payload.send_profile_email
+        audit_details.append(f"send_profile_email={payload.send_profile_email}")
+
+    # Handle Password update
+    temp_pass = None
+    if payload.password and payload.password.strip():
+        temp_pass = payload.password.strip()
+        user.hashed_password = get_password_hash(temp_pass)
+        audit_details.append("password_updated")
+
+    await log_audit(
+        db,
+        admin_email=admin.email,
+        action_type="update_user_profile",
+        target_entity=user.email,
+        details=f"Admin updated profile details for user {user.email}. Updates: {', '.join(audit_details)}"
+    )
+    db.add(user)
+    await db.commit()
+    await db.refresh(user)
+
+    # Optional Email Notifications
+    email_sent = False
+    
+    # 1. Send Password mail if checked
+    if temp_pass and payload.send_password_mail:
+        try:
+            from app.tasks.email_sender import send_system_email_task
+            send_system_email_task.delay(
+                recipient_email=user.email,
+                subject="Your Account Password Has Been Updated",
+                html_body=f"<h1>Password Update Notification</h1><p>Your password has been updated by an administrator.</p><p>Your new password is: <strong>{temp_pass}</strong></p><p>Please log in with your updated credentials.</p>"
+            )
+            email_sent = True
+        except Exception as e:
+            print(f"Error queuing profile password notification: {e}")
+
+    # 2. Send Profile detail email if checked
+    if payload.send_profile_email:
+        try:
+            from app.tasks.email_sender import send_system_email_task
+            profile_html = f"""
+            <h1>Account Profile Details</h1>
+            <p>Your account profile details have been updated by an administrator.</p>
+            <ul>
+                <li><strong>Username:</strong> {user.username or 'N/A'}</li>
+                <li><strong>Email:</strong> {user.email}</li>
+                <li><strong>Company:</strong> {user.company or 'N/A'}</li>
+                <li><strong>Address:</strong> {user.address or 'N/A'}</li>
+                <li><strong>Country:</strong> {user.country or 'N/A'}</li>
+                <li><strong>Phone Number:</strong> {user.phone_number or 'N/A'}</li>
+                <li><strong>Language:</strong> {user.language or 'English'}</li>
+                <li><strong>Time Zone:</strong> {user.timezone or 'UTC'}</li>
+            </ul>
+            """
+            send_system_email_task.delay(
+                recipient_email=user.email,
+                subject="Your Account Profile Details Updated",
+                html_body=profile_html
+            )
+            email_sent = True
+        except Exception as e:
+            print(f"Error queuing profile email notification: {e}")
+
+    return {
+        "success": True,
+        "email_notified": email_sent,
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "username": user.username,
+            "company": user.company,
+            "address": user.address,
+            "country": user.country,
+            "phone_number": user.phone_number,
+            "language": user.language,
+            "timezone": user.timezone,
+            "send_profile_email": user.send_profile_email
+        }
     }
 
 
