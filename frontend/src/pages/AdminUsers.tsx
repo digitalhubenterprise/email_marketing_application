@@ -182,21 +182,24 @@ export default function AdminUsers() {
 
   const handleFinancialSubmit = async () => {
     if (!selectedUser) return;
-    const amountVal = parseInt(txAmount, 10);
-    if (isNaN(amountVal) || amountVal <= 0) {
+    const rawAmount = parseInt(txAmount, 10);
+    if (isNaN(rawAmount) || rawAmount <= 0) {
       alert("Please enter a valid positive amount.");
       return;
     }
+    const amountVal = txType === 'rebate' ? -rawAmount : rawAmount;
 
     setSubmittingFinancial(true);
     const token = localStorage.getItem("admin_token");
     
     // Calculate due days display string
-    let dueDaysStr = txDueDays;
-    if (txDueDays === 'custom_date') {
-      dueDaysStr = `Date: ${txCustomDate}`;
-    } else if (txDueDays === 'custom_days') {
-      dueDaysStr = `${txCustomDays} days`;
+    let dueDaysStr = txStatus === 'pending' ? txDueDays : 'N/A';
+    if (txStatus === 'pending') {
+      if (txDueDays === 'custom_date') {
+        dueDaysStr = `Date: ${txCustomDate}`;
+      } else if (txDueDays === 'custom_days') {
+        dueDaysStr = `${txCustomDays} days`;
+      }
     }
 
     // Build structured notes
@@ -846,7 +849,7 @@ export default function AdminUsers() {
                           </div>
 
                           {/* Invoice & Status Selection */}
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className={`grid grid-cols-1 ${txStatus === 'pending' ? 'md:grid-cols-2' : ''} gap-4`}>
                             <div>
                               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                                 Invoice Status
@@ -877,30 +880,32 @@ export default function AdminUsers() {
                               </div>
                             </div>
 
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
-                                Due Days
-                              </label>
-                              <select
-                                value={txDueDays}
-                                onChange={(e) => setTxDueDays(e.target.value)}
-                                className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
-                              >
-                                <option value="1">1 Day</option>
-                                <option value="2">2 Days</option>
-                                <option value="5">5 Days</option>
-                                <option value="7">7 Days</option>
-                                <option value="15">15 Days</option>
-                                <option value="30">30 Days</option>
-                                <option value="custom_date">Custom Date</option>
-                                <option value="custom_days">Custom Days</option>
-                              </select>
-                            </div>
+                            {txStatus === 'pending' && (
+                              <div className="animate-fadeIn">
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
+                                  Due Days
+                                </label>
+                                <select
+                                  value={txDueDays}
+                                  onChange={(e) => setTxDueDays(e.target.value)}
+                                  className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                                >
+                                  <option value="1">1 Day</option>
+                                  <option value="2">2 Days</option>
+                                  <option value="5">5 Days</option>
+                                  <option value="7">7 Days</option>
+                                  <option value="15">15 Days</option>
+                                  <option value="30">30 Days</option>
+                                  <option value="custom_date">Custom Date</option>
+                                  <option value="custom_days">Custom Days</option>
+                                </select>
+                              </div>
+                            )}
                           </div>
 
                           {/* Custom date/days input */}
-                          {txDueDays === 'custom_date' && (
-                            <div>
+                          {txStatus === 'pending' && txDueDays === 'custom_date' && (
+                            <div className="animate-fadeIn">
                               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                                 Custom Due Date
                               </label>
@@ -914,8 +919,8 @@ export default function AdminUsers() {
                             </div>
                           )}
 
-                          {txDueDays === 'custom_days' && (
-                            <div>
+                          {txStatus === 'pending' && txDueDays === 'custom_days' && (
+                            <div className="animate-fadeIn">
                               <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">
                                 Custom Due Days
                               </label>

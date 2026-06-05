@@ -290,7 +290,7 @@ export default function AdminBilling() {
         },
         body: JSON.stringify({
           user_email: selectedUser.email,
-          amount: fundAmount,
+          amount: fundAction === 'rebate' ? -fundAmount : fundAmount,
           currency: fundCurrency,
           plan_tier: selectedUser.subscription_tier || 'pro',
           gateway: fundGateway,
