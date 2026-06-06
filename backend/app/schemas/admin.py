@@ -156,6 +156,8 @@ class SubscriptionPlanBase(BaseModel):
     tier: str
     name: str
     price: int
+    public_price: Optional[int] = 0
+    discount: Optional[int] = 0
     quota: int
     smtp_limit: int
     validity: str = "30 Days"
@@ -168,6 +170,8 @@ class SubscriptionPlanCreate(SubscriptionPlanBase):
 class SubscriptionPlanUpdate(BaseModel):
     name: Optional[str] = None
     price: Optional[int] = None
+    public_price: Optional[int] = None
+    discount: Optional[int] = None
     quota: Optional[int] = None
     smtp_limit: Optional[int] = None
     validity: Optional[str] = None

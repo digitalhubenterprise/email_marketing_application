@@ -167,12 +167,26 @@ export default function Billing() {
               icon = <Layers className="text-indigo-400" size={16} />;
             }
 
+            // Convert cents from database to dollars
+            const costPriceUSD = p.price / 100.0;
+            const publicPriceUSD = (p.publicPrice || 0) / 100.0;
+            const discountUSD = (p.discount || 0) / 100.0;
+
+            // Logic:
+            // Logged-in user sees (Public Cost Price - discount)
+            // Guest sees Public Cost Price
+            const displayPriceNum = token ? Math.max(0, publicPriceUSD - discountUSD) : publicPriceUSD;
+            const displayPriceStr = `$${displayPriceNum.toFixed(2)}`;
+
             return {
               name: p.name,
-              price: `$${p.price.toLocaleString()}`,
-              priceNum: p.price,
+              price: displayPriceStr,
+              priceNum: displayPriceNum,
+              costPrice: costPriceUSD,
+              publicPrice: publicPriceUSD,
+              discount: discountUSD,
               desc: desc,
-              priceDetail: `Annual $${(p.price * 9).toLocaleString()}`,
+              priceDetail: displayPriceNum > 0 ? `Annual $${(displayPriceNum * 9).toFixed(2)}` : 'Always free',
               specs: [
                 { label: "Contacts", value: contactsVal },
                 { label: "Sends/mo", value: sendsVal },
@@ -196,7 +210,7 @@ export default function Billing() {
       }
     };
     fetchPlans();
-  }, []);
+  }, [token]);
 
 
   const handleUpgrade = async (tier: string, method: "wallet" | "direct", price: number) => {
@@ -436,6 +450,14 @@ export default function Billing() {
                     </div>
  
                     <div className="flex flex-col items-center justify-center py-0.5 sm:py-1 text-center">
+                      {token && p.discount > 0 && (
+                        <div className="flex items-center gap-1 mb-1">
+                          <span className="text-[10px] text-dark-500 line-through">${p.publicPrice.toFixed(2)}</span>
+                          <span className="text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-450 border border-emerald-500/20 px-1 py-0.2 rounded">
+                            Save ${p.discount.toFixed(2)}
+                          </span>
+                        </div>
+                      )}
                       <div className="flex items-baseline justify-center gap-0.5">
                         <span className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">{p.price}</span>
                         <span className="text-[8.5px] sm:text-[10px] text-dark-450 font-semibold">/ mo</span>

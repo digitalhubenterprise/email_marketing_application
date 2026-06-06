@@ -1507,6 +1507,8 @@ async def list_admin_plans(
                 tier=p.tier,
                 name=p.name,
                 price=p.price,
+                public_price=p.public_price or 0,
+                discount=p.discount or 0,
                 quota=p.quota,
                 smtp_limit=p.smtp_limit,
                 validity=p.validity,
@@ -1537,6 +1539,8 @@ async def create_subscription_plan(
         tier=tier_clean,
         name=plan_in.name.strip(),
         price=plan_in.price,
+        public_price=plan_in.public_price or 0,
+        discount=plan_in.discount or 0,
         quota=plan_in.quota,
         smtp_limit=plan_in.smtp_limit,
         validity=plan_in.validity,
@@ -1552,6 +1556,8 @@ async def create_subscription_plan(
         tier=new_plan.tier,
         name=new_plan.name,
         price=new_plan.price,
+        public_price=new_plan.public_price or 0,
+        discount=new_plan.discount or 0,
         quota=new_plan.quota,
         smtp_limit=new_plan.smtp_limit,
         validity=new_plan.validity,
@@ -1578,6 +1584,10 @@ async def update_subscription_plan(
         plan.name = plan_in.name.strip()
     if plan_in.price is not None:
         plan.price = plan_in.price
+    if plan_in.public_price is not None:
+        plan.public_price = plan_in.public_price
+    if plan_in.discount is not None:
+        plan.discount = plan_in.discount
     if plan_in.quota is not None:
         plan.quota = plan_in.quota
     if plan_in.smtp_limit is not None:
@@ -1598,6 +1608,8 @@ async def update_subscription_plan(
         tier=plan.tier,
         name=plan.name,
         price=plan.price,
+        public_price=plan.public_price or 0,
+        discount=plan.discount or 0,
         quota=plan.quota,
         smtp_limit=plan.smtp_limit,
         validity=plan.validity,

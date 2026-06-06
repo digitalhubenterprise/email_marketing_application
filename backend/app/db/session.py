@@ -207,6 +207,10 @@ async def create_db_tables() -> None:
             
             # telegram_marketing_configs website_url column upgrade
             await conn.execute(text("ALTER TABLE telegram_marketing_configs ADD COLUMN IF NOT EXISTS website_url VARCHAR DEFAULT 'iPhoneUnlock.org'"))
+            
+            # subscription_plans upgrades
+            await conn.execute(text("ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS public_price INTEGER DEFAULT 0"))
+            await conn.execute(text("ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS discount INTEGER DEFAULT 0"))
     except Exception as e:
         print(f"DB feature upgrades migration warning (non-fatal): {e}")
 
@@ -299,32 +303,34 @@ async def create_db_tables() -> None:
             if not plan_check.first():
                 default_plans = [
                     (
-                        "free", "Starter", 499, 5000, 1, "30 Days", "60s update interval",
+                        "free", "Starter", 499, 999, 500, 5000, 1, "30 Days", "60s update interval",
                         "Contacts: 1,000\nSends/mo: 5,000\nSMTP nodes: 1\nTeam seats: 1\nCampaign create + send\nCSV import\n5 starter templates\nBasic analytics\nUnsubscribe handling"
                     ),
                     (
-                        "pro", "Standard", 1199, 50000, 3, "30 Days", "45s update interval",
+                        "pro", "Standard", 1199, 2999, 1800, 50000, 3, "30 Days", "45s update interval",
                         "Contacts: 10,000\nSends/mo: 50,000\nSMTP nodes: 3\nTeam seats: 3\nAll Starter features\nScheduled sending\n20+ templates\nAdvanced analytics\nMobile preview\nDuplicate campaign"
                     ),
                     (
-                        "business", "Premium", 2499, 200000, 5, "30 Days", "30s update interval",
+                        "business", "Premium", 2499, 5999, 3500, 200000, 5, "30 Days", "30s update interval",
                         "Contacts: 50,000\nSends/mo: 200,000\nSMTP nodes: 5\nTeam seats: 10\nAll Standard features\nA/B subject testing\nCustom unsubscribe page\nCampaign export (PDF)"
                     ),
                     (
-                        "enterprise", "Enterprise", 5999, 999999999, 999999, "30 Days", "15s update interval",
+                        "enterprise", "Enterprise", 5999, 14999, 9000, 999999999, 999999, "30 Days", "15s update interval",
                         "Contacts: Unlimited\nSends/mo: Unlimited\nSMTP nodes: Unlimited\nTeam seats: Unlimited\nAll Premium features\nFull API access\nMulti-client manage\nCustom invoice"
                     )
                 ]
-                for tier, name, price, quota, smtp_limit, validity, throttle, features in default_plans:
+                for tier, name, price, public_price, discount, quota, smtp_limit, validity, throttle, features in default_plans:
                     await conn.execute(
                         text(
-                            "INSERT INTO subscription_plans (tier, name, price, quota, smtp_limit, validity, throttle, features) "
-                            "VALUES (:tier, :name, :price, :quota, :smtp_limit, :validity, :throttle, :features)"
+                            "INSERT INTO subscription_plans (tier, name, price, public_price, discount, quota, smtp_limit, validity, throttle, features) "
+                            "VALUES (:tier, :name, :price, :public_price, :discount, :quota, :smtp_limit, :validity, :throttle, :features)"
                         ),
                         {
                             "tier": tier,
                             "name": name,
                             "price": price,
+                            "public_price": public_price,
+                            "discount": discount,
                             "quota": quota,
                             "smtp_limit": smtp_limit,
                             "validity": validity,
@@ -332,6 +338,20 @@ async def create_db_tables() -> None:
                             "features": features
                         }
                     )
+            else:
+                # Seed default values for existing records if they are 0 or NULL
+                await conn.execute(
+                    text("UPDATE subscription_plans SET public_price = 999, discount = 500 WHERE tier = 'free' AND (public_price IS NULL OR public_price = 0)")
+                )
+                await conn.execute(
+                    text("UPDATE subscription_plans SET public_price = 2999, discount = 1800 WHERE tier = 'pro' AND (public_price IS NULL OR public_price = 0)")
+                )
+                await conn.execute(
+                    text("UPDATE subscription_plans SET public_price = 5999, discount = 3500 WHERE tier = 'business' AND (public_price IS NULL OR public_price = 0)")
+                )
+                await conn.execute(
+                    text("UPDATE subscription_plans SET public_price = 14999, discount = 9000 WHERE tier = 'enterprise' AND (public_price IS NULL OR public_price = 0)")
+                )
     except Exception as e:
         print(f"DB plans seeding warning (non-fatal): {e}")
 

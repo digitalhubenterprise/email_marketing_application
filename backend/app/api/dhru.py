@@ -385,7 +385,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             new_payment = PaymentLog(
                 user_id=user.id,
                 user_email=user.email,
-                amount=plan.price,
+                amount=float(plan.price) / 100.0,
                 currency="USD",
                 plan_tier=plan.tier,
                 gateway="DhruFusionAPI",

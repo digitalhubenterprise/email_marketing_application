@@ -94,6 +94,6 @@ async def test_auth_registration_and_login(client, db_session):
     payment = res.scalars().first()
     assert payment is not None
     assert payment.plan_tier == "pro"
-    assert payment.amount == 1199
+    assert payment.amount == 11.99
     assert payment.gateway == "Stripe"
     assert payment.status == "paid"

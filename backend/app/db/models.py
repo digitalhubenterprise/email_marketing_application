@@ -301,6 +301,8 @@ class SubscriptionPlan(Base):
     tier = Column(String, unique=True, index=True, nullable=False)
     name = Column(String, nullable=False)
     price = Column(Integer, nullable=False)
+    public_price = Column(Integer, nullable=True, default=0)
+    discount = Column(Integer, nullable=True, default=0)
     quota = Column(Integer, nullable=False)
     smtp_limit = Column(Integer, nullable=False)
     validity = Column(String, default="30 Days")

@@ -238,10 +238,16 @@ async def upgrade_tier(
     current_user.is_active = True
     db.add(current_user)
     
+    # Calculate amount: (public_price - discount) if configured, else fallback to standard price
+    upgrade_amount = plan.price
+    if plan.public_price and plan.public_price > 0:
+        discount_val = plan.discount or 0
+        upgrade_amount = max(0, plan.public_price - discount_val)
+        
     new_payment = PaymentLog(
         user_id=current_user.id,
         user_email=current_user.email,
-        amount=plan.price,
+        amount=float(upgrade_amount) / 100.0,
         currency="USD",
         plan_tier=tier_lower,
         gateway="Stripe",
@@ -270,6 +276,8 @@ async def list_public_plans(
             "tier": p.tier,
             "name": p.name,
             "price": p.price,
+            "publicPrice": p.public_price or 0,
+            "discount": p.discount or 0,
             "quota": p.quota,
             "smtpLimit": p.smtp_limit,
             "validity": p.validity,

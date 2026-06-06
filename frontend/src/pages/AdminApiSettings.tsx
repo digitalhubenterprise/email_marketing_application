@@ -12,7 +12,9 @@ import {
   AlertCircle,
   HelpCircle,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  History,
+  DollarSign
 } from 'lucide-react'
 
 interface DhruLog {
@@ -22,6 +24,33 @@ interface DhruLog {
   ip_address: string | null;
   status: string;
   message: string | null;
+  created_at: string;
+}
+
+interface SubscriptionPlan {
+  id: number;
+  tier: string;
+  name: string;
+  price: number;
+  public_price: number;
+  discount: number;
+  quota: number;
+  smtp_limit: number;
+  validity: string;
+  throttle: string;
+  features: string[];
+  created_at?: string;
+}
+
+interface ApiOrder {
+  id: number;
+  user_email: string;
+  amount: number;
+  currency: string;
+  plan_tier: string;
+  gateway: string;
+  status: string;
+  notes: string | null;
   created_at: string;
 }
 
@@ -37,7 +66,17 @@ export default function AdminApiSettings() {
   const [saveError, setSaveError] = useState<string | null>(null);
   
   const [copied, setCopied] = useState(false);
-  const [activeSubTab, setActiveSubTab] = useState<'credentials' | 'guide' | 'logs'>('credentials');
+  const [activeSubTab, setActiveSubTab] = useState<'credentials' | 'guide' | 'services' | 'orders' | 'logs'>('credentials');
+  
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(false);
+  const [updatingPlanTier, setUpdatingPlanTier] = useState<string | null>(null);
+  const [planPrices, setPlanPrices] = useState<{[key: string]: string}>({});
+  const [planPublicPrices, setPlanPublicPrices] = useState<{[key: string]: string}>({});
+  const [planDiscounts, setPlanDiscounts] = useState<{[key: string]: string}>({});
+
+  const [orders, setOrders] = useState<ApiOrder[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
   
   const apiEndpointUrl = `${window.location.origin}/api/dhru`;
 
@@ -78,9 +117,99 @@ export default function AdminApiSettings() {
     }
   };
 
+  const fetchPlans = async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return;
+    setPlansLoading(true);
+    try {
+      const res = await fetch('/api/admin/plans', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPlans(data);
+        const initialPrices: {[key: string]: string} = {};
+        const initialPublicPrices: {[key: string]: string} = {};
+        const initialDiscounts: {[key: string]: string} = {};
+        data.forEach((p: SubscriptionPlan) => {
+          initialPrices[p.tier] = (p.price / 100).toFixed(2);
+          initialPublicPrices[p.tier] = (p.public_price / 100).toFixed(2);
+          initialDiscounts[p.tier] = (p.discount / 100).toFixed(2);
+        });
+        setPlanPrices(prev => ({ ...initialPrices, ...prev }));
+        setPlanPublicPrices(prev => ({ ...initialPublicPrices, ...prev }));
+        setPlanDiscounts(prev => ({ ...initialDiscounts, ...prev }));
+      }
+    } catch (err) {
+      console.error('Failed to fetch subscription plans:', err);
+    } finally {
+      setPlansLoading(false);
+    }
+  };
+
+  const fetchOrders = async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return;
+    setOrdersLoading(true);
+    try {
+      const res = await fetch('/api/admin/payments?gateway=DhruFusionAPI&limit=100', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setOrders(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch API orders:', err);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const handleUpdatePlanPrices = async (
+    tier: string,
+    priceInCents: number,
+    publicPriceInCents: number,
+    discountInCents: number
+  ) => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return;
+    setUpdatingPlanTier(tier);
+    setSaveSuccess(null);
+    setSaveError(null);
+    try {
+      const res = await fetch(`/api/admin/plans/${tier}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          price: priceInCents,
+          public_price: publicPriceInCents,
+          discount: discountInCents
+        })
+      });
+      if (res.ok) {
+        setSaveSuccess(`Prices for ${tier} plan updated successfully.`);
+        fetchPlans();
+      } else {
+        const errData = await res.json();
+        setSaveError(errData.detail || 'Failed to update plan prices.');
+      }
+    } catch (err) {
+      setSaveError('Network communication error.');
+      console.error(err);
+    } finally {
+      setUpdatingPlanTier(null);
+    }
+  };
+
   useEffect(() => {
     fetchConfig();
     fetchLogs();
+    fetchPlans();
+    fetchOrders();
   }, []);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
@@ -176,6 +305,28 @@ export default function AdminApiSettings() {
         >
           <BookOpen size={14} />
           Setup Manual
+        </button>
+        <button
+          onClick={() => setActiveSubTab('services')}
+          className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 ${
+            activeSubTab === 'services'
+              ? 'border-brand-500 text-brand-500'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <Layers size={14} />
+          Services
+        </button>
+        <button
+          onClick={() => setActiveSubTab('orders')}
+          className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 ${
+            activeSubTab === 'orders'
+              ? 'border-brand-500 text-brand-500'
+              : 'border-transparent text-slate-500 hover:text-slate-900'
+          }`}
+        >
+          <History size={14} />
+          Order History
         </button>
         <button
           onClick={() => setActiveSubTab('logs')}
@@ -410,6 +561,236 @@ export default function AdminApiSettings() {
                 <li>Alternatively, create a required custom field labeled <strong>email</strong>. The listener will scan both locations to capture it.</li>
               </ul>
             </div>
+          </div>
+        </div>
+      )}
+
+
+      {/* Services Tab */}
+      {activeSubTab === 'services' && (
+        <div className="space-y-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] gap-4 animate-fadeIn">
+            <div>
+              <h3 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
+                📦 API Services & Subscriptions
+              </h3>
+              <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
+                Sync plans, view parameters and update reseller pricing for automatic activation
+              </p>
+            </div>
+            <button
+              onClick={fetchPlans}
+              disabled={plansLoading}
+              className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
+            >
+              <RefreshCw size={12} className={plansLoading ? 'animate-spin text-brand-500' : ''} />
+              Sync Plans
+            </button>
+          </div>
+
+          {plansLoading && plans.length === 0 ? (
+            <div className="py-12 flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+              <RefreshCw size={24} className="animate-spin text-brand-500" />
+              <span className="text-xs font-semibold text-slate-400">Loading catalog services...</span>
+            </div>
+          ) : plans.length === 0 ? (
+            <div className="py-12 text-center text-slate-400 font-semibold text-xs bg-white rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+              No subscription plans found in the system.
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fadeIn">
+              {plans.map((plan) => (
+                <div key={plan.id} className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col justify-between hover:shadow-lg transition-all duration-300">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[9px] font-black uppercase bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100">
+                        Tier: {plan.tier}
+                      </span>
+                      <span className="text-[10px] text-slate-400 font-bold">
+                        ID: {plan.id}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-black text-slate-800">{plan.name} Plan</h4>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
+                        API Sync Service Product
+                      </p>
+                    </div>
+                    <div className="space-y-1 text-slate-500 text-xs font-semibold pt-2 border-t border-slate-100">
+                      <div className="flex justify-between">
+                        <span>Email Quota:</span>
+                        <span className="text-slate-800 font-bold">{plan.quota.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>SMTP Nodes:</span>
+                        <span className="text-slate-800 font-bold">{plan.smtp_limit}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Validity:</span>
+                        <span className="text-slate-800 font-bold">{plan.validity}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Interval:</span>
+                        <span className="text-slate-800 font-bold">{plan.throttle}</span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mt-5 pt-4 border-t border-slate-100 space-y-3">
+                    <div className="space-y-1">
+                      <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider">
+                        API Cost Price (USD)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400 font-bold text-xs">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={planPrices[plan.tier] !== undefined ? planPrices[plan.tier] : (plan.price / 100).toFixed(2)}
+                          onChange={(e) => setPlanPrices({ ...planPrices, [plan.tier]: e.target.value })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-semibold focus:outline-none focus:bg-white focus:border-brand-500 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider">
+                        Public Cost Price (USD)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400 font-bold text-xs">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={planPublicPrices[plan.tier] !== undefined ? planPublicPrices[plan.tier] : ((plan.public_price || 0) / 100).toFixed(2)}
+                          onChange={(e) => setPlanPublicPrices({ ...planPublicPrices, [plan.tier]: e.target.value })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-semibold focus:outline-none focus:bg-white focus:border-brand-500 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider">
+                        Discount (USD)
+                      </label>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-slate-400 font-bold text-xs">$</span>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={planDiscounts[plan.tier] !== undefined ? planDiscounts[plan.tier] : ((plan.discount || 0) / 100).toFixed(2)}
+                          onChange={(e) => setPlanDiscounts({ ...planDiscounts, [plan.tier]: e.target.value })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-semibold focus:outline-none focus:bg-white focus:border-brand-500 transition-all"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const priceVal = planPrices[plan.tier] !== undefined ? planPrices[plan.tier] : (plan.price / 100).toFixed(2);
+                          const publicVal = planPublicPrices[plan.tier] !== undefined ? planPublicPrices[plan.tier] : ((plan.public_price || 0) / 100).toFixed(2);
+                          const discountVal = planDiscounts[plan.tier] !== undefined ? planDiscounts[plan.tier] : ((plan.discount || 0) / 100).toFixed(2);
+                          
+                          const priceCents = Math.round(parseFloat(priceVal) * 100);
+                          const publicCents = Math.round(parseFloat(publicVal) * 100);
+                          const discountCents = Math.round(parseFloat(discountVal) * 100);
+                          
+                          if (!isNaN(priceCents) && !isNaN(publicCents) && !isNaN(discountCents)) {
+                            handleUpdatePlanPrices(plan.tier, priceCents, publicCents, discountCents);
+                          }
+                        }}
+                        disabled={updatingPlanTier === plan.tier}
+                        className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                      >
+                        {updatingPlanTier === plan.tier ? 'Saving...' : 'Update Prices'}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Order History Tab */}
+      {activeSubTab === 'orders' && (
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+              🛒 Reseller API Order History
+            </h3>
+            <button
+              onClick={fetchOrders}
+              disabled={ordersLoading}
+              className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
+            >
+              <RefreshCw size={12} className={ordersLoading ? 'animate-spin text-brand-500' : ''} />
+              Refresh Orders
+            </button>
+          </div>
+
+          <div className="overflow-x-auto">
+            {ordersLoading && orders.length === 0 ? (
+              <div className="py-12 flex flex-col items-center justify-center gap-3">
+                <RefreshCw size={24} className="animate-spin text-brand-500" />
+                <span className="text-xs font-semibold text-slate-400">Fetching API orders...</span>
+              </div>
+            ) : orders.length === 0 ? (
+              <div className="py-12 text-center text-slate-400 font-semibold text-xs">
+                No reseller API orders recorded yet.
+              </div>
+            ) : (
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
+                    <th className="p-3">Order ID</th>
+                    <th className="p-3">Timestamp</th>
+                    <th className="p-3">Customer Email</th>
+                    <th className="p-3">Plan Tier</th>
+                    <th className="p-3 text-right">Amount (USD)</th>
+                    <th className="p-3 text-center">Status</th>
+                    <th className="p-3">Details / Notes</th>
+                  </tr>
+                </thead>
+                <tbody className="text-slate-600 font-medium">
+                  {orders.map((order) => (
+                    <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                      <td className="p-3 font-mono font-bold text-slate-900">
+                        #{order.id}
+                      </td>
+                      <td className="p-3 text-[10.5px] whitespace-nowrap text-slate-400">
+                        {new Date(order.created_at).toLocaleString()}
+                      </td>
+                      <td className="p-3 text-slate-800 font-bold">
+                        {order.user_email}
+                      </td>
+                      <td className="p-3">
+                        <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                          {order.plan_tier}
+                        </span>
+                      </td>
+                      <td className="p-3 text-right font-bold text-slate-900">
+                        ${(order.amount / 100).toFixed(2)}
+                      </td>
+                      <td className="p-3 text-center">
+                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                          order.status === 'paid' 
+                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                            : 'bg-amber-50 text-amber-600 border border-amber-100'
+                        }`}>
+                          {order.status}
+                        </span>
+                      </td>
+                      <td className="p-3 text-[11px] text-slate-500 max-w-sm truncate" title={order.notes || ''}>
+                        {order.notes || '-'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
         </div>
       )}
