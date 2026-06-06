@@ -136,7 +136,7 @@ async def test_smtp_connection(
                     if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
                         is_private = True
                         break
-            except Exception:
+            except (socket.gaierror, ValueError, OSError):  # nosec B110
                 pass
 
         if is_private:
