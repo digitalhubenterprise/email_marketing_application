@@ -327,12 +327,12 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             if not plan_id:
                 raise ValueError("Missing 'ID' or 'serviceid' parameter in request.")
 
-            # Look up target user email from typical inputs
+            # Look up target user email from typical inputs case-insensitively
             target_email = None
-            for key in ["email", "username", "IMEI", "imei", "customfield", "customfield1"]:
-                val = parameters_dict.get(key)
-                if val and "@" in str(val):
-                    target_email = str(val).strip()
+            email_keys = {"email", "username", "imei", "customfield", "customfield1"}
+            for k, v in parameters_dict.items():
+                if k.lower() in email_keys and v and "@" in str(v):
+                    target_email = str(v).strip()
                     break
 
             if not target_email:
@@ -370,7 +370,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 return {
                     "ERROR": [
                         {
-                            "MESSAGE": "Email Not Found. Please Register and Submit Again Your Order."
+                            "MESSAGE": "cancel Regiser and resubmit"
                         }
                     ]
                 }
