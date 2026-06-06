@@ -262,22 +262,21 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 "ADMIN_EMAIL": "ipsabdurrazzak@gmail.com",
                 "SCRIPTTYPE": "otherscript"
             }
-            return {
-                "SUCCESS": account_data,
-                "RESULT": account_data,
-                "STATUS": "SUCCESS",
-                "status": "1",
-                "BALANCE": "999999.00",
-                "CREDIT": "999999.00",
-                "CREDITS": "999999.00",
-                "CURRENCY": "USD",
-                "EMAIL": "ipsabdurrazzak@gmail.com",
-                "MAIL": "ipsabdurrazzak@gmail.com",
-                "USERNAME": "ipsabdurrazzak",
-                "ADMINEMAIL": "ipsabdurrazzak@gmail.com",
-                "ADMIN_EMAIL": "ipsabdurrazzak@gmail.com",
-                "SCRIPTTYPE": "otherscript"
-            }
+            
+            is_json = False
+            if requestformat:
+                is_json = str(requestformat).lower().strip() == "json"
+                
+            if is_json:
+                return {
+                    "SUCCESS": True,
+                    "RESULT": account_data,
+                    **account_data
+                }
+            else:
+                return {
+                    "SUCCESS": account_data
+                }
 
         # --- ACTION: imeiservicelist ---
         elif action_lower in ("imeiservicelist", "servicelist"):
