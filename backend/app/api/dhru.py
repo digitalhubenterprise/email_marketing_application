@@ -285,8 +285,8 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                     "SUCCESS": account_data
                 }
 
-        # --- ACTION: imeiservicelist ---
-        elif action_lower in ("imeiservicelist", "servicelist"):
+        # --- ACTION: imeiservicelist / serverservicelist ---
+        elif action_lower in ("imeiservicelist", "servicelist", "serverservicelist"):
             plans_res = await db.execute(select(SubscriptionPlan))
             plans = plans_res.scalars().all()
 
@@ -299,7 +299,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 })
 
             log = DhruApiLog(
-                action="imeiservicelist",
+                action=action_lower,
                 username=username,
                 ip_address=client_ip,
                 status="success",
@@ -313,7 +313,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                     {
                         "LIST": [
                             {
-                                "GROUPNAME": "SmartCampaign SaaS Subscriptions",
+                                "GROUPNAME": "Email & Telegram Marketing Subscription",
                                 "SERVICES": services
                             }
                         ]
@@ -321,8 +321,8 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 ]
             }
 
-        # --- ACTION: placeimeiorder ---
-        elif action_lower == "placeimeiorder":
+        # --- ACTION: placeimeiorder / placeserverorder ---
+        elif action_lower in ("placeimeiorder", "placeserverorder"):
             plan_id = parameters_dict.get("ID") or parameters_dict.get("serviceid")
             if not plan_id:
                 raise ValueError("Missing 'ID' or 'serviceid' parameter in request.")
@@ -358,7 +358,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             if not user:
                 log_message = f"Order rejected. Email '{target_email}' not found in database."
                 log = DhruApiLog(
-                    action="placeimeiorder",
+                    action=action_lower,
                     username=username,
                     ip_address=client_ip,
                     status="failed",
@@ -406,7 +406,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
 
             # Log to DB logs
             log = DhruApiLog(
-                action="placeimeiorder",
+                action=action_lower,
                 username=username,
                 ip_address=client_ip,
                 status="success",
@@ -424,8 +424,8 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 ]
             }
 
-        # --- ACTION: getimeiorder ---
-        elif action_lower in ("getimeiorder", "orderstatus"):
+        # --- ACTION: getimeiorder / getserverorder ---
+        elif action_lower in ("getimeiorder", "orderstatus", "getserverorder"):
             order_id = parameters_dict.get("ID") or parameters_dict.get("referenceid")
             if not order_id:
                 raise ValueError("Missing 'ID' or 'referenceid' parameter in request.")
@@ -435,7 +435,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
 
             if payment and payment.status == "paid":
                 log = DhruApiLog(
-                    action="getimeiorder",
+                    action=action_lower,
                     username=username,
                     ip_address=client_ip,
                     status="success",
@@ -455,7 +455,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 }
             else:
                 log = DhruApiLog(
-                    action="getimeiorder",
+                    action=action_lower,
                     username=username,
                     ip_address=client_ip,
                     status="success",
