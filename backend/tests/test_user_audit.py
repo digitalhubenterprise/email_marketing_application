@@ -184,10 +184,46 @@ async def test_dhru_parsing_fallback(client, db_session):
         "username": "dhru_user",
         "apiaccesskey": "dhru_key_123456",
         "action": "accountinfo",
-        "parameters": "!!!invalid_base64!!!"
+        "parameters": "!!!invalid_base64!!!",
+        "requestformat": "JSON"
     }
 
     # Should fallback gracefully without 500 error
     response = await client.post("/api/dhru", data=payload)
     assert response.status_code == 200
     assert "SUCCESS" in response.json()
+
+
+async def test_dhru_xml_response(client, db_session):
+    config_res = await db_session.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = config_res.scalars().first()
+    if not config:
+        config = SystemConfig(
+            id=1,
+            api_listener_username="dhru_user",
+            api_listener_access_key="dhru_key_123456",
+            api_listener_enabled=True
+        )
+        db_session.add(config)
+    else:
+        config.api_listener_username = "dhru_user"
+        config.api_listener_access_key = "dhru_key_123456"
+        config.api_listener_enabled = True
+        db_session.add(config)
+    await db_session.commit()
+
+    payload = {
+        "username": "dhru_user",
+        "apiaccesskey": "dhru_key_123456",
+        "action": "accountinfo",
+        "requestformat": "XML"
+    }
+
+    response = await client.post("/api/dhru", data=payload)
+    assert response.status_code == 200
+    assert response.headers.get("content-type") == "application/xml"
+    body = response.text
+    assert "<RESPONSE>" in body
+    assert "<SUCCESS>" in body
+    assert "<BALANCE>999999.00</BALANCE>" in body
+    assert "<CURRENCY>USD</CURRENCY>" in body

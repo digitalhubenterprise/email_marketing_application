@@ -6,7 +6,7 @@ import string
 from typing import Optional
 
 logger = logging.getLogger("app.api.dhru")
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 
@@ -15,13 +15,55 @@ from app.db.models import User, SystemConfig, PaymentLog, SubscriptionPlan, Dhru
 from app.core.security import get_password_hash
 from app.tasks.email_sender import send_system_email_task
 
+def dict_to_xml(data: dict) -> str:
+    xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>', "<RESPONSE>"]
+    
+    def serialize(val, parent_key=None):
+        if isinstance(val, dict):
+            for k, v in val.items():
+                tag = str(k).upper()
+                if isinstance(v, list) and tag == "SERVICES":
+                    xml_lines.append("<SERVICES>")
+                    for item in v:
+                        xml_lines.append("<SERVICE>")
+                        serialize(item, "SERVICE")
+                        xml_lines.append("</SERVICE>")
+                    xml_lines.append("</SERVICES>")
+                elif isinstance(v, list) and tag in ("SUCCESS", "ERROR", "LIST"):
+                    xml_lines.append(f"<{tag}>")
+                    for item in v:
+                        serialize(item, tag)
+                    xml_lines.append(f"</{tag}>")
+                elif isinstance(v, (dict, list)):
+                    xml_lines.append(f"<{tag}>")
+                    serialize(v, k)
+                    xml_lines.append(f"</{tag}>")
+                else:
+                    val_str = str(v).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+                    xml_lines.append(f"<{tag}>{val_str}</{tag}>")
+        elif isinstance(val, list):
+            for item in val:
+                serialize(item)
+        else:
+            val_str = str(val).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+            xml_lines.append(val_str)
+
+    serialize(data)
+    xml_lines.append("</RESPONSE>")
+    return "\n".join(xml_lines)
+
+def send_response(data: dict, requestformat: Optional[str]) -> Response:
+    req_format = str(requestformat).lower().strip() if requestformat else "xml"
+    if req_format == "json":
+        import json
+        return Response(content=json.dumps(data), media_type="application/json")
+    else:
+        xml_content = dict_to_xml(data)
+        return Response(content=xml_content, media_type="application/xml")
+
 router = APIRouter()
 
-@router.post("")
-@router.post("/")
-@router.post("/api.php")
-@router.post("/index.php")
-async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
+async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict):
     """
     Public API Listener endpoint conforming to Dhru Fusion API Standards.
     Accepts standard form-encoded POST requests or JSON requests.
@@ -44,6 +86,7 @@ async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
             action = body_json.get("action")
             parameters_str = body_json.get("parameters")
             requestformat = body_json.get("requestformat")
+            context["requestformat"] = requestformat
         except Exception as json_err:
             return {
                 "ERROR": [
@@ -60,6 +103,7 @@ async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
             action = form_data.get("action")
             parameters_str = form_data.get("parameters")
             requestformat = form_data.get("requestformat")
+            context["requestformat"] = requestformat
         except Exception as form_err:
             return {
                 "ERROR": [
@@ -383,3 +427,13 @@ async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
                 }
             ]
         }
+
+
+@router.post("")
+@router.post("/")
+@router.post("/api.php")
+@router.post("/index.php")
+async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
+    context = {"requestformat": None}
+    result = await handle_dhru_api_impl(request, db, context)
+    return send_response(result, context["requestformat"])
