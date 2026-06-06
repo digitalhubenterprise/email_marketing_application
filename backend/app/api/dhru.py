@@ -313,7 +313,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                     {
                         "LIST": [
                             {
-                                "GROUPNAME": "Email & Telegram Marketing Subscription",
+                                "GROUPNAME": "Service Group (Server Service)",
                                 "SERVICES": services
                             }
                         ]
