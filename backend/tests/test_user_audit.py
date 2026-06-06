@@ -227,3 +227,5 @@ async def test_dhru_xml_response(client, db_session):
     assert "<SUCCESS>" in body
     assert "<BALANCE>999999.00</BALANCE>" in body
     assert "<CURRENCY>USD</CURRENCY>" in body
+    assert "<balance>" not in body
+    assert "<currency>" not in body

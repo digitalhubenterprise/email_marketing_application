@@ -71,12 +71,12 @@ def dict_to_xml(data: dict) -> str:
 
 def send_response(data: dict, requestformat: Optional[str]) -> Response:
     req_format = str(requestformat).lower().strip() if requestformat else "xml"
-    enriched_data = enrich_with_lowercase_keys(data)
     if req_format == "json":
+        enriched_data = enrich_with_lowercase_keys(data)
         import json
         return Response(content=json.dumps(enriched_data), media_type="application/json")
     else:
-        xml_content = dict_to_xml(enriched_data)
+        xml_content = dict_to_xml(data)
         return Response(content=xml_content, media_type="application/xml")
 
 router = APIRouter()
