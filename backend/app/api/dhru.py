@@ -88,6 +88,15 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             requestformat = body_json.get("requestformat")
             context["requestformat"] = requestformat
         except Exception as json_err:
+            log = DhruApiLog(
+                action="unknown",
+                username=None,
+                ip_address=client_ip,
+                status="failed",
+                message=f"Invalid JSON payload: {str(json_err)}"
+            )
+            db.add(log)
+            await db.commit()
             return {
                 "ERROR": [
                     {
@@ -105,6 +114,15 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             requestformat = form_data.get("requestformat")
             context["requestformat"] = requestformat
         except Exception as form_err:
+            log = DhruApiLog(
+                action="unknown",
+                username=None,
+                ip_address=client_ip,
+                status="failed",
+                message=f"Invalid form-encoded payload: {str(form_err)}"
+            )
+            db.add(log)
+            await db.commit()
             return {
                 "ERROR": [
                     {
@@ -436,6 +454,9 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
 @router.post("/")
 @router.post("/api.php")
 @router.post("/index.php")
+@router.post("/api/api.php")
+@router.post("/api/index.php")
+@router.post("/dhru_bridge")
 async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
     context = {"requestformat": None}
     result = await handle_dhru_api_impl(request, db, context)
