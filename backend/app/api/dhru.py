@@ -15,21 +15,38 @@ from app.db.models import User, SystemConfig, PaymentLog, SubscriptionPlan, Dhru
 from app.core.security import get_password_hash
 from app.tasks.email_sender import send_system_email_task
 
+def enrich_with_lowercase_keys(data):
+    if isinstance(data, dict):
+        new_dict = {}
+        for k, v in data.items():
+            enriched_v = enrich_with_lowercase_keys(v)
+            new_dict[k] = enriched_v
+            k_lower = str(k).lower()
+            if k_lower != k:
+                new_dict[k_lower] = enriched_v
+        return new_dict
+    elif isinstance(data, list):
+        return [enrich_with_lowercase_keys(item) for item in data]
+    else:
+        return data
+
 def dict_to_xml(data: dict) -> str:
     xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>', "<RESPONSE>"]
     
     def serialize(val, parent_key=None):
         if isinstance(val, dict):
             for k, v in val.items():
-                tag = str(k).upper()
-                if isinstance(v, list) and tag == "SERVICES":
-                    xml_lines.append("<SERVICES>")
+                tag = str(k)
+                tag_upper = tag.upper()
+                if isinstance(v, list) and tag_upper == "SERVICES":
+                    xml_lines.append(f"<{tag}>")
                     for item in v:
-                        xml_lines.append("<SERVICE>")
-                        serialize(item, "SERVICE")
-                        xml_lines.append("</SERVICE>")
-                    xml_lines.append("</SERVICES>")
-                elif isinstance(v, list) and tag in ("SUCCESS", "ERROR", "LIST"):
+                        sub_tag = "service" if tag.islower() else "SERVICE"
+                        xml_lines.append(f"<{sub_tag}>")
+                        serialize(item, sub_tag)
+                        xml_lines.append(f"</{sub_tag}>")
+                    xml_lines.append(f"</{tag}>")
+                elif isinstance(v, list) and tag_upper in ("SUCCESS", "ERROR", "LIST"):
                     xml_lines.append(f"<{tag}>")
                     for item in v:
                         serialize(item, tag)
@@ -54,11 +71,12 @@ def dict_to_xml(data: dict) -> str:
 
 def send_response(data: dict, requestformat: Optional[str]) -> Response:
     req_format = str(requestformat).lower().strip() if requestformat else "xml"
+    enriched_data = enrich_with_lowercase_keys(data)
     if req_format == "json":
         import json
-        return Response(content=json.dumps(data), media_type="application/json")
+        return Response(content=json.dumps(enriched_data), media_type="application/json")
     else:
-        xml_content = dict_to_xml(data)
+        xml_content = dict_to_xml(enriched_data)
         return Response(content=xml_content, media_type="application/xml")
 
 router = APIRouter()
