@@ -268,9 +268,16 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 is_json = str(requestformat).lower().strip() == "json"
                 
             if is_json:
+                # Support both array-like access SUCCESS[0]['EMAIL'] and dict-like access SUCCESS['EMAIL']
+                success_val = {
+                    **account_data,
+                    "0": account_data
+                }
                 return {
-                    "SUCCESS": True,
-                    "RESULT": account_data,
+                    "status": "success",
+                    "SUCCESS": success_val,
+                    "RESULT": success_val,
+                    "data": success_val,
                     **account_data
                 }
             else:
