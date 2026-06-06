@@ -22,7 +22,7 @@ def enrich_with_lowercase_keys(data):
             enriched_v = enrich_with_lowercase_keys(v)
             new_dict[k] = enriched_v
             k_lower = str(k).lower()
-            if k_lower != k:
+            if k_lower != k and k_lower not in ("success", "result", "error", "list", "services", "service"):
                 new_dict[k_lower] = enriched_v
         return new_dict
     elif isinstance(data, list):
