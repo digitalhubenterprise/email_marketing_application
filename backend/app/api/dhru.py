@@ -233,7 +233,12 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                         "ADMINEMAIL": "ipsabdurrazzak@gmail.com",
                         "ADMIN_EMAIL": "ipsabdurrazzak@gmail.com"
                     }
-                ]
+                ],
+                "BALANCE": "999999.00",
+                "CURRENCY": "USD",
+                "EMAIL": "ipsabdurrazzak@gmail.com",
+                "ADMINEMAIL": "ipsabdurrazzak@gmail.com",
+                "ADMIN_EMAIL": "ipsabdurrazzak@gmail.com"
             }
 
         # --- ACTION: imeiservicelist ---
