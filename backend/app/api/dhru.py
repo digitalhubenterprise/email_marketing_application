@@ -15,18 +15,21 @@ from app.db.models import User, SystemConfig, PaymentLog, SubscriptionPlan, Dhru
 from app.core.security import get_password_hash
 from app.tasks.email_sender import send_system_email_task
 
-def enrich_with_lowercase_keys(data):
+def enrich_with_lowercase_keys(data, parent_key=None):
     if isinstance(data, dict):
         new_dict = {}
         for k, v in data.items():
-            enriched_v = enrich_with_lowercase_keys(v)
+            is_group_list = (str(parent_key).upper() == "LIST")
+            enriched_v = enrich_with_lowercase_keys(v, k)
             new_dict[k] = enriched_v
-            k_lower = str(k).lower()
-            if k_lower != k and k_lower not in ("success", "result", "error", "list", "services", "service"):
-                new_dict[k_lower] = enriched_v
+            
+            if not is_group_list:
+                k_lower = str(k).lower()
+                if k_lower != k and k_lower not in ("success", "result", "error", "list", "services", "service"):
+                    new_dict[k_lower] = enriched_v
         return new_dict
     elif isinstance(data, list):
-        return [enrich_with_lowercase_keys(item) for item in data]
+        return [enrich_with_lowercase_keys(item, parent_key) for item in data]
     else:
         return data
 
