@@ -14,6 +14,8 @@ class UserLogin(UserBase):
 class Token(BaseModel):
     access_token: str
     token_type: str
+    role: Optional[str] = None
+    email: Optional[str] = None
 
 class TokenData(BaseModel):
     user_id: Optional[int] = None

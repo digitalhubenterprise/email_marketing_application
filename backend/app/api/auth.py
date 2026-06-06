@@ -182,7 +182,7 @@ async def login(
                 detail="Incorrect 2FA verification code."
             )
 
-    return {"access_token": create_access_token(subject=user.id, role="user"), "token_type": "bearer"}  # nosec
+    return {"access_token": create_access_token(subject=user.id, role="user"), "token_type": "bearer", "role": "user", "email": user.email}  # nosec
 
 
 # ─── Current User ─────────────────────────────────────────────────────

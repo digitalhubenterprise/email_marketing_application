@@ -151,7 +151,7 @@ async def login_admin(
     await db.commit()  # commit transaction
 
     token = create_access_token(subject=admin.id, role="admin")
-    return {"access_token": token, "token_type": "bearer"}  # nosec
+    return {"access_token": token, "token_type": "bearer", "role": admin.role, "email": admin.email}  # nosec
 
 
 # ─── Dashboard Overview ───────────────────────────────────────────────

@@ -5,6 +5,10 @@ from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, Asyn
 from app.main import app
 from app.db.session import get_db
 from app.db.models import Base
+from app.tasks.email_sender import celery
+
+# Configure Celery in eager mode for tests to run tasks synchronously without Redis broker
+celery.conf.task_always_eager = True
 
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
