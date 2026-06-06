@@ -172,6 +172,14 @@ async def create_db_tables() -> None:
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_telegram_enabled BOOLEAN DEFAULT false"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_2fa_secret VARCHAR"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_chat_id VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS company VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS address VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS country VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS phone_number VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS language VARCHAR DEFAULT 'English'"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone VARCHAR DEFAULT 'UTC'"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS send_profile_email BOOLEAN DEFAULT false"))
             
             # smtp reputation
             await conn.execute(text("ALTER TABLE smtp_servers ADD COLUMN IF NOT EXISTS reputation_score INTEGER DEFAULT 100"))
