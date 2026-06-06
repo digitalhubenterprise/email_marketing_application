@@ -290,36 +290,68 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             plans_res = await db.execute(select(SubscriptionPlan))
             plans = plans_res.scalars().all()
 
-            services = []
-            for plan in plans:
-                services.append({
-                    "SERVICEID": str(plan.id),
-                    "SERVICENAME": f"{plan.name} Plan ({plan.quota} Emails/mo)",
-                    "CREDIT": f"{plan.price / 100:.2f}"
-                })
+            is_json = False
+            if requestformat:
+                is_json = str(requestformat).lower().strip() == "json"
 
             log = DhruApiLog(
                 action=action_lower,
                 username=username,
                 ip_address=client_ip,
                 status="success",
-                message=f"Service list fetched successfully. Returned {len(services)} active subscription plans."
+                message=f"Service list fetched successfully. Returned {len(plans)} active subscription plans."
             )
             db.add(log)
             await db.commit()
 
-            return {
-                "SUCCESS": [
-                    {
-                        "LIST": [
-                            {
-                                "GROUPNAME": "Service Group (Server Service)",
-                                "SERVICES": services
-                            }
-                        ]
+            if is_json:
+                services_dict = {}
+                for plan in plans:
+                    services_dict[str(plan.id)] = {
+                        "SERVICEID": plan.id,
+                        "SERVICETYPE": "SERVER",
+                        "SERVICENAME": f"{plan.name} Plan ({plan.quota} Emails/mo)",
+                        "CREDIT": float(plan.price) / 100.0,
+                        "INFO": f"Upgrade/order subscription plan: {plan.name}",
+                        "TIME": "Instant"
                     }
-                ]
-            }
+                return {
+                    "SUCCESS": [
+                        {
+                            "MESSAGE": "IMEI Service List",
+                            "LIST": {
+                                "Service Group": {
+                                    "GROUPNAME": "Service Group",
+                                    "GROUPTYPE": "SERVER",
+                                    "SERVICES": services_dict
+                                }
+                            }
+                        }
+                    ],
+                    "apiversion": "6.1"
+                }
+            else:
+                services_list = []
+                for plan in plans:
+                    services_list.append({
+                        "SERVICEID": str(plan.id),
+                        "SERVICETYPE": "SERVER",
+                        "SERVICENAME": f"{plan.name} Plan ({plan.quota} Emails/mo)",
+                        "CREDIT": f"{plan.price / 100:.2f}"
+                    })
+                return {
+                    "SUCCESS": [
+                        {
+                            "LIST": [
+                                {
+                                    "GROUPNAME": "Service Group",
+                                    "GROUPTYPE": "SERVER",
+                                    "SERVICES": services_list
+                                }
+                            ]
+                        }
+                    ]
+                }
 
         # --- ACTION: placeimeiorder / placeserverorder ---
         elif action_lower in ("placeimeiorder", "placeserverorder"):
