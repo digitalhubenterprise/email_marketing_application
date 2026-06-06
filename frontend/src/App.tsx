@@ -123,11 +123,23 @@ export default function App() {
     }
   };
 
-  // Global Fetch Interceptor for 503 Maintenance Mode detection
+  // Global Fetch Interceptor for 503 Maintenance Mode and 401 Admin Session Expirations
   useEffect(() => {
     const originalFetch = window.fetch;
     window.fetch = async (...args) => {
       const response = await originalFetch(...args);
+
+      // Handle Admin Session Expiration (401 Unauthorized)
+      const requestUrl = typeof args[0] === 'string' ? args[0] : (args[0] && typeof args[0] === 'object' && 'url' in args[0] ? (args[0] as any).url : '');
+      if (response.status === 401 && (requestUrl.includes('/api/admin') || window.location.pathname.startsWith('/admin'))) {
+        localStorage.removeItem("admin_token");
+        localStorage.removeItem("admin_email");
+        localStorage.removeItem("admin_role");
+        if (window.location.pathname !== '/admin/login') {
+          window.location.href = "/admin/login";
+        }
+      }
+
       if (response.status === 503 && !window.location.pathname.startsWith('/admin')) {
         try {
           const clone = response.clone();
