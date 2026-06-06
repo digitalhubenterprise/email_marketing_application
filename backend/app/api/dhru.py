@@ -90,9 +90,12 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
     apiaccesskey = None
     action = None
     parameters_str = None
-    requestformat = None
+    
+    # Extract requestformat from query string parameters first
+    requestformat = request.query_params.get("requestformat") or request.query_params.get("requestFormat") or request.query_params.get("format")
 
     client_ip = request.client.host if request.client else "unknown"
+    form_data = None
 
     # 1. Parse incoming parameters safely
     content_type = request.headers.get("content-type", "")
@@ -103,7 +106,8 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             apiaccesskey = body_json.get("apiaccesskey")
             action = body_json.get("action")
             parameters_str = body_json.get("parameters")
-            requestformat = body_json.get("requestformat")
+            if not requestformat:
+                requestformat = body_json.get("requestformat") or body_json.get("requestFormat") or body_json.get("format")
             context["requestformat"] = requestformat
         except Exception as json_err:
             log = DhruApiLog(
@@ -129,7 +133,8 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             apiaccesskey = form_data.get("apiaccesskey")
             action = form_data.get("action")
             parameters_str = form_data.get("parameters")
-            requestformat = form_data.get("requestformat")
+            if not requestformat:
+                requestformat = form_data.get("requestformat") or form_data.get("requestFormat") or form_data.get("format")
             context["requestformat"] = requestformat
         except Exception as form_err:
             log = DhruApiLog(
@@ -231,12 +236,13 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
     try:
         # --- ACTION: accountinfo ---
         if action_lower == "accountinfo":
+            log_msg = f"Account info requested. Credentials verified. Format: {requestformat} | Query: {dict(request.query_params)} | Form: {dict(form_data) if form_data is not None else 'None'} | Headers: {dict(request.headers)}"
             log = DhruApiLog(
                 action="accountinfo",
                 username=username,
                 ip_address=client_ip,
                 status="success",
-                message="Account info requested. Credentials verified successfully."
+                message=log_msg
             )
             db.add(log)
             await db.commit()
