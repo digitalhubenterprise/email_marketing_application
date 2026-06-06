@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   Menu,
   Sun,
-  Moon
+  Moon,
+  Key
 } from 'lucide-react'
 import { useAuth } from '../App'
 
@@ -121,7 +122,8 @@ export default function AdminLayout() {
     { to: "/admin/users", icon: <Users size={18} />, label: "Members" },
     { to: "/admin/campaigns", icon: <Activity size={18} />, label: "Campaign Monitoring" },
     { to: "/admin/billing", icon: <CreditCard size={18} />, label: "Financial Review" },
-    { to: "/admin/settings", icon: <Settings size={18} />, label: "Settings & System" },
+    { to: "/admin/settings", icon: <Settings size={18} />, label: "Settings" },
+    { to: "/admin/api-settings", icon: <Key size={18} />, label: "API Settings" },
     { to: "/admin/audits", icon: <ShieldAlert size={18} />, label: "Audit Ledger" },
     { to: "/admin/register", icon: <UserPlus size={18} />, label: "Invite Admin" },
   ];
@@ -215,7 +217,7 @@ export default function AdminLayout() {
       </aside>
 
       {/* Main Admin Section Body Content */}
-      <div className="flex-1 lg:pl-64 pl-0 flex flex-col min-h-screen relative overflow-x-hidden">
+      <div className="flex-1 lg:pl-64 pl-0 flex flex-col min-h-screen relative overflow-x-hidden min-w-0">
         <header className="h-16 bg-white border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-30 shadow-[0_2px_24px_rgba(0,0,0,0.01)]">
           <div className="flex items-center gap-2.5">
             <button 
@@ -271,8 +273,24 @@ export default function AdminLayout() {
           </div>
         </header>
 
-        <main className="flex-1 p-8 overflow-y-auto animate-fadeIn bg-[#f4f6fa]">
-          <Outlet />
+        <main className="flex-1 p-8 overflow-y-auto animate-fadeIn bg-[#f4f6fa] flex flex-col justify-between min-w-0 overflow-x-hidden">
+          <div className="flex-1 pb-4">
+            <Outlet />
+          </div>
+
+          {/* Footer */}
+          <footer className="mt-8">
+            <div className="px-5 py-4 bg-white/60 dark:bg-dark-900/40 backdrop-blur-md border-t border-x border-slate-200 dark:border-dark-800/80 rounded-t-2xl sm:rounded-t-3xl rounded-b-none flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] sm:text-[11px] text-slate-500 dark:text-dark-300 font-semibold shadow-[0_2px_12px_rgba(0,0,0,0.015)]">
+              <div>
+                Copyright &copy; 2025 ASTRA IT, Inc. All Rights Reserved.
+              </div>
+              <div className="flex gap-4 sm:gap-6">
+                <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Privacy Policy</a>
+                <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Terms of Service</a>
+                <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Report a Vulnerability</a>
+              </div>
+            </div>
+          </footer>
         </main>
       </div>
     </div>

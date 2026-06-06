@@ -11,7 +11,8 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
 from app.db.session import create_db_tables
-from app.api import auth, smtp, contacts, templates, campaigns, tracker, admin, telegram_marketing
+from app.api import auth, smtp, contacts, templates, campaigns, tracker, admin, telegram_marketing, dhru
+
 
 # ─── Environment detection ───────────────────────────────────────────
 IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
@@ -88,6 +89,7 @@ async def check_maintenance_mode(request: Request, call_next) -> Response:
         or path == "/api/health"
         or path.startswith("/api/admin")
         or path.startswith("/api/track")
+        or path.startswith("/api/dhru")
         or path == f"{settings.API_V1_STR}/auth/config"
     )
     if not is_bypass:
@@ -152,6 +154,8 @@ app.include_router(campaigns.router, prefix=f"{settings.API_V1_STR}/campaigns", 
 app.include_router(tracker.router,   prefix="/api/track",                        tags=["Email Tracking"])
 app.include_router(admin.router,     prefix="/api/admin",                        tags=["Super Admin"])
 app.include_router(telegram_marketing.router, prefix=f"{settings.API_V1_STR}/telegram-marketing", tags=["Telegram Marketing"])
+app.include_router(dhru.router, prefix="/api/dhru", tags=["Dhru Fusion API Standards"])
+
 
 
 # ─── Root & Health ────────────────────────────────────────────────────

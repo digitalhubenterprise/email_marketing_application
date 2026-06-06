@@ -18,7 +18,8 @@ from app.db.models import (
     SMTPServer,
     ContactList,
     EmailTemplate,
-    SubscriptionPlan
+    SubscriptionPlan,
+    DhruApiLog
 )
 from app.schemas.user import Token
 from app.schemas.admin import (
@@ -34,7 +35,8 @@ from app.schemas.admin import (
     SubscriptionPlanCreate,
     SubscriptionPlanUpdate,
     SubscriptionPlanResponse,
-    UserProfileUpdate
+    UserProfileUpdate,
+    DhruApiLogResponse
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token, encrypt_smtp_password
@@ -931,7 +933,46 @@ async def get_system_settings(
 ):
     """Fetches core platform branding and security settings."""
     res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
-    return res.scalars().first()
+    config = res.scalars().first()
+    if config:
+        needs_commit = False
+        if config.announcement_active is None:
+            config.announcement_active = False
+            needs_commit = True
+        if config.maintenance_mode is None:
+            config.maintenance_mode = False
+            needs_commit = True
+        if config.email_verification_required is None:
+            config.email_verification_required = False
+            needs_commit = True
+        if config.system_smtp_enabled is None:
+            config.system_smtp_enabled = False
+            needs_commit = True
+        if config.telegram_notifications_enabled is None:
+            config.telegram_notifications_enabled = False
+            needs_commit = True
+        if config.two_factor_email_enabled is None:
+            config.two_factor_email_enabled = False
+            needs_commit = True
+        if config.two_factor_telegram_enabled is None:
+            config.two_factor_telegram_enabled = False
+            needs_commit = True
+        if config.two_factor_mandatory_for_admins is None:
+            config.two_factor_mandatory_for_admins = False
+            needs_commit = True
+        if config.api_listener_username is None:
+            config.api_listener_username = "dhru_user"
+            needs_commit = True
+        if config.api_listener_access_key is None:
+            config.api_listener_access_key = "dhru_key_123456"
+            needs_commit = True
+        if config.api_listener_enabled is None:
+            config.api_listener_enabled = True
+            needs_commit = True
+        if needs_commit:
+            await db.commit()
+            await db.refresh(config)
+    return config
 
 
 @router.put("/settings", response_model=SystemConfigResponse)
@@ -965,6 +1006,18 @@ async def update_system_settings(
     await db.commit()  # commit transaction
     await db.refresh(config)
     return config
+
+
+@router.get("/settings/dhru-logs", response_model=List[DhruApiLogResponse])
+async def get_dhru_api_logs(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Retrieves recent Dhru API listener logs."""
+    res = await db.execute(select(DhruApiLog).order_by(DhruApiLog.created_at.desc()).limit(50))
+    logs = res.scalars().all()
+    return logs
+
 
 
 @router.post("/settings/maintenance")

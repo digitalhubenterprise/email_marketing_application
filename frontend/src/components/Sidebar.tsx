@@ -8,7 +8,9 @@ import {
   Send, 
   CreditCard, 
   Wallet,
-  LogOut
+  LogOut,
+  Settings,
+  Key
 } from 'lucide-react'
 import { useAuth } from '../App'
 
@@ -19,6 +21,8 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarProps) {
   const { logout, user, appConfig } = useAuth();
+  
+  const isAdmin = !!localStorage.getItem("admin_token");
 
   const navItems = [
     { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
@@ -27,8 +31,9 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
     { to: "/templates", icon: <FileText size={20} />, label: "Email Templates" },
     { to: "/campaigns", icon: <Send size={20} />, label: "Campaigns" },
     { to: "/telegram-marketing", icon: <Send size={20} className="rotate-[320deg]" />, label: "Telegram Marketing" },
-    { to: "/billing", icon: <CreditCard size={20} />, label: "Billing & Plans" },
     { to: "/wallet", icon: <Wallet size={20} />, label: "Wallet" },
+    { to: "/billing", icon: <CreditCard size={20} />, label: "Subscription" },
+    { to: "/settings", icon: <Settings size={20} />, label: "Manage Settings" },
   ];
 
   return (

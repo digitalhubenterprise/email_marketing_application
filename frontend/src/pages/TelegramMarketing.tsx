@@ -229,6 +229,17 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
     setSelectedGroupFilter('all');
   }, [page, limit, statusFilter, searchFilter, activeTab]);
 
+  // Scroll active tab into view on mobile viewports
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const activeTabEl = document.querySelector('.active-tab-btn');
+      if (activeTabEl) {
+        activeTabEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [activeTab]);
+
   // Handle settings config update
   const handleSaveConfig = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -455,62 +466,64 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
             <Sliders size={13} className="text-brand-400" />
             <span>{label} Services Pool ({displayedServices.length})</span>
           </h3>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={handleCreateGroupClick}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-dark-800 dark:bg-dark-900 border border-dark-700 hover:bg-dark-700/50 dark:hover:bg-dark-800 text-dark-200 dark:text-white rounded-lg text-[10px] font-bold shadow-md transition-all animate-fadeIn"
-            >
-              <Plus size={12} />
-              <span>+ CREATE GROUP</span>
-            </button>
+          <div className="flex flex-row items-center gap-1.5 w-full sm:w-auto">
             <button
               onClick={() => openAddServiceModal('General')}
-              className="flex items-center gap-1.5 px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[10px] font-bold shadow-md shadow-brand-500/15 transition-all"
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 brand-gradient-bg hover:opacity-95 text-white rounded-lg text-[9px] sm:text-[10px] font-bold shadow-md shadow-brand-500/15 transition-all"
             >
-              <Plus size={12} />
-              <span>+ CREATE SERVICE</span>
+              <Plus size={10} className="shrink-0" />
+              <span className="whitespace-nowrap">CREATE SERVICE</span>
+            </button>
+            <button
+              onClick={handleCreateGroupClick}
+              className="flex-1 flex items-center justify-center gap-1 px-2 py-1.5 sm:px-3 sm:py-2 bg-dark-800 dark:bg-dark-900 border border-dark-700 hover:bg-dark-700/50 dark:hover:bg-dark-800 text-dark-200 dark:text-white rounded-lg text-[9px] sm:text-[10px] font-bold shadow-md transition-all animate-fadeIn"
+            >
+              <Plus size={10} className="shrink-0" />
+              <span className="whitespace-nowrap">CREATE GROUP</span>
             </button>
           </div>
         </div>
 
         {/* Toggle view control menu & group filter */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-dark-800/40">
-          <div className="flex items-center gap-1 p-1 bg-dark-950/60 border border-dark-800/50 rounded-lg max-w-max">
-            <button
-              type="button"
-              onClick={() => setViewMode('all')}
-              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${
-                viewMode === 'all'
-                  ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/10'
-                  : 'text-dark-400 hover:text-white'
-              }`}
-            >
-              ALL {label}
-            </button>
-            <button
-              type="button"
-              onClick={() => setViewMode('groups')}
-              className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all duration-150 ${
-                viewMode === 'groups'
-                  ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/10'
-                  : 'text-dark-400 hover:text-white'
-              }`}
-            >
-              ALL SERVICE GROUP
-            </button>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-dark-800/40">
+          <div className="overflow-x-auto scrollbar-none w-full sm:w-auto">
+            <div className="flex items-center gap-1 p-1 bg-dark-950/60 border border-dark-800/50 rounded-lg min-w-max">
+              <button
+                type="button"
+                onClick={() => setViewMode('all')}
+                className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all duration-150 whitespace-nowrap ${
+                  viewMode === 'all'
+                    ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/10'
+                    : 'text-dark-400 hover:text-white'
+                }`}
+              >
+                ALL SERVICES
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('groups')}
+                className={`px-3 py-1.5 rounded-md text-[9px] font-black uppercase tracking-wider transition-all duration-150 whitespace-nowrap ${
+                  viewMode === 'groups'
+                    ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/10'
+                    : 'text-dark-400 hover:text-white'
+                }`}
+              >
+                GROUPS
+              </button>
+            </div>
           </div>
-
+ 
           {viewMode === 'all' && (
-            <div className="flex items-center gap-2 bg-dark-900/60 border border-dark-800 rounded-lg px-3 py-1.5 text-xs">
-              <span className="text-[10px] font-black text-dark-500 uppercase tracking-wider">Group Filter:</span>
+            <div className="flex items-center justify-between sm:justify-start gap-2 bg-dark-900/60 border border-dark-800 rounded-lg px-3 py-1.5 text-xs w-full sm:w-auto shrink-0 text-dark-300 dark:text-white">
+              <span className="text-[10px] font-black text-dark-500 uppercase tracking-wider whitespace-nowrap">Group Filter:</span>
               <select
                 value={selectedGroupFilter}
                 onChange={(e) => setSelectedGroupFilter(e.target.value)}
-                className="bg-transparent border-none text-white focus:outline-none cursor-pointer font-bold"
+                className="custom-select-filter text-xs"
               >
-                <option value="all" className="bg-dark-900 text-white">All Groups</option>
+                <option value="all" className="bg-white dark:bg-dark-900 text-dark-100 dark:text-white">All Groups</option>
                 {uniqueGroups.map(g => (
-                  <option key={g} value={g} className="bg-dark-900 text-white">{g}</option>
+                  <option key={g} value={g} className="bg-white dark:bg-dark-900 text-dark-100 dark:text-white">{g}</option>
                 ))}
               </select>
             </div>
@@ -538,63 +551,113 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               </div>
             </div>
           ) : (
-            <div className="glass-panel rounded-xl overflow-hidden border border-dark-700/30">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead className="bg-dark-900/60 border-b border-dark-800 text-[10px] font-black uppercase text-dark-400 tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3 w-16 text-center">Status</th>
-                      <th className="px-4 py-3">Service Title</th>
-                      <th className="px-4 py-3">Group Name</th>
-                      <th className="px-4 py-3">Angle & Hook</th>
-                      <th className="px-4 py-3">Details & Key Words</th>
-                      <th className="px-4 py-3 w-28 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-dark-850/60">
-                    {filteredServices.map((s) => (
-                      <tr key={s.id} className="hover:bg-dark-900/30 transition-colors">
-                        <td className="px-4 py-3.5 text-center">
-                          <span className={`inline-block h-2 w-2 rounded-full ${s.active ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-dark-600'}`} />
-                        </td>
-                        <td className="px-4 py-3.5 font-bold text-white max-w-xs truncate" title={s.title}>
-                          {s.title}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-dark-900 text-dark-300 border border-dark-700/40">
-                            {s.group || 'General'}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5 text-dark-300 font-semibold max-w-sm truncate" title={s.angle}>
-                          {s.angle}
-                        </td>
-                        <td className="px-4 py-3.5 text-dark-400 font-semibold font-mono max-w-xs truncate" title={s.focus}>
-                          {s.focus}
-                        </td>
-                        <td className="px-4 py-3.5 text-right">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              onClick={() => handleEditServiceClick(s)}
-                              className="p-1.5 text-dark-400 hover:text-white bg-dark-900/60 hover:bg-dark-800 rounded-lg border border-dark-800 transition-colors"
-                              title="Edit Service"
-                            >
-                              <Edit size={11} />
-                            </button>
-                            <button
-                              onClick={() => handleDeleteService(s.id)}
-                              className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
-                              title="Delete Service"
-                            >
-                              <Trash2 size={11} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            <>
+              {/* Mobile View: Cards */}
+              <div className="block sm:hidden space-y-3">
+                {filteredServices.map((s) => (
+                  <div key={s.id} className="glass-panel p-3.5 rounded-xl border border-dark-700/30 space-y-2.5 text-xs">
+                    <div className="flex items-center justify-between gap-2 border-b border-dark-850 pb-2">
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className={`h-2.5 w-2.5 rounded-full shrink-0 ${s.active ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-dark-600'}`} />
+                        <span className="font-bold text-white truncate">{s.title}</span>
+                      </div>
+                      <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-dark-900 text-dark-300 border border-dark-700/40 shrink-0">
+                        {s.group || 'General'}
+                      </span>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <div>
+                        <span className="text-[9px] font-bold text-dark-400 uppercase tracking-wider block">Angle & Hook:</span>
+                        <p className="text-dark-200 font-semibold leading-relaxed break-words">{s.angle}</p>
+                      </div>
+                      {s.focus && (
+                        <div>
+                          <span className="text-[9px] font-bold text-dark-400 uppercase tracking-wider block">Details & Key Words:</span>
+                          <p className="text-dark-300 font-semibold font-mono bg-dark-950/40 p-2.5 border border-dark-900/60 rounded-lg break-all leading-normal">{s.focus}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-dark-850">
+                      <button
+                        onClick={() => handleEditServiceClick(s)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-dark-200 hover:text-white bg-dark-850 hover:bg-dark-750 rounded-lg border border-dark-700 transition-colors text-[10px] font-bold"
+                      >
+                        <Edit size={11} />
+                        <span>Modify</span>
+                      </button>
+                      <button
+                        onClick={() => handleDeleteService(s.id)}
+                        className="flex items-center gap-1.5 px-3 py-1.5 text-rose-450 hover:text-rose-350 bg-rose-500/10 hover:bg-rose-500/25 rounded-lg border border-rose-500/15 transition-colors text-[10px] font-bold"
+                      >
+                        <Trash2 size={11} />
+                        <span>Delete</span>
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
-            </div>
+
+              {/* Desktop View: Table */}
+              <div className="hidden sm:block glass-panel rounded-xl overflow-hidden border border-dark-700/30">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[750px] border-collapse text-left text-xs">
+                    <thead className="bg-dark-900/60 border-b border-dark-800 text-[10px] font-black uppercase text-dark-400 tracking-wider">
+                      <tr>
+                        <th className="px-4 py-3 w-16 text-center">Status</th>
+                        <th className="px-4 py-3">Service Title</th>
+                        <th className="px-4 py-3">Group Name</th>
+                        <th className="px-4 py-3">Angle & Hook</th>
+                        <th className="px-4 py-3">Details & Key Words</th>
+                        <th className="px-4 py-3 w-28 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-dark-850/60">
+                      {filteredServices.map((s) => (
+                        <tr key={s.id} className="hover:bg-dark-900/30 transition-colors">
+                          <td className="px-4 py-3.5 text-center">
+                            <span className={`inline-block h-2 w-2 rounded-full ${s.active ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.5)]' : 'bg-dark-600'}`} />
+                          </td>
+                          <td className="px-4 py-3.5 font-bold text-white max-w-xs truncate" title={s.title}>
+                            {s.title}
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-wider bg-dark-900 text-dark-300 border border-dark-700/40">
+                              {s.group || 'General'}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3.5 text-dark-300 font-semibold max-w-sm truncate" title={s.angle}>
+                            {s.angle}
+                          </td>
+                          <td className="px-4 py-3.5 text-dark-400 font-semibold font-mono max-w-xs truncate" title={s.focus}>
+                            {s.focus}
+                          </td>
+                          <td className="px-4 py-3.5 text-right">
+                            <div className="flex items-center justify-end gap-1.5">
+                              <button
+                                onClick={() => handleEditServiceClick(s)}
+                                className="p-1.5 text-dark-400 hover:text-white bg-dark-900/60 hover:bg-dark-800 rounded-lg border border-dark-800 transition-colors"
+                                title="Edit Service"
+                              >
+                                <Edit size={11} />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteService(s.id)}
+                                className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
+                                title="Delete Service"
+                              >
+                                <Trash2 size={11} />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )
         ) : (
           uniqueGroups.length === 0 ? (
@@ -611,58 +674,101 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               </div>
             </div>
           ) : (
-            <div className="glass-panel rounded-xl overflow-hidden border border-dark-700/30">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left text-xs">
-                  <thead className="bg-dark-900/60 border-b border-dark-800 text-[10px] font-black uppercase text-dark-400 tracking-wider">
-                    <tr>
-                      <th className="px-4 py-3">Group Name</th>
-                      <th className="px-4 py-3 text-center">Total Services</th>
-                      <th className="px-4 py-3 w-48 text-right">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-dark-850/60">
-                    {uniqueGroups.map((groupName) => {
-                      const count = groups[groupName]?.length || 0;
-                      return (
-                        <tr key={groupName} className="hover:bg-dark-900/30 transition-colors">
-                          <td className="px-4 py-3.5 font-bold text-white flex items-center gap-2">
-                            <Folder size={14} className="text-brand-400 shrink-0" />
-                            <span>{groupName}</span>
-                          </td>
-                          <td className="px-4 py-3.5 text-center font-bold text-white">
-                            <span className="px-2 py-0.5 bg-dark-950 border border-dark-850 text-dark-400 rounded-md text-[10px]">
-                              {count}
-                            </span>
-                          </td>
-                          <td className="px-4 py-3.5 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => openAddServiceModal(groupName)}
-                                className="flex items-center gap-1 px-2.5 py-1.5 bg-dark-900 border border-dark-800 hover:bg-brand-500/10 hover:border-brand-500/30 text-brand-400 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all"
-                                title="Create Service in Group"
-                              >
-                                <Plus size={10} />
-                                <span>Add Service</span>
-                              </button>
-                              {groupName !== 'General' && (
-                                <button
-                                  onClick={() => handleDeleteGroup(groupName, targetCategory)}
-                                  className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
-                                  title="Delete Group"
-                                >
-                                  <Trash2 size={11} />
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+            <>
+              {/* Mobile View: Groups Card list */}
+              <div className="block sm:hidden space-y-3">
+                {uniqueGroups.map((groupName) => {
+                  const count = groups[groupName]?.length || 0;
+                  return (
+                    <div key={groupName} className="glass-panel p-3.5 rounded-xl border border-dark-700/30 space-y-2.5 text-xs flex flex-col justify-between">
+                      <div className="flex items-center justify-between gap-2 border-b border-dark-850 pb-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <Folder size={14} className="text-brand-400 shrink-0" />
+                          <span className="font-bold text-white truncate">{groupName}</span>
+                        </div>
+                        <span className="px-2 py-0.5 bg-dark-900 border border-dark-700/40 text-dark-300 rounded-md text-[10px] font-bold">
+                          {count} service{count !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-end gap-2 pt-1">
+                        <button
+                          onClick={() => openAddServiceModal(groupName)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 bg-dark-850 hover:bg-dark-700 text-brand-400 rounded-lg text-[10px] font-bold border border-dark-700 transition-colors"
+                          title="Create Service in Group"
+                        >
+                          <Plus size={11} />
+                          <span>Add Service</span>
+                        </button>
+                        {groupName !== 'General' && (
+                          <button
+                            onClick={() => handleDeleteGroup(groupName, targetCategory)}
+                            className="p-1.5 text-rose-455 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
+                            title="Delete Group"
+                          >
+                            <Trash2 size={11} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-            </div>
+
+              {/* Desktop View: Groups Table */}
+              <div className="hidden sm:block glass-panel rounded-xl overflow-hidden border border-dark-700/30">
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-[450px] border-collapse text-left text-xs">
+                    <thead className="bg-dark-900/60 border-b border-dark-800 text-[10px] font-black uppercase text-dark-400 tracking-wider">
+                      <tr>
+                        <th className="px-4 py-3">Group Name</th>
+                        <th className="px-4 py-3 text-center">Total Services</th>
+                        <th className="px-4 py-3 w-48 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-dark-850/60">
+                      {uniqueGroups.map((groupName) => {
+                        const count = groups[groupName]?.length || 0;
+                        return (
+                          <tr key={groupName} className="hover:bg-dark-900/30 transition-colors">
+                            <td className="px-4 py-3.5 font-bold text-white flex items-center gap-2">
+                              <Folder size={14} className="text-brand-400 shrink-0" />
+                              <span>{groupName}</span>
+                            </td>
+                            <td className="px-4 py-3.5 text-center font-bold text-white">
+                              <span className="px-2 py-0.5 bg-dark-950 border border-dark-850 text-dark-400 rounded-md text-[10px]">
+                                {count}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3.5 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => openAddServiceModal(groupName)}
+                                  className="flex items-center gap-1 px-2.5 py-1.5 bg-dark-900 border border-dark-800 hover:bg-brand-500/10 hover:border-brand-500/30 text-brand-400 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all"
+                                  title="Create Service in Group"
+                                >
+                                  <Plus size={10} />
+                                  <span>Add Service</span>
+                                </button>
+                                {groupName !== 'General' && (
+                                  <button
+                                    onClick={() => handleDeleteGroup(groupName, targetCategory)}
+                                    className="p-1.5 text-rose-400 hover:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg border border-rose-500/15 transition-colors"
+                                    title="Delete Group"
+                                  >
+                                    <Trash2 size={11} />
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </>
           )
         )}
       </div>
@@ -680,31 +786,44 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
         .animate-slideInFromRight {
           animation: slideInFromRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
+        .custom-select-filter {
+          background-color: transparent !important;
+          border: none !important;
+          color: inherit !important;
+          outline: none !important;
+          padding: 0 !important;
+          margin: 0 !important;
+          cursor: pointer;
+        }
+        .custom-select-filter:focus {
+          box-shadow: none !important;
+          outline: none !important;
+        }
       `}} />
       {/* Title Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-dark-700/20">
-        <div>
-          <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <Send size={18} className="text-brand-400 rotate-[320deg] shrink-0" />
-            <span>Telegram AI Marketing Dispatcher</span>
+        <div className="hidden sm:block min-w-0 flex-1">
+          <h2 className="text-lg xs-mid:text-xl font-extrabold text-white tracking-tight flex items-start gap-2 flex-wrap">
+            <Send size={18} className="text-brand-400 rotate-[320deg] shrink-0 mt-0.5 xs-mid:mt-1" />
+            <span className="flex-1 min-w-[200px] break-words">Telegram AI Marketing Dispatcher</span>
           </h2>
-          <p className="text-[10px] text-dark-400 mt-0.5">
+          <p className="text-[10px] text-dark-450 mt-1 leading-normal break-words">
             Automated LLM promoter targeting carrier locks and rentals. Alternates services periodically directly into channels.
           </p>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col xs-mid:flex-row items-stretch xs-mid:items-center gap-2 w-full sm:w-auto">
           <button
             onClick={handleTriggerAIPost}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-[10px] font-bold shadow-md shadow-brand-500/10 transition-all shrink-0"
+            className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 bg-brand-600 hover:bg-brand-500 text-white rounded-lg text-[10px] font-bold shadow-md shadow-brand-500/10 transition-all shrink-0 w-full sm:w-auto text-center"
           >
             <Play size={11} fill="currentColor" />
             <span>Run AI Post Now</span>
           </button>
           
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-dark-900/60 border border-dark-700/30 rounded-md">
+          <div className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-2.5 py-1.5 bg-dark-900/60 border border-dark-700/30 rounded-md shrink-0 w-full sm:w-auto">
             <span className={`h-1.5 w-1.5 rounded-full ${stats.scheduler_status === 'Active' ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.6)] animate-pulse' : 'bg-rose-500'}`} />
-            <span className="text-[9px] font-bold text-dark-300 uppercase tracking-wider">Scheduler: {stats.scheduler_status}</span>
+            <span className="text-[9px] font-bold text-dark-300 uppercase tracking-wider font-sans">Scheduler: {stats.scheduler_status}</span>
           </div>
         </div>
       </div>
@@ -715,7 +834,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'dashboard'
-              ? 'border-brand-500 text-brand-600 dark:text-white'
+              ? 'border-brand-500 text-brand-600 dark:text-white active-tab-btn'
               : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
@@ -726,7 +845,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/imei')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'imei'
-              ? 'border-brand-500 text-brand-600 dark:text-white'
+              ? 'border-brand-500 text-brand-600 dark:text-white active-tab-btn'
               : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
@@ -737,7 +856,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/server')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'server'
-              ? 'border-brand-500 text-brand-600 dark:text-white'
+              ? 'border-brand-500 text-brand-600 dark:text-white active-tab-btn'
               : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
@@ -748,7 +867,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/remote')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'remote'
-              ? 'border-brand-500 text-brand-600 dark:text-white'
+              ? 'border-brand-500 text-brand-600 dark:text-white active-tab-btn'
               : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
@@ -759,7 +878,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/logs')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'logs'
-              ? 'border-brand-500 text-brand-600 dark:text-white'
+              ? 'border-brand-500 text-brand-600 dark:text-white active-tab-btn'
               : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
@@ -770,7 +889,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
           onClick={() => navigate('/telegram-marketing/settings')}
           className={`px-4 py-2 border-b-2 text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
             activeTab === 'settings'
-              ? 'border-brand-500 text-brand-600 dark:text-white'
+              ? 'border-brand-500 text-brand-600 dark:text-white active-tab-btn'
               : 'border-transparent text-dark-400 hover:text-dark-100 dark:hover:text-white hover:border-dark-700'
           }`}
         >
@@ -785,44 +904,44 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
       {activeTab === 'dashboard' && (
         <div className="space-y-4">
           {/* Stats Cards */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+          <div className="grid grid-cols-1 xs-mid:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 flex items-center gap-3">
-              <div className="h-9 w-9 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 border border-brand-500/20">
+              <div className="h-9 w-9 bg-brand-500/10 rounded-lg flex items-center justify-center text-brand-400 border border-brand-500/20 shrink-0">
                 <Send size={16} />
               </div>
-              <div>
-                <p className="text-[9px] font-bold text-dark-400 uppercase tracking-widest">Total Posts</p>
-                <h4 className="text-lg font-black text-white leading-tight">{stats.total_posts}</h4>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-dark-400 uppercase tracking-widest truncate">Total Posts</p>
+                <h4 className="text-lg font-black text-white leading-tight truncate">{stats.total_posts}</h4>
               </div>
             </div>
             
             <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 flex items-center gap-3">
-              <div className="h-9 w-9 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-400 border border-emerald-500/20">
+              <div className="h-9 w-9 bg-emerald-500/10 rounded-lg flex items-center justify-center text-emerald-400 border border-emerald-500/20 shrink-0">
                 <CheckCircle size={16} />
               </div>
-              <div>
-                <p className="text-[9px] font-bold text-dark-400 uppercase tracking-widest">Successful Sends</p>
-                <h4 className="text-lg font-black text-white leading-tight">{stats.success_posts}</h4>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-dark-400 uppercase tracking-widest truncate">Successful Sends</p>
+                <h4 className="text-lg font-black text-white leading-tight truncate">{stats.success_posts}</h4>
               </div>
             </div>
 
             <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 flex items-center gap-3">
-              <div className="h-9 w-9 bg-rose-500/10 rounded-lg flex items-center justify-center text-rose-400 border border-rose-500/20">
+              <div className="h-9 w-9 bg-rose-500/10 rounded-lg flex items-center justify-center text-rose-400 border border-rose-500/20 shrink-0">
                 <AlertCircle size={16} />
               </div>
-              <div>
-                <p className="text-[9px] font-bold text-dark-400 uppercase tracking-widest">Errors Logged</p>
-                <h4 className="text-lg font-black text-white leading-tight">{stats.failed_posts}</h4>
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-dark-400 uppercase tracking-widest truncate">Errors Logged</p>
+                <h4 className="text-lg font-black text-white leading-tight truncate">{stats.failed_posts}</h4>
               </div>
             </div>
 
             <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 flex items-center gap-3">
-              <div className="h-9 w-9 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-400 border border-amber-500/20">
+              <div className="h-9 w-9 bg-amber-500/10 rounded-lg flex items-center justify-center text-amber-400 border border-amber-500/20 shrink-0">
                 <Layers size={16} />
               </div>
-              <div>
-                <p className="text-[9px] font-bold text-dark-400 uppercase tracking-widest">Rotated Services</p>
-                <h4 className="text-lg font-black text-white leading-tight">
+              <div className="min-w-0">
+                <p className="text-[9px] font-bold text-dark-400 uppercase tracking-widest truncate">Rotated Services</p>
+                <h4 className="text-lg font-black text-white leading-tight truncate">
                   {stats.active_services} <span className="text-[10px] text-dark-400 font-normal">Active</span>
                 </h4>
               </div>
@@ -841,14 +960,14 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                   The automated AI Campaign manager alternates promotions between active services (GSM carrier unlocks, server credentials, and remote rentals). At the interval specified in Settings, the background engine requests a Groq AI LLM payload using system-engineered prompts, verifies the message contains no credentials leaks, and dispatches the promotion straight to your Telegram news channel.
                 </p>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <div className="p-3 bg-dark-900/40 rounded-lg border border-dark-800 text-[10px] space-y-1">
-                    <span className="text-dark-400 block font-bold">Last Run Timestamp:</span>
-                    <span className="text-white font-mono font-semibold">{lastRun ? formatDateTime(lastRun) : 'N/A'}</span>
+                <div className="grid grid-cols-1 xs-mid:grid-cols-2 gap-3 pt-2">
+                  <div className="p-3 bg-dark-900/40 rounded-lg border border-dark-800 text-[10px] space-y-1 min-w-0">
+                    <span className="text-dark-400 block font-bold truncate">Last Run Timestamp:</span>
+                    <span className="text-white font-mono font-semibold block truncate">{lastRun ? formatDateTime(lastRun) : 'N/A'}</span>
                   </div>
-                  <div className="p-3 bg-dark-900/40 rounded-lg border border-dark-800 text-[10px] space-y-1">
-                    <span className="text-dark-400 block font-bold">Next Run Estimated Ticks:</span>
-                    <span className="text-brand-400 font-mono font-semibold">
+                  <div className="p-3 bg-dark-900/40 rounded-lg border border-dark-800 text-[10px] space-y-1 min-w-0">
+                    <span className="text-dark-400 block font-bold truncate">Next Run Estimated Ticks:</span>
+                    <span className="text-brand-400 font-mono font-semibold block truncate">
                       {nextRun && schedulerActive ? formatDateTime(nextRun) : 'Inactive'}
                     </span>
                   </div>
@@ -856,10 +975,10 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               </div>
 
               {/* Setup Guideline Warning */}
-              <div className="p-3 bg-brand-500/10 border border-brand-500/20 text-brand-300 rounded-xl flex gap-2.5 text-[10px] items-start leading-relaxed">
+              <div className="p-3.5 bg-brand-500/10 border border-brand-500/20 text-brand-300 rounded-xl flex gap-2.5 text-[10px] items-start leading-relaxed">
                 <HelpCircle size={14} className="shrink-0 text-brand-400 mt-0.5" />
                 <div>
-                  <h4 className="font-bold mb-0.5 text-white">How to initialize your automatic dispatcher:</h4>
+                  <h4 className="font-bold mb-1 text-white">How to initialize your automatic dispatcher:</h4>
                   <ol className="list-decimal pl-4 space-y-0.5 font-semibold">
                     <li>Create your Telegram channel and add your bot as an administrator.</li>
                     <li>Configure credentials in the <strong>Integration API</strong> tab.</li>
@@ -876,23 +995,23 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
                 <h3 className="text-xs font-bold text-white uppercase tracking-wider">Integration Health</h3>
                 
                 <div className="space-y-2.5">
-                  <div className="flex items-center justify-between text-[11px] p-2 bg-dark-900/40 rounded-lg border border-dark-800">
-                    <span className="text-dark-400 font-bold">Telegram Token Status</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${hasBotToken ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                  <div className="flex items-center justify-between text-[11px] p-2 bg-dark-900/40 rounded-lg border border-dark-800 gap-2">
+                    <span className="text-dark-400 font-bold truncate">Telegram Token Status</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${hasBotToken ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                       {hasBotToken ? 'Configured' : 'Missing'}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] p-2 bg-dark-900/40 rounded-lg border border-dark-800">
-                    <span className="text-dark-400 font-bold">Groq Cloud API Key</span>
-                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase ${hasGroqKey ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+                  <div className="flex items-center justify-between text-[11px] p-2 bg-dark-900/40 rounded-lg border border-dark-800 gap-2">
+                    <span className="text-dark-400 font-bold truncate">Groq Cloud API Key</span>
+                    <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase shrink-0 ${hasGroqKey ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
                       {hasGroqKey ? 'Configured' : 'Missing'}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-[11px] p-2 bg-dark-900/40 rounded-lg border border-dark-800">
-                    <span className="text-dark-400 font-bold">Target Broadcast Channel</span>
-                    <span className={`font-mono text-white ${channel ? 'text-white' : 'text-rose-400'}`}>
+                  <div className="flex flex-col xs-mid:flex-row xs-mid:items-center justify-between text-[11px] p-2 bg-dark-900/40 rounded-lg border border-dark-800 gap-1.5">
+                    <span className="text-dark-400 font-bold shrink-0">Target Broadcast Channel</span>
+                    <span className={`font-mono text-[10px] truncate max-w-full ${channel ? 'text-white' : 'text-rose-400'}`} title={channel}>
                       {channel || 'Not Configured'}
                     </span>
                   </div>
@@ -911,44 +1030,46 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
       {/* 3. AUDIT LOGS TAB */}
       {activeTab === 'logs' && (
         <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-1 border-b border-dark-750">
+          <div className="flex flex-col xs-mid:flex-row xs-mid:items-center justify-between gap-3 pb-1 border-b border-dark-750">
             <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-2">
               <ClipboardList size={13} className="text-brand-400" />
               <span>Telegram Dispatch Audit Logs ({totalLogs})</span>
             </h3>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="flex flex-col xs-mid:flex-row items-stretch xs-mid:items-center gap-2 w-full xs-mid:w-auto">
               {/* Search filter */}
               <input
                 type="text"
                 placeholder="Search logs..."
                 value={searchFilter}
                 onChange={(e) => { setSearchFilter(e.target.value); setPage(1); }}
-                className="px-2.5 py-1 bg-dark-950/50 border border-dark-700/50 rounded-lg text-[10px] text-white focus:outline-none focus:border-brand-500"
+                className="px-2.5 py-1 bg-dark-950/50 border border-dark-700/50 rounded-lg text-[10px] text-white focus:outline-none focus:border-brand-500 w-full xs-mid:w-auto font-semibold"
               />
 
-              {/* Status filter */}
-              <select
-                value={statusFilter}
-                onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
-                className="px-2 py-1 bg-dark-950/50 border border-dark-700/50 rounded-lg text-[10px] text-white focus:outline-none focus:border-brand-500"
-              >
-                <option value="">All Statuses</option>
-                <option value="Success">Success</option>
-                <option value="Failed">Failed</option>
-              </select>
+              <div className="flex gap-2 w-full xs-mid:w-auto">
+                {/* Status filter */}
+                <select
+                  value={statusFilter}
+                  onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+                  className="px-2 py-1 bg-dark-950/50 border border-dark-700/50 rounded-lg text-[10px] text-white focus:outline-none focus:border-brand-500 flex-1 xs-mid:flex-initial cursor-pointer font-semibold"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="Success">Success</option>
+                  <option value="Failed">Failed</option>
+                </select>
 
-              {/* Pagination limit */}
-              <select
-                value={limit}
-                onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
-                className="px-2 py-1 bg-dark-950/50 border border-dark-700/50 rounded-lg text-[10px] text-white focus:outline-none focus:border-brand-500"
-              >
-                <option value="10">10 / page</option>
-                <option value="25">25 / page</option>
-                <option value="50">50 / page</option>
-                <option value="100">100 / page</option>
-              </select>
+                {/* Pagination limit */}
+                <select
+                  value={limit}
+                  onChange={(e) => { setLimit(Number(e.target.value)); setPage(1); }}
+                  className="px-2 py-1 bg-dark-950/50 border border-dark-700/50 rounded-lg text-[10px] text-white focus:outline-none focus:border-brand-500 flex-1 xs-mid:flex-initial cursor-pointer font-semibold"
+                >
+                  <option value="10">10 / page</option>
+                  <option value="25">25 / page</option>
+                  <option value="50">50 / page</option>
+                  <option value="100">100 / page</option>
+                </select>
+              </div>
             </div>
           </div>
 
@@ -984,8 +1105,8 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
               ))}
 
               {/* Pagination controls */}
-              <div className="flex items-center justify-between border-t border-dark-850 pt-3">
-                <span className="text-[10px] text-dark-400 font-semibold">
+              <div className="flex flex-col xs-mid:flex-row items-center justify-between gap-3 border-t border-dark-850 pt-3">
+                <span className="text-[10px] text-dark-400 font-semibold text-center xs-mid:text-left">
                   Showing {(page - 1) * limit + 1} to {Math.min(page * limit, totalLogs)} of {totalLogs} logs
                 </span>
                 
@@ -1202,7 +1323,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
             onClick={() => setShowServiceModal(false)}
           />
           {/* Slide-in Drawer */}
-          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-white dark:bg-dark-900 border-l border-dark-600 dark:border-dark-800/80 p-6 z-50 shadow-2xl dark:shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-dark-100 dark:text-white overflow-y-auto">
+          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-white dark:bg-dark-900 border-l border-dark-600 dark:border-dark-800/80 p-4 xs-mid:p-6 z-50 shadow-2xl dark:shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-dark-100 dark:text-white overflow-y-auto">
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-dark-600 dark:border-dark-800/80 pb-4">
                 <div className="flex items-center gap-2.5">
@@ -1346,7 +1467,7 @@ export default function TelegramMarketing({ defaultTab = 'dashboard' }: Telegram
             onClick={() => setShowGroupModal(false)}
           />
           {/* Slide-in Drawer */}
-          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-white dark:bg-dark-900 border-l border-dark-600 dark:border-dark-800/80 p-6 z-50 shadow-2xl dark:shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-dark-100 dark:text-white">
+          <div className="fixed top-0 right-0 h-full w-full md:w-1/2 bg-white dark:bg-dark-900 border-l border-dark-600 dark:border-dark-800/80 p-4 xs-mid:p-6 z-50 shadow-2xl dark:shadow-[-10px_0_50px_rgba(0,0,0,0.85)] flex flex-col justify-between animate-slideInFromRight text-dark-100 dark:text-white">
             <div className="space-y-6">
               <div className="flex items-center justify-between border-b border-dark-600 dark:border-dark-800/80 pb-4">
                 <div className="flex items-center gap-2.5">

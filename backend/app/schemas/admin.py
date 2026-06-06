@@ -28,10 +28,10 @@ class SystemConfigResponse(BaseModel):
     site_name: str
     logo_url: Optional[str]
     support_email: str
-    maintenance_mode: bool
+    maintenance_mode: Optional[bool] = False
     global_send_rate_limit: int
     default_from_email: str
-    announcement_active: bool = False
+    announcement_active: Optional[bool] = False
     announcement_message: Optional[str] = None
     seo_meta_title: Optional[str] = None
     seo_meta_description: Optional[str] = None
@@ -58,6 +58,11 @@ class SystemConfigResponse(BaseModel):
     system_smtp_from_name: Optional[str] = None
     system_smtp_from_email: Optional[str] = None
     system_smtp_enabled: Optional[bool] = None
+
+    api_listener_username: Optional[str] = None
+    api_listener_access_key: Optional[str] = None
+    api_listener_enabled: Optional[bool] = None
+
 
     class Config:
         from_attributes = True
@@ -94,6 +99,11 @@ class SystemConfigUpdate(BaseModel):
     system_smtp_from_name: Optional[str] = None
     system_smtp_from_email: Optional[str] = None
     system_smtp_enabled: Optional[bool] = None
+
+    api_listener_username: Optional[str] = None
+    api_listener_access_key: Optional[str] = None
+    api_listener_enabled: Optional[bool] = None
+
 
 class PaymentLogBase(BaseModel):
     user_email: EmailStr
@@ -137,8 +147,8 @@ class AdminDashboardStats(BaseModel):
     emails_sent_today: int
     emails_sent_month: int
     emails_sent_all_time: int
-    revenue_usd_month: int
-    revenue_bdt_month: int
+    revenue_usd_month: float
+    revenue_bdt_month: float
     recent_activities: List[AdminAuditLogResponse]
 
 
@@ -185,6 +195,20 @@ class UserProfileUpdate(BaseModel):
     timezone: Optional[str] = None
     send_password_mail: Optional[bool] = False
     send_profile_email: Optional[bool] = False
+
+
+class DhruApiLogResponse(BaseModel):
+    id: int
+    action: str
+    username: Optional[str] = None
+    ip_address: Optional[str] = None
+    status: str
+    message: Optional[str] = None
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
 
 
 

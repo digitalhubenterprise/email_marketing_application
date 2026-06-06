@@ -39,6 +39,13 @@ class ContactResponse(ContactBase):
     class Config:
         from_attributes = True
 
+class ContactUpdate(BaseModel):
+    email: Optional[EmailStr] = None
+    name: Optional[str] = None
+    tags: Optional[str] = None
+    status: Optional[str] = None
+    custom_fields: Optional[str] = None
+
 # CSV upload helper response
 class CSVImportResponse(BaseModel):
     success_count: int

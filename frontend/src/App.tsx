@@ -11,6 +11,7 @@ import Campaigns from './pages/Campaigns'
 import Billing from './pages/Billing'
 import Wallet from './pages/Wallet'
 import TelegramMarketing from './pages/TelegramMarketing'
+import ManageSettings from './pages/ManageSettings'
 
 // Administrative Portal pages imports
 import AdminLayout from './components/AdminLayout'
@@ -22,6 +23,8 @@ import AdminSettings from './pages/AdminSettings'
 import AdminAudits from './pages/AdminAudits'
 import AdminRegister from './pages/AdminRegister'
 import AdminCampaigns from './pages/AdminCampaigns'
+import AdminApiSettings from './pages/AdminApiSettings'
+
 
 // Define AuthContext shape
 interface AuthConfigType {
@@ -273,6 +276,7 @@ export default function App() {
           <Route path="campaigns" element={<Campaigns />} />
           <Route path="billing" element={<Billing />} />
           <Route path="wallet" element={<Wallet />} />
+          <Route path="settings" element={<ManageSettings />} />
           <Route path="telegram-marketing" element={<TelegramMarketing />} />
           <Route path="telegram-marketing/imei" element={<TelegramMarketing defaultTab="imei" />} />
           <Route path="telegram-marketing/server" element={<TelegramMarketing defaultTab="server" />} />
@@ -289,6 +293,7 @@ export default function App() {
           <Route path="users" element={<AdminUsers />} />
           <Route path="billing" element={<AdminBilling />} />
           <Route path="settings" element={<AdminSettings />} />
+          <Route path="api-settings" element={<AdminApiSettings />} />
           <Route path="audits" element={<AdminAudits />} />
           <Route path="campaigns" element={<AdminCampaigns />} />
         </Route>

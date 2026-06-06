@@ -190,8 +190,8 @@ export default function SMTPServers() {
             )}
 
             {/* Row 1: Server Name & Daily Send Limit */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-              <div className="sm:col-span-8 flex flex-col gap-1">
+            <div className="grid grid-cols-1 large-android:grid-cols-12 gap-3">
+              <div className="large-android:col-span-8 flex flex-col gap-1">
                 <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider">Server Name *</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
@@ -205,7 +205,7 @@ export default function SMTPServers() {
                 </div>
               </div>
 
-              <div className="sm:col-span-4 flex flex-col gap-1">
+              <div className="large-android:col-span-4 flex flex-col gap-1">
                 <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider">Daily Send Limit *</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
@@ -221,8 +221,8 @@ export default function SMTPServers() {
             </div>
 
             {/* Row 2: SMTP Host & Port */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-              <div className="sm:col-span-9 flex flex-col gap-1">
+            <div className="grid grid-cols-1 large-android:grid-cols-12 gap-3">
+              <div className="large-android:col-span-9 flex flex-col gap-1">
                 <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider">SMTP Host *</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
@@ -236,7 +236,7 @@ export default function SMTPServers() {
                 </div>
               </div>
 
-              <div className="sm:col-span-3 flex flex-col gap-1">
+              <div className="large-android:col-span-3 flex flex-col gap-1">
                 <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider">Port *</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
@@ -252,8 +252,8 @@ export default function SMTPServers() {
             </div>
 
             {/* Row 3: Encryption & SMTP Username */}
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3">
-              <div className="sm:col-span-4 flex flex-col gap-1">
+            <div className="grid grid-cols-1 large-android:grid-cols-12 gap-3">
+              <div className="large-android:col-span-4 flex flex-col gap-1">
                 <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider">Encryption</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
@@ -273,7 +273,7 @@ export default function SMTPServers() {
                 </div>
               </div>
 
-              <div className="sm:col-span-8 flex flex-col gap-1">
+              <div className="large-android:col-span-8 flex flex-col gap-1">
                 <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider">SMTP Username *</label>
                 <div className="relative">
                   <div className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
@@ -289,7 +289,7 @@ export default function SMTPServers() {
             </div>
 
             {/* Row 4: SMTP Password & From Name */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 large-android:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
                 <label className="block text-[10px] font-bold text-dark-400 uppercase tracking-wider">SMTP Password *</label>
                 <div className="relative">
@@ -370,12 +370,12 @@ export default function SMTPServers() {
             )}
 
             {/* Actions */}
-            <div className="flex flex-col sm:flex-row gap-2 pt-2">
+            <div className="flex flex-col large-android:flex-row gap-2 pt-2">
               <button
                 type="button"
                 disabled={testing || submitting || !host || !username || !password}
                 onClick={handleTestConnection}
-                className="px-4 py-2 bg-dark-950/60 hover:bg-dark-900 text-xs font-bold text-white rounded-lg border border-dark-700/60 flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed group"
+                className="px-4 py-2 bg-dark-950/60 hover:bg-dark-900 text-xs font-bold text-white rounded-lg border border-dark-700/60 flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed group w-full large-android:w-auto"
               >
                 {testing ? (
                   <>
@@ -412,7 +412,7 @@ export default function SMTPServers() {
         </div>
 
         {/* Saved Profiles Side Panel */}
-        <div className="glass-panel p-3.5 md:p-4 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/20">
+        <div className="glass-panel p-3.5 md:p-4 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/20 w-full">
           <h3 className="text-sm font-bold text-white mb-3.5 flex items-center gap-2">
             <Server size={14} className="text-brand-400 shrink-0" />
             <span>Configured Nodes ({servers.length})</span>
@@ -423,7 +423,7 @@ export default function SMTPServers() {
               <RefreshCw className="animate-spin text-brand-500" size={18} />
             </div>
           ) : servers.length > 0 ? (
-            <div className="space-y-2.5 max-h-[460px] overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 max-h-[460px] overflow-y-auto pr-1">
               {servers.map((s) => (
                 <div 
                   key={s.id} 

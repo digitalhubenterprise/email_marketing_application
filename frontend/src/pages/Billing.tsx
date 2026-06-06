@@ -8,6 +8,59 @@ export default function Billing() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showSimModal, setShowSimModal] = useState<string | null>(null);
+  
+  // Active tier details states & helpers
+  const [autoRenew, setAutoRenew] = useState(true);
+  const [showPortalModal, setShowPortalModal] = useState(false);
+
+  const getActiveTierName = (tier: string) => {
+    switch (tier?.toLowerCase()) {
+      case 'free': return 'Starter Free 🚀';
+      case 'pro': return 'Standard V2 🏆';
+      case 'business': return 'Business Elite 💎';
+      case 'enterprise': return 'Diamond V2 🏆';
+      default: return (tier ? tier.charAt(0).toUpperCase() + tier.slice(1) : 'Starter Free') + ' 🚀';
+    }
+  };
+
+  const getNetworkSpeed = (tier: string) => {
+    switch (tier?.toLowerCase()) {
+      case 'free': return 'Standard Speed';
+      case 'pro': return 'High Speed';
+      case 'business':
+      case 'enterprise':
+        return 'Enterprise High Speed';
+      default: return 'Standard Speed';
+    }
+  };
+
+  const getSecurityStatus = (tier: string) => {
+    switch (tier?.toLowerCase()) {
+      case 'free': return 'Basic Firewall';
+      case 'pro': return 'Advanced Firewall';
+      case 'business':
+      case 'enterprise':
+        return 'Hardened Shield';
+      default: return 'Basic Firewall';
+    }
+  };
+
+  const getGlobalRelay = (tier: string) => {
+    switch (tier?.toLowerCase()) {
+      case 'free': return 'Disabled';
+      default: return 'Enabled';
+    }
+  };
+
+  const getSlaStatus = (tier: string) => {
+    switch (tier?.toLowerCase()) {
+      case 'free': return 'Community Support';
+      case 'pro': return 'Standard Support';
+      case 'business': return 'Priority Support';
+      case 'enterprise': return 'Dedicated 24/7 SLA Support';
+      default: return 'Community Support';
+    }
+  };
 
   // Cash desk states
   const [payMethod, setPayMethod] = useState<"wallet" | "direct">("wallet");
@@ -246,9 +299,71 @@ export default function Billing() {
       <div className="pb-1.5 border-b border-dark-700/20">
         <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
           <CreditCard size={18} className="text-brand-400 shrink-0" />
-          <span>SaaS Subscription Desk</span>
+          <span>Subscription Plan</span>
         </h2>
         <p className="text-[10px] text-dark-400 mt-0.5">Select the pricing model that best scales with your audience assets</p>
+      </div>
+
+      {/* Currently Active Tier Section */}
+      <div className="glass-panel rounded-2xl overflow-hidden border border-dark-700/30 shadow-lg">
+        {/* Banner Header */}
+        <div className="bg-brand-600 dark:bg-brand-600/90 text-center py-1.5 text-[9px] font-black uppercase tracking-widest text-slate-100">
+          Currently Active Tier
+        </div>
+        {/* Body content */}
+        <div className="p-4 sm:p-5 flex flex-col md:flex-row md:items-center justify-between gap-4 md:gap-0 bg-dark-900/40">
+          {/* Active Package Details */}
+          <div className="flex-1 min-w-0 md:pr-6 md:pb-0 pb-3 border-b md:border-b-0 border-dark-800/40">
+            <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider block mb-1">Active Package</span>
+            <span className="text-xs sm:text-sm font-black text-white font-sans truncate block">{getActiveTierName(user?.subscription_tier)}</span>
+          </div>
+
+          {/* Spec Columns Grid */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-[3.5] md:px-6 md:py-0 py-1 border-b md:border-b-0 border-dark-800/40">
+            {/* Net Speed */}
+            <div className="min-w-0">
+              <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider block mb-0.5">Network Speed</span>
+              <span className="text-[10px] font-semibold text-white truncate block">{getNetworkSpeed(user?.subscription_tier)}</span>
+            </div>
+            {/* Security */}
+            <div className="min-w-0">
+              <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider block mb-0.5">Security</span>
+              <span className="text-[10px] font-bold text-emerald-400 truncate block">{getSecurityStatus(user?.subscription_tier)}</span>
+            </div>
+            {/* Global Relay */}
+            <div className="min-w-0">
+              <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider block mb-0.5">Global Relay</span>
+              <span className="text-[10px] font-bold text-brand-400 truncate block">{getGlobalRelay(user?.subscription_tier)}</span>
+            </div>
+            {/* SLA Status */}
+            <div className="min-w-0">
+              <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider block mb-0.5">SLA Status</span>
+              <span className="text-[10px] font-semibold text-white truncate block">{getSlaStatus(user?.subscription_tier)}</span>
+            </div>
+          </div>
+
+          {/* Auto Renew & Billing Portal */}
+          <div className="flex flex-row md:flex-col md:items-end justify-between items-center gap-3 flex-1 md:pl-6 pt-2 md:pt-0">
+            <div className="flex items-center gap-2.5">
+              <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider">Auto Renew</span>
+              {/* Custom toggle button */}
+              <button
+                type="button"
+                onClick={() => setAutoRenew(prev => !prev)}
+                className={`w-7 h-4 flex items-center rounded-full p-0.5 transition-colors duration-300 ${autoRenew ? 'bg-emerald-500' : 'bg-dark-800 border border-dark-700'}`}
+              >
+                <div className={`w-3 h-3 rounded-full bg-white shadow-md transform transition-transform duration-300 ${autoRenew ? 'translate-x-3' : 'translate-x-0'}`} />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPortalModal(true)}
+              className="px-4 py-1.5 bg-dark-800 hover:bg-dark-750 dark:bg-dark-900/60 dark:hover:bg-dark-800 text-dark-200 dark:text-white border border-dark-700/60 dark:border-dark-850 rounded-lg text-[9px] font-black uppercase tracking-wider shadow-sm transition-all whitespace-nowrap"
+            >
+              Billing Portal
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Plans Grid */}
@@ -261,10 +376,34 @@ export default function Billing() {
           No billing plans configured in system database.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-3.5 items-stretch">
+        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 sm:gap-4 items-stretch">
           {plans.map((p, idx) => {
             const isCurrent = user?.subscription_tier === p.tierCode;
             const staggerDelay = `${idx * 80}ms`;
+
+            // Custom modern theme mappings
+            let badgeText = null;
+            let cardStyle = "bg-dark-900/60 backdrop-blur-md border-dark-800/80 hover:border-dark-700/80 shadow-lg";
+            let iconBg = "bg-dark-950/80 border-dark-800/60 text-dark-400";
+            
+            if (isCurrent) {
+              badgeText = "Active";
+              cardStyle = "bg-emerald-950/10 backdrop-blur-md border-emerald-500/40 shadow-emerald-950/20 shadow-xl hover:border-emerald-500/60";
+              iconBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-400";
+            } else if (p.tierCode === 'pro' || p.name === 'Standard') {
+              badgeText = "Best Seller";
+              cardStyle = "bg-brand-950/10 backdrop-blur-md border-brand-500/40 shadow-brand-500/10 shadow-xl animate-pulseGlow hover:border-brand-500/60";
+              iconBg = "bg-brand-500/10 border-brand-500/30 text-brand-400";
+            } else if (p.tierCode === 'business') {
+              badgeText = "For Teams";
+              cardStyle = "bg-amber-950/10 backdrop-blur-md border-amber-500/30 hover:border-amber-500/50 shadow-lg";
+              iconBg = "bg-amber-500/10 border-amber-500/30 text-amber-400";
+            } else if (p.tierCode === 'enterprise') {
+              badgeText = "Enterprise";
+              cardStyle = "bg-emerald-950/10 backdrop-blur-md border-emerald-500/30 hover:border-emerald-500/50 shadow-lg";
+              iconBg = "bg-emerald-500/10 border-emerald-500/30 text-emerald-450";
+            }
+
             return (
               <div
                 key={p.name}
@@ -272,89 +411,99 @@ export default function Billing() {
                 className="opacity-0 animate-slideUp flex flex-col"
               >
                 <div
-                  className={`glass-panel p-4.5 rounded-xl border flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:scale-[1.015] hover:-translate-y-0.5 group shadow-lg flex-1 ${p.color} ${
-                    p.name === "Standard" ? "animate-pulseGlow" : ""
-                  }`}
+                  className={`rounded-2xl border p-3 sm:p-5 flex flex-col justify-between relative overflow-hidden transition-all duration-300 hover:scale-[1.015] hover:-translate-y-0.5 group flex-1 ${cardStyle}`}
                 >
-                  {p.name === "Standard" && (
-                    <span className="absolute -top-0.5 left-1/2 -translate-x-1/2 px-2.5 py-0.5 bg-brand-500 text-white text-[8px] font-extrabold uppercase tracking-wider rounded-b-md shadow-md shadow-brand-500/20">
-                      Most Popular
+                  {badgeText && (
+                    <span className={`absolute top-0 right-3 sm:right-4 px-1.5 py-0.5 text-[7px] sm:text-[8.5px] font-extrabold uppercase tracking-wider rounded-b-md shadow-md
+                      ${isCurrent 
+                        ? 'bg-emerald-500 text-white shadow-emerald-500/20' 
+                        : p.tierCode === 'pro' || p.name === 'Standard'
+                          ? 'bg-brand-500 text-white shadow-brand-500/20'
+                          : 'bg-dark-800 text-dark-300 border-x border-b border-dark-700'
+                      }
+                    `}>
+                      {badgeText}
                     </span>
                   )}
                   
-                  <div className="space-y-4">
-                    <div className="flex flex-col items-center mt-1 text-center">
-                      <div className="w-8 h-8 rounded-full bg-dark-950/80 border border-dark-700/50 flex items-center justify-center text-dark-400 group-hover:scale-110 transition-transform duration-300 mb-2">
-                        {p.icon}
+                  <div className="space-y-3 sm:space-y-4">
+                    <div className="flex flex-col items-center mt-1 sm:mt-2 text-center">
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 mb-2 ${iconBg}`}>
+                        {React.cloneElement(p.icon as React.ReactElement, { size: 14 })}
                       </div>
-                      <h3 className="text-sm font-bold text-white font-sans">{p.name}</h3>
-                      <p className="text-[10px] text-dark-400 mt-0.5 leading-normal max-w-[170px]">{p.desc}</p>
+                      <h3 className="text-xs sm:text-sm font-black text-white font-sans tracking-wide uppercase">{p.name}</h3>
+                      <p className="text-[9px] sm:text-[10px] text-dark-400 mt-0.5 sm:mt-1 leading-normal max-w-[190px] line-clamp-2 sm:line-clamp-none">{p.desc}</p>
                     </div>
-
-                    <div className="flex flex-col items-center justify-center py-1 text-center">
+ 
+                    <div className="flex flex-col items-center justify-center py-0.5 sm:py-1 text-center">
                       <div className="flex items-baseline justify-center gap-0.5">
-                        <span className="text-2xl font-extrabold text-white tracking-tight">{p.price}</span>
-                        <span className="text-[10px] text-dark-400 font-medium">/ month</span>
+                        <span className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">{p.price}</span>
+                        <span className="text-[8.5px] sm:text-[10px] text-dark-450 font-semibold">/ mo</span>
                       </div>
                       {p.priceDetail && (
-                        <span className="text-[9px] text-dark-400 mt-0.5 font-medium">{p.priceDetail}</span>
+                        <span className="text-[8px] sm:text-[9px] text-dark-500 mt-0.5 font-medium">{p.priceDetail}</span>
                       )}
                     </div>
-
-                    <div className="h-[1px] bg-dark-700/20" />
-
+ 
+                    <div className="h-[1px] bg-dark-800/40" />
+ 
                     {/* Specifications Grid */}
-                    <div className="space-y-2 py-1 px-1.5">
+                    <div className="space-y-1.5 py-0.5 sm:py-1 px-0.5">
                       {p.specs.map((spec: any) => (
-                        <div key={spec.label} className="flex justify-between items-center text-[11px]">
-                          <span className="text-dark-400 font-medium flex items-center gap-1.5">
-                            {spec.label === "Contacts" && <Users size={12} className="text-dark-500 shrink-0" />}
-                            {spec.label === "Sends/mo" && <Send size={12} className="text-dark-500 shrink-0" />}
-                            {spec.label === "SMTP" && <Server size={12} className="text-dark-500 shrink-0" />}
-                            {spec.label === "Team seats" && <Layers size={12} className="text-dark-500 shrink-0" />}
+                        <div key={spec.label} className="flex justify-between items-center text-[9.5px] sm:text-[10.5px] border-b border-dark-850/40 pb-1.5 last:border-0 last:pb-0">
+                          <span className="text-dark-450 font-medium flex items-center gap-1.5">
+                            {spec.label === "Contacts" && <Users size={10} className="text-sky-400 shrink-0" />}
+                            {spec.label === "Sends/mo" && <Send size={10} className="text-brand-400 shrink-0" />}
+                            {spec.label === "SMTP" && <Server size={10} className="text-amber-400 shrink-0" />}
+                            {spec.label === "Team seats" && <Layers size={10} className="text-emerald-400 shrink-0" />}
                             <span>{spec.label}</span>
                           </span>
                           <span className="text-white font-extrabold font-mono">{spec.value}</span>
                         </div>
                       ))}
                     </div>
-
-                    <div className="h-[1px] bg-dark-700/20" />
-
-                    <ul className="space-y-2 text-left w-full pl-5 pr-2">
-                      {p.features.map((f: string, idx: number) => (
-                        <li key={idx} className="flex items-start gap-2 text-[10.5px] text-dark-300 leading-relaxed">
-                          <span className="p-0.5 bg-brand-500/10 text-brand-400 rounded-md border border-brand-500/20 mt-0.5 shrink-0">
-                            <Check size={8} />
+ 
+                    <div className="h-[1px] bg-dark-800/40" />
+ 
+                    <ul className="space-y-1.5 text-left w-full pl-1 sm:pl-2 pr-1">
+                      {p.features.slice(0, 3).map((f: string, idx: number) => (
+                        <li key={idx} className="flex items-start gap-1.5 text-[9px] sm:text-[10px] text-dark-300 leading-normal">
+                          <span className="p-0.5 bg-brand-500/10 text-brand-450 rounded border border-brand-500/20 mt-0.5 shrink-0">
+                            <Check size={6} className="stroke-[3]" />
                           </span>
-                          <span>{f}</span>
+                          <span className="truncate">{f}</span>
                         </li>
                       ))}
                     </ul>
                   </div>
-
-                  <div className="mt-4.5 pt-2">
-                    <button
-                      type="button"
-                      disabled={isCurrent || loading}
-                      onClick={() => {
-                        setShowSimModal(p.tierCode);
-                        setCheckoutStatus("idle");
-                        setPayMethod("wallet");
-                        setProcessingProgress(0);
-                        setProcessingLog("");
-                      }}
-                      className={`w-full py-2 px-4 text-xs font-bold rounded-lg transition-all text-center flex items-center justify-center gap-1.5
-                        ${isCurrent 
-                          ? 'bg-dark-950 text-dark-400 border border-dark-800 cursor-default' 
-                          : p.name === 'Standard'
-                            ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.99]'
-                            : 'bg-dark-950 hover:bg-dark-900 text-white border border-dark-700 hover:scale-[1.01] active:scale-[0.99]'}
-                      `}
-                    >
-                      <span>{isCurrent ? "Active Plan" : p.btnText}</span>
-                      {!isCurrent && <ArrowUpRight size={12} />}
-                    </button>
+ 
+                  <div className="mt-4 sm:mt-5 pt-1">
+                    {isCurrent ? (
+                      <div className="w-full py-1.5 sm:py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-bold rounded-lg text-center bg-emerald-500/10 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 dark:border-emerald-500/30 flex items-center justify-center gap-1 shadow-sm shadow-emerald-500/5 cursor-default">
+                        <Check size={12} className="stroke-[3]" />
+                        <span>Active Plan</span>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={loading}
+                        onClick={() => {
+                          setShowSimModal(p.tierCode);
+                          setCheckoutStatus("idle");
+                          setPayMethod("wallet");
+                          setProcessingProgress(0);
+                          setProcessingLog("");
+                        }}
+                        className={`w-full py-1.5 sm:py-2 px-2 sm:px-4 text-[10px] sm:text-xs font-bold rounded-lg transition-all text-center flex items-center justify-center gap-1
+                          ${p.tierCode === 'pro' || p.name === 'Standard'
+                            ? 'brand-gradient-bg text-white shadow-md shadow-brand-500/25 hover:opacity-95 hover:scale-[1.01] active:scale-[0.99]'
+                            : 'bg-dark-850 dark:bg-white/5 hover:bg-dark-700 dark:hover:bg-white/10 text-dark-100 dark:text-white border border-dark-600/40 dark:border-white/10 hover:border-dark-500 dark:hover:border-white/20 hover:scale-[1.01] active:scale-[0.99]'}
+                        `}
+                      >
+                        <span>{p.btnText}</span>
+                        <ArrowUpRight size={10} />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>
@@ -520,7 +669,7 @@ export default function Billing() {
                       setPayMethod("wallet");
                       setCheckoutStatus("idle");
                     }}
-                    className="flex-1 py-2 bg-dark-950 hover:bg-dark-900 text-xs font-bold text-white border border-dark-800 rounded-lg transition-colors"
+                    className="flex-1 py-2 bg-dark-850 dark:bg-dark-950 hover:bg-dark-700 dark:hover:bg-dark-900 text-xs font-bold text-dark-100 dark:text-white border border-dark-600/40 dark:border-dark-800 rounded-lg transition-colors"
                   >
                     Cancel
                   </button>
@@ -651,6 +800,84 @@ export default function Billing() {
               </div>
             )}
 
+          </div>
+        </div>
+      )}
+
+      {/* Billing Portal Modal */}
+      {showPortalModal && (
+        <div className="fixed inset-0 bg-dark-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-md bg-dark-900 border border-dark-700/50 rounded-2xl p-5 shadow-2xl relative animate-scaleUp text-white">
+            <div className="flex justify-between items-center border-b border-dark-800 pb-3 mb-4">
+              <div className="flex items-center gap-2">
+                <CreditCard className="text-brand-400" size={18} />
+                <h4 className="text-xs font-black uppercase tracking-wider">ASTRA IT Stripe Customer Portal</h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPortalModal(false)}
+                className="text-dark-400 hover:text-white text-xs font-bold font-sans"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              <div className="p-3 bg-dark-950 border border-dark-850 rounded-xl space-y-2">
+                <span className="text-[8px] font-bold text-dark-500 uppercase tracking-widest block">Billing Profile</span>
+                <div className="flex justify-between text-dark-300">
+                  <span>Customer Email</span>
+                  <span className="text-white font-semibold">{user?.email}</span>
+                </div>
+                <div className="flex justify-between text-dark-300">
+                  <span>Active Plan</span>
+                  <span className="text-emerald-400 font-bold uppercase">{user?.subscription_tier || 'Free'} Tier</span>
+                </div>
+                <div className="flex justify-between text-dark-300">
+                  <span>Billing Cycle</span>
+                  <span className="text-white font-semibold">Monthly Auto-Renew</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-dark-950 border border-dark-850 rounded-xl space-y-2">
+                <span className="text-[8px] font-bold text-dark-500 uppercase tracking-widest block">Payment Method</span>
+                <div className="flex justify-between items-center text-dark-300">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck size={14} className="text-emerald-400" />
+                    <span>Visa ending in 4242</span>
+                  </div>
+                  <span className="text-[8px] font-bold uppercase px-1.5 py-0.5 bg-brand-500/10 border border-brand-500/20 text-brand-400 rounded">Default</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-dark-950 border border-dark-850 rounded-xl space-y-2">
+                <span className="text-[8px] font-bold text-dark-500 uppercase tracking-widest block">Mock Invoice History</span>
+                <div className="space-y-1.5">
+                  <div className="flex justify-between text-[10px] text-dark-400 border-b border-dark-850 pb-1.5 last:border-0 last:pb-0">
+                    <span>Jun 01, 2026 - Plan Upgrade</span>
+                    <span className="font-mono text-white font-bold">$25.00 Paid</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-dark-400 border-b border-dark-850 pb-1.5 last:border-0 last:pb-0">
+                    <span>May 01, 2026 - Monthly Renewal</span>
+                    <span className="font-mono text-white font-bold">$25.00 Paid</span>
+                  </div>
+                  <div className="flex justify-between text-[10px] text-dark-400 border-b border-dark-850 pb-1.5 last:border-0 last:pb-0">
+                    <span>Apr 01, 2026 - Account Setup</span>
+                    <span className="font-mono text-white font-bold">$0.00 Free</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-5 border-t border-dark-800 pt-3 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowPortalModal(false)}
+                className="px-4 py-1.5 bg-dark-800 hover:bg-dark-750 text-white rounded-lg text-[10px] font-bold transition-all"
+              >
+                Close Portal
+              </button>
+            </div>
           </div>
         </div>
       )}

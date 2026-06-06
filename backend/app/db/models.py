@@ -24,6 +24,9 @@ class User(Base):
     notification_settings = Column(String, default="all")
     two_factor_secret = Column(String, nullable=True)
     two_factor_enabled = Column(Boolean, default=False)
+    two_factor_telegram_enabled = Column(Boolean, default=False)
+    telegram_2fa_secret = Column(String, nullable=True)
+    telegram_chat_id = Column(String, nullable=True)
     username = Column(String, nullable=True)
     company = Column(String, nullable=True)
     address = Column(String, nullable=True)
@@ -222,6 +225,9 @@ class SystemConfig(Base):
     system_smtp_from_name = Column(String, nullable=True)
     system_smtp_from_email = Column(String, nullable=True)
     system_smtp_enabled = Column(Boolean, default=False)
+    api_listener_username = Column(String, default="dhru_user")
+    api_listener_access_key = Column(String, default="dhru_key_123456")
+    api_listener_enabled = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utc_now_naive)
 
 
@@ -301,4 +307,13 @@ class SubscriptionPlan(Base):
     throttle = Column(String, default="30s update interval")
     features = Column(Text, nullable=False)  # Newline-separated list of features
     created_at = Column(DateTime, default=utc_now_naive)
+class DhruApiLog(Base):
+    __tablename__ = "dhru_api_logs"
 
+    id = Column(Integer, primary_key=True, index=True)
+    action = Column(String, nullable=False)
+    username = Column(String, nullable=True)
+    ip_address = Column(String, nullable=True)
+    status = Column(String, nullable=False)  # "success" or "failed"
+    message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)

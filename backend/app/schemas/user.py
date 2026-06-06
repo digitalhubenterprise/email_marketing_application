@@ -29,6 +29,8 @@ class UserResponse(UserBase):
     brand_font_family: Optional[str] = "Inter"
     notification_settings: Optional[str] = "all"
     two_factor_enabled: bool = False
+    two_factor_telegram_enabled: bool = False
+    telegram_chat_id: Optional[str] = None
     created_at: datetime
 
     class Config:

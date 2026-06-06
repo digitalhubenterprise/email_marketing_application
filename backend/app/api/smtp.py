@@ -1,4 +1,8 @@
 import aiosmtplib
+import asyncio
+import ipaddress
+import os
+import socket
 from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -110,6 +114,37 @@ async def test_smtp_connection(
     Tests SMTP socket connectivity and credential authentication.
     Requires a valid JWT session — endpoint cannot be abused anonymously.
     """
+    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+    if is_production:
+        host_clean = req.host.strip()
+        is_private = False
+        try:
+            # Check if it is an IP address
+            ip = ipaddress.ip_address(host_clean)
+            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
+                is_private = True
+        except ValueError:
+            # Resolve DNS hostname
+            try:
+                loop = asyncio.get_running_loop()
+                addr_info = await loop.run_in_executor(
+                    None, lambda: socket.getaddrinfo(host_clean, None)
+                )
+                for family, socktype, proto, canonname, sockaddr in addr_info:
+                    ip_str = sockaddr[0]
+                    ip = ipaddress.ip_address(ip_str)
+                    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
+                        is_private = True
+                        break
+            except Exception:
+                pass
+
+        if is_private:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Testing connections to private or loopback IP ranges is not allowed in production."
+            )
+
     use_tls = req.security.upper() == "SSL"
     start_tls = req.security.upper() == "TLS"
 

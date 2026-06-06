@@ -146,6 +146,15 @@ async def create_db_tables() -> None:
             await conn.execute(
                 text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS system_smtp_enabled BOOLEAN DEFAULT false")
             )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS api_listener_username VARCHAR DEFAULT 'dhru_user'")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS api_listener_access_key VARCHAR DEFAULT 'dhru_key_123456'")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS api_listener_enabled BOOLEAN DEFAULT true")
+            )
     except Exception as e:
         print(f"DB migration warning 4 (non-fatal): {e}")
 
@@ -160,6 +169,9 @@ async def create_db_tables() -> None:
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS notification_settings VARCHAR DEFAULT 'all'"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_secret VARCHAR"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_enabled BOOLEAN DEFAULT false"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS two_factor_telegram_enabled BOOLEAN DEFAULT false"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_2fa_secret VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS telegram_chat_id VARCHAR"))
             
             # smtp reputation
             await conn.execute(text("ALTER TABLE smtp_servers ADD COLUMN IF NOT EXISTS reputation_score INTEGER DEFAULT 100"))

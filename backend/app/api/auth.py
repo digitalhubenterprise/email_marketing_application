@@ -116,6 +116,72 @@ async def login(
             detail="Account has been disabled. Please contact support.",
         )
 
+    # Check Multi-Factor Authentication (MFA)
+    if user.two_factor_enabled or user.two_factor_telegram_enabled:
+        mfa_code = request.headers.get("X-2FA-Code") or request.headers.get("x-2fa-code")
+        if not mfa_code:
+            # If Telegram 2FA is active, dispatch verification code automatically
+            if user.two_factor_telegram_enabled and user.telegram_2fa_secret and user.telegram_chat_id:
+                try:
+                    import pyotp
+                    # 1. Resolve Bot Token
+                    res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
+                    sys_config = res.scalars().first()
+                    bot_token = sys_config.telegram_bot_token if sys_config else None
+
+                    if not bot_token:
+                        from app.db.models import TelegramMarketingConfig
+                        user_config_res = await db.execute(
+                            select(TelegramMarketingConfig).where(TelegramMarketingConfig.user_id == user.id)
+                        )
+                        user_config = user_config_res.scalars().first()
+                        bot_token = user_config.telegram_bot_token if user_config else None
+
+                    if bot_token:
+                        totp = pyotp.TOTP(user.telegram_2fa_secret)
+                        code = totp.now()
+                        import aiohttp
+                        telegram_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+                        message_text = (
+                            f"🔒 *SmartCampaign Login Code*\n\n"
+                            f"Your login verification code is: *{code}*\n\n"
+                            f"If you did not request this, please secure your credentials."
+                        )
+                        payload_data = {
+                            "chat_id": user.telegram_chat_id,
+                            "text": message_text,
+                            "parse_mode": "Markdown"
+                        }
+                        async with aiohttp.ClientSession() as session:
+                            await session.post(telegram_url, json=payload_data, timeout=8)
+                except Exception as tg_err:
+                    print(f"Error dispatching login Telegram OTP: {tg_err}")
+
+            method = "telegram" if user.two_factor_telegram_enabled else "google"
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="2FA_REQUIRED"
+            )
+
+        # Verify the 2FA code
+        import pyotp
+        verified = False
+        if user.two_factor_enabled and user.two_factor_secret:
+            totp = pyotp.TOTP(user.two_factor_secret)
+            if totp.verify(mfa_code, valid_window=1):
+                verified = True
+
+        if not verified and user.two_factor_telegram_enabled and user.telegram_2fa_secret:
+            totp = pyotp.TOTP(user.telegram_2fa_secret)
+            if totp.verify(mfa_code, valid_window=1):
+                verified = True
+
+        if not verified:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect 2FA verification code."
+            )
+
     return {"access_token": create_access_token(subject=user.id, role="user"), "token_type": "bearer"}  # nosec
 
 
@@ -225,8 +291,17 @@ class PaymentSubmitRequest(BaseModel):
 
 
 async def verify_bep20_transaction(tx_hash: str, expected_amount: float) -> tuple[bool, float, str]:
-    if tx_hash.startswith("MOCK_TXN_") or tx_hash.startswith("TXN-") or not tx_hash:
-        return True, expected_amount, "Simulated BEP20 receipt accepted."
+    import os
+    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+
+    if is_production:
+        if not tx_hash:
+            return False, 0.0, "Transaction hash cannot be empty."
+        if tx_hash.startswith("MOCK_TXN_") or tx_hash.startswith("TXN-"):
+            return False, 0.0, "Mock transactions are not allowed in production."
+    else:
+        if tx_hash.startswith("MOCK_TXN_") or tx_hash.startswith("TXN-") or not tx_hash:
+            return True, expected_amount, "Simulated BEP20 receipt accepted."
         
     import aiohttp
     import asyncio
@@ -309,14 +384,17 @@ async def submit_payment(
             status_val = "paid"
             notes_val = f"[ADD_FUND] Verified {log_msg} | TXID: {tx_hash}"
             if payload.plan_tier != "free":
-                valid_tiers = {
-                    "free": 5000,
-                    "pro": 50000,
-                    "business": 200000,
-                    "enterprise": 999999999,
-                }
-                current_user.subscription_tier = payload.plan_tier
-                current_user.quota_limit = valid_tiers.get(payload.plan_tier, 5000)
+                plan_res = await db.execute(
+                    select(SubscriptionPlan).where(SubscriptionPlan.tier == payload.plan_tier.strip().lower())
+                )
+                plan = plan_res.scalars().first()
+                if not plan:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Requested subscription plan tier does not exist."
+                    )
+                current_user.subscription_tier = plan.tier
+                current_user.quota_limit = plan.quota
                 db.add(current_user)
         else:
             raise HTTPException(status_code=400, detail=log_msg)
@@ -386,6 +464,16 @@ class SettingsUpdateRequest(BaseModel):
 class TwoFactorVerifyRequest(BaseModel):
     code: str
     secret: str
+
+
+class Telegram2FASetupRequest(BaseModel):
+    telegram_chat_id: str
+
+
+class Telegram2FAVerifyRequest(BaseModel):
+    code: str
+    secret: str
+    telegram_chat_id: str
 
 
 @router.post("/update-settings", response_model=UserResponse)
@@ -472,6 +560,127 @@ async def disable_two_factor(
     """De-activates MFA authentication on the account."""
     current_user.two_factor_secret = None
     current_user.two_factor_enabled = False
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.post("/2fa/telegram/setup")
+async def setup_telegram_2fa(
+    payload: Telegram2FASetupRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Generates a TOTP secret and dispatches the initial verification code via Telegram Bot."""
+    try:
+        import pyotp
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="MFA library (pyotp) is not installed on the server."
+        )
+
+    # 1. Resolve Telegram Bot Token
+    # First check SystemConfig
+    res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    sys_config = res.scalars().first()
+    bot_token = sys_config.telegram_bot_token if sys_config else None
+
+    # Fallback to user's TelegramMarketingConfig
+    if not bot_token:
+        from app.db.models import TelegramMarketingConfig
+        user_config_res = await db.execute(
+            select(TelegramMarketingConfig).where(TelegramMarketingConfig.user_id == current_user.id)
+        )
+        user_config = user_config_res.scalars().first()
+        bot_token = user_config.telegram_bot_token if user_config else None
+
+    if not bot_token:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Telegram Bot Token is not configured. Please contact support or set your Telegram Bot Token in Telegram Marketing settings."
+        )
+
+    # 2. Generate secret and code
+    secret = pyotp.random_base32()
+    totp = pyotp.TOTP(secret)
+    code = totp.now()
+
+    # 3. Dispatch code to Telegram Chat ID
+    import aiohttp
+    telegram_url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    message_text = (
+        f"🔒 *SmartCampaign Security Alert*\n\n"
+        f"Your Telegram 2FA verification code is: *{code}*\n\n"
+        f"Enter this code in your browser to complete your setup. Do not share this code with anyone."
+    )
+    payload_data = {
+        "chat_id": payload.telegram_chat_id,
+        "text": message_text,
+        "parse_mode": "Markdown"
+    }
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(telegram_url, json=payload_data, timeout=10) as response:
+                if response.status != 200:
+                    raw_err = await response.text()
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Telegram API returned an error. Ensure you have started the bot. Error: {raw_err}"
+                    )
+    except Exception as e:
+        if isinstance(e, HTTPException):
+            raise e
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to communicate with Telegram API: {str(e)}"
+        )
+
+    return {
+        "secret": secret,
+        "telegram_chat_id": payload.telegram_chat_id
+    }
+
+
+@router.post("/2fa/telegram/enable", response_model=UserResponse)
+async def enable_telegram_2fa(
+    payload: Telegram2FAVerifyRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Verifies the Telegram OTP and activates Telegram 2FA protection on the account."""
+    try:
+        import pyotp
+    except ImportError:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="MFA library (pyotp) is not installed on the server."
+        )
+
+    totp = pyotp.TOTP(payload.secret)
+    if not totp.verify(payload.code, valid_window=1):
+        raise HTTPException(status_code=400, detail="Invalid Telegram 2FA verification code.")
+
+    current_user.telegram_2fa_secret = payload.secret
+    current_user.telegram_chat_id = payload.telegram_chat_id
+    current_user.two_factor_telegram_enabled = True
+    db.add(current_user)
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.post("/2fa/telegram/disable", response_model=UserResponse)
+async def disable_telegram_2fa(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """De-activates Telegram 2FA authentication on the account."""
+    current_user.telegram_2fa_secret = None
+    current_user.telegram_chat_id = None
+    current_user.two_factor_telegram_enabled = False
     db.add(current_user)
     await db.commit()
     await db.refresh(current_user)

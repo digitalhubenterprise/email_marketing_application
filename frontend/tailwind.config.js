@@ -51,6 +51,20 @@ export default {
         '13': '3.25rem',
         '18': '4.5rem',
       },
+      screens: {
+        'xs': '320px',      // Small phones (SE, 5)
+        'xs-mid': '375px',  // Most Android / iPhone 6-8
+        'xs-large': '390px', // iPhone X / 11 / 12 mini
+        'xs-pro': '393px',  // iPhone 14 / 15 Pro
+        'xs-max': '414px',  // iPhone Plus / Max
+        'large-android': '480px', // Large Android (S23+)
+        'ipad-10th': '810px',     // iPad 10th gen (portrait)
+        'ipad-air': '820px',      // iPad Air / Pro 11" (portrait)
+        'macbook': '1366px',      // HD laptops / 13" MacBook
+        'desktop-1080': '1920px', // Full HD desktop (1080p)
+        'qhd': '2560px',          // 2K / QHD monitor
+        'uhd': '3840px',          // 4K / UHD monitor
+      },
     },
   },
   plugins: [],

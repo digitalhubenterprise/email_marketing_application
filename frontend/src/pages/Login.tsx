@@ -9,6 +9,8 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [mfaRequired, setMfaRequired] = useState(false)
+  const [mfaCode, setMfaCode] = useState("")
   const { login, appConfig } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -22,9 +24,14 @@ export default function Login() {
       params.append("username", email);
       params.append("password", password);
 
+      const headers: HeadersInit = { "Content-Type": "application/x-www-form-urlencoded" };
+      if (mfaRequired && mfaCode) {
+        headers["X-2FA-Code"] = mfaCode.trim();
+      }
+
       const response = await fetch("/api/auth/login", {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        headers: headers,
         body: params
       });
 
@@ -32,6 +39,20 @@ export default function Login() {
         const data = await response.json();
         await login(data.access_token);
       } else {
+        if (response.status === 401 && !mfaRequired) {
+          const clone = response.clone();
+          try {
+            const data = await clone.json();
+            if (data && data.detail === "2FA_REQUIRED") {
+              setMfaRequired(true);
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            // ignore JSON parse error, proceed to standard logic
+          }
+        }
+
         let errorMsg = "Incorrect email or password";
         try {
           const errData = await response.json();
@@ -86,56 +107,90 @@ export default function Login() {
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col gap-1">
-            <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Email Address</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
-                <Mail size={13} />
-              </span>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@domain.com"
-                className="w-full pl-9 pr-3.5 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
-              />
-            </div>
-          </div>
+          {!mfaRequired ? (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Email Address</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                    <Mail size={13} />
+                  </span>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@domain.com"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
+                  />
+                </div>
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <div className="flex justify-between items-center">
-              <label className="text-[10px] font-bold text-dark-300 uppercase tracking-wider">Password</label>
-              <a href="#" className="text-[10px] text-brand-400 hover:text-brand-300 font-bold">Forgot?</a>
-            </div>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
-                <Lock size={13} />
-              </span>
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-9 pr-10 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
-              />
+              <div className="flex flex-col gap-1">
+                <div className="flex justify-between items-center">
+                  <label className="text-[10px] font-bold text-dark-300 uppercase tracking-wider">Password</label>
+                  <a href="#" className="text-[10px] text-brand-400 hover:text-brand-300 font-bold">Forgot?</a>
+                </div>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                    <Lock size={13} />
+                  </span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-10 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-1.5 p-3 bg-dark-900/40 border border-dark-800 rounded-xl animate-fadeIn">
+              <label className="block text-[10px] font-bold text-amber-400 uppercase tracking-wider text-center">
+                MFA Verification Required
+              </label>
+              <p className="text-[9.5px] text-dark-400 text-center leading-normal mb-1">
+                Please enter the 6-digit verification code from Google Authenticator or your Telegram 2FA chat.
+              </p>
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                  <Lock size={13} />
+                </span>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={mfaCode}
+                  onChange={(e) => setMfaCode(e.target.value)}
+                  placeholder="e.g. 123456"
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-dark-950 border border-dark-800 rounded-xl text-center text-xs text-white font-mono placeholder:text-dark-655 focus:border-brand-500 focus:outline-none"
+                />
+              </div>
               <button
                 type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white transition-colors"
+                onClick={() => { setMfaRequired(false); setMfaCode(""); }}
+                className="text-center text-[10px] text-dark-500 hover:text-dark-300 font-semibold mt-1.5 underline"
               >
-                {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                Back to credentials
               </button>
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3 px-4 brand-gradient-bg text-white font-bold rounded-xl text-xs transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5 glow-btn disabled:opacity-50 mt-1"
           >
-            {loading ? "Authenticating..." : "Sign In to Dashboard"}
+            {loading ? "Verifying..." : mfaRequired ? "Confirm Login" : "Sign In to Dashboard"}
             {!loading && <ArrowRight size={13} />}
           </button>
         </form>

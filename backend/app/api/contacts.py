@@ -11,7 +11,7 @@ from app.db.session import get_db
 from app.db.models import ContactList, Contact, User
 from app.schemas.contact import (
     ContactListCreate, ContactListResponse,
-    ContactCreate, ContactResponse, CSVImportResponse
+    ContactCreate, ContactResponse, CSVImportResponse, ContactUpdate
 )
 from app.api.deps import get_current_user
 
@@ -217,6 +217,66 @@ async def delete_contact(
 
     await db.delete(contact)
     await db.commit()
+
+
+@router.patch("/lists/{list_id}/contacts/{contact_id}", response_model=ContactResponse)
+async def update_contact(
+    list_id: int,
+    contact_id: int,
+    contact_in: ContactUpdate,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Updates a single contact in a mailing list."""
+    list_check = await db.execute(
+        select(ContactList).where(
+            ContactList.id == list_id, ContactList.user_id == current_user.id
+        )
+    )
+    if not list_check.scalars().first():
+        raise HTTPException(status_code=404, detail="Mailing list not found.")
+
+    result = await db.execute(
+        select(Contact).where(Contact.id == contact_id, Contact.list_id == list_id)
+    )
+    contact = result.scalars().first()
+    if not contact:
+        raise HTTPException(status_code=404, detail="Contact not found.")
+
+    if contact_in.email is not None:
+        email = contact_in.email.strip().lower()
+        if not is_valid_email(email):
+            raise HTTPException(status_code=400, detail="Invalid email address format.")
+        
+        # Check uniqueness if email has changed
+        if email != contact.email:
+            existing = await db.execute(
+                select(Contact).where(Contact.list_id == list_id, Contact.email == email)
+            )
+            if existing.scalars().first():
+                raise HTTPException(
+                    status_code=status.HTTP_409_CONFLICT,
+                    detail=f"Contact '{email}' already exists in this list.",
+                )
+            contact.email = email
+
+    if contact_in.name is not None:
+        contact.name = contact_in.name.strip()
+    
+    if contact_in.tags is not None:
+        contact.tags = contact_in.tags.strip()
+        
+    if contact_in.status is not None:
+        status_val = contact_in.status.strip().lower()
+        contact.status = status_val
+        contact.is_unsubscribed = (status_val == "unsubscribed")
+
+    if contact_in.custom_fields is not None:
+        contact.custom_fields = contact_in.custom_fields.strip()
+
+    await db.commit()
+    await db.refresh(contact)
+    return contact
 
 
 # ─────────────────────── CSV Upload ───────────────────────

@@ -41,20 +41,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Account brand settings state
-  const [brandPrimary, setBrandPrimary] = useState(user?.brand_primary_color || "#4c6ef5");
-  const [brandSecondary, setBrandSecondary] = useState(user?.brand_secondary_color || "#fab005");
-  const [brandFont, setBrandFont] = useState(user?.brand_font_family || "Inter");
-  const [notificationSettings, setNotificationSettings] = useState(user?.notification_settings || "all");
-  const [savingSettings, setSavingSettings] = useState(false);
 
-  // 2FA state
-  const [setup2faSecret, setSetup2faSecret] = useState<string | null>(null);
-  const [setup2faQr, setSetup2faQr] = useState<string | null>(null);
-  const [mfaCode, setMfaCode] = useState("");
-  const [mfaError, setMfaError] = useState<string | null>(null);
-  const [mfaSuccess, setMfaSuccess] = useState(false);
-  const [loading2fa, setLoading2fa] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -75,97 +62,7 @@ export default function Dashboard() {
     fetchStats();
   }, [token]);
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSavingSettings(true);
-    try {
-      const res = await fetch("/api/auth/update-settings", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          brand_primary_color: brandPrimary,
-          brand_secondary_color: brandSecondary,
-          brand_font_family: brandFont,
-          notification_settings: notificationSettings
-        })
-      });
-      if (res.ok) {
-        alert("Account style configurations saved successfully!");
-        await refreshUser();
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setSavingSettings(false);
-    }
-  };
 
-  const handleSetup2FA = async () => {
-    setLoading2fa(true);
-    setMfaError(null);
-    setMfaSuccess(false);
-    try {
-      const res = await fetch("/api/auth/2fa/setup", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setSetup2faSecret(data.secret);
-        setSetup2faQr(data.provision_url);
-      }
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setLoading2fa(false);
-    }
-  };
-
-  const handleEnable2FA = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMfaError(null);
-    try {
-      const res = await fetch("/api/auth/2fa/enable", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
-        body: JSON.stringify({ code: mfaCode, secret: setup2faSecret })
-      });
-      if (res.ok) {
-        setMfaSuccess(true);
-        setSetup2faSecret(null);
-        setSetup2faQr(null);
-        setMfaCode("");
-        await refreshUser();
-      } else {
-        const err = await res.json();
-        setMfaError(err.detail || "2FA verification failed. Check authorization token code.");
-      }
-    } catch (err) {
-      setMfaError("Connection failed.");
-    }
-  };
-
-  const handleDisable2FA = async () => {
-    if (!confirm("Are you sure you want to disable Multi-Factor Authentication? Your account security will be reduced.")) return;
-    try {
-      const res = await fetch("/api/auth/2fa/disable", {
-        method: "POST",
-        headers: { "Authorization": `Bearer ${token}` }
-      });
-      if (res.ok) {
-        alert("2FA protection successfully removed.");
-        await refreshUser();
-      }
-    } catch (err) {
-      console.error(err);
-    }
-  };
 
   if (loading) {
     return (
@@ -235,73 +132,37 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-5 animate-fadeIn">
-      {/* Welcome Banner */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h2 className="text-2xl font-extrabold text-white font-sans tracking-tight">Campaign Console</h2>
-          <p className="text-xs text-dark-400 mt-0.5">Real-time statistics for beta.smartcampaign.today</p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link
-            to="/campaigns"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold border border-dark-700 hover:bg-dark-800 text-white transition-colors"
-          >
-            <PlusCircle size={12} />
-            New Campaign
-          </Link>
-          <Link
-            to="/smtp"
-            className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-semibold brand-gradient-bg text-white shadow-md shadow-brand-500/20 hover:scale-[1.01] transition-transform"
-          >
-            <Server size={12} />
-            Configure SMTP
-          </Link>
-        </div>
-      </div>
-
-      {/* Warning banner if SMTP is missing */}
-      {!stats?.smtp_health && (
-        <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs flex items-center gap-2 animate-pulse">
-          <AlertTriangle size={16} className="shrink-0 animate-bounce" />
-          <div>
-            <span className="font-bold">SMTP Connection Needed:</span> You must register at least one custom SMTP Server before launching campaigns.
-            <Link to="/smtp" className="underline ml-2 font-semibold text-white">Setup SMTP now →</Link>
-          </div>
-        </div>
-      )}
-
+    <div className="space-y-4 sm:space-y-5 animate-fadeIn">
       {/* Grid of Metric Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
         {cards.map((c, i) => (
           <div 
             key={i} 
-            className="flex items-center justify-between p-3.5 rounded-full glass-panel hover:border-brand-500/30 dark:hover:border-dark-600 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 relative overflow-hidden group shadow-lg hover:shadow-xl dark:hover:shadow-brand-500/5"
+            className="flex items-center justify-between p-2.5 sm:p-3.5 rounded-2xl glass-panel hover:border-brand-500/30 dark:hover:border-dark-600 transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 relative overflow-hidden group shadow-lg hover:shadow-xl dark:hover:shadow-brand-500/5"
             style={{ backgroundImage: c.glowBg }}
           >
-            <div className="flex items-center relative z-10">
-              <div className={`w-11 h-11 rounded-2xl flex items-center justify-center border transition-transform duration-500 group-hover:scale-105 group-hover:rotate-6 ${c.colorClass}`}>
+            <div className="flex items-center relative z-10 min-w-0">
+              <div className={`w-8 h-8 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center border transition-transform duration-500 group-hover:scale-105 group-hover:rotate-6 shrink-0 ${c.colorClass}`}>
                 {c.icon}
               </div>
 
-              <div className="ml-3 flex flex-col justify-center">
-                <span className="text-[9px] font-extrabold text-dark-300 dark:text-dark-400 uppercase tracking-widest block transition-colors duration-300 group-hover:text-dark-100 dark:group-hover:text-dark-300">
+              <div className="ml-2 sm:ml-3 flex flex-col justify-center min-w-0">
+                <span className="text-[8px] sm:text-[9px] font-extrabold text-dark-300 dark:text-dark-400 uppercase tracking-widest block transition-colors duration-300 group-hover:text-dark-100 dark:group-hover:text-dark-300 truncate">
                   {c.title}
                 </span>
-                <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="text-sm font-black text-white tracking-tight select-none">
+                <div className="flex items-center gap-1 mt-0.5 flex-wrap">
+                  <span className="text-xs sm:text-sm font-black text-white tracking-tight select-none">
                     {c.value}
                   </span>
-                  <span className={`w-1.5 h-1.5 rounded-full ${c.indicatorColor}`} />
-                  <span className="text-[9px] text-dark-400 dark:text-dark-500 font-bold dark:font-semibold lowercase tracking-wide group-hover:text-dark-200 dark:group-hover:text-dark-400 transition-colors duration-300">
+                  <span className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full shrink-0 ${c.indicatorColor}`} />
+                  <span className="text-[8px] sm:text-[9px] text-dark-400 dark:text-dark-500 font-bold dark:font-semibold lowercase tracking-wide group-hover:text-dark-200 dark:group-hover:text-dark-400 transition-colors duration-300 truncate">
                     ({c.status})
                   </span>
                 </div>
               </div>
             </div>
             
-            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-dark-800/60 border border-dark-700/50 text-dark-400 hover:text-dark-100 dark:hover:text-white hover:bg-dark-700/50 dark:hover:bg-dark-800 cursor-pointer transition-all duration-300 relative z-10">
+            <div className="w-8 h-8 rounded-full flex items-center justify-center bg-dark-800/60 border border-dark-700/50 text-dark-400 hover:text-dark-100 dark:hover:text-white hover:bg-dark-700/50 dark:hover:bg-dark-800 cursor-pointer transition-all duration-300 relative z-10 shrink-0 ml-2 hidden sm:flex">
               <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-refresh-cw">
                 <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
                 <path d="M3 3v5h5" />
@@ -325,7 +186,7 @@ export default function Dashboard() {
 
           <div className="h-64 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <AreaChart data={chartData} margin={{ top: 10, right: 5, left: -10, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorSent" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#4c6ef5" stopOpacity={0.25}/>
@@ -355,7 +216,7 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="glass-panel p-5 rounded-2xl border border-dark-700/30 flex flex-col justify-between">
+        <div className="glass-panel p-5 rounded-2xl border border-dark-700/30 flex flex-col justify-between gap-4">
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-base font-bold text-white">Database Assets</h3>
@@ -383,7 +244,7 @@ export default function Dashboard() {
 
           <Link
             to="/lists"
-            className="w-full mt-4 py-3 bg-dark-900 hover:bg-dark-800 rounded-xl text-xs font-bold text-white border border-dark-700 text-center flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full py-3 bg-dark-900 hover:bg-dark-800 rounded-xl text-xs font-bold text-white border border-dark-700 text-center flex items-center justify-center gap-1.5 transition-colors"
           >
             Manage Contact Assets
             <ArrowUpRight size={12} />
@@ -396,7 +257,7 @@ export default function Dashboard() {
         <h3 className="text-base font-bold text-white mb-4">Recent Campaigns</h3>
         {stats?.recent_campaigns && stats.recent_campaigns.length > 0 ? (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
+            <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
                 <tr className="border-b border-dark-700/50 pb-2 text-[10px] font-bold text-dark-400 uppercase tracking-wider">
                   <th className="pb-2.5">Campaign Details</th>
@@ -438,162 +299,6 @@ export default function Dashboard() {
             <p className="text-xs text-dark-400">No campaigns launched yet. Start sending by clicking "New Campaign".</p>
           </div>
         )}
-      </div>
-
-      {/* Account Settings & MFA Security Center */}
-      <div className="glass-panel p-5 rounded-2xl border border-dark-700/30 grid grid-cols-1 md:grid-cols-2 gap-5 shadow-lg">
-        {/* Style & Preferences */}
-        <div className="space-y-4">
-          <h3 className="text-base font-bold text-white mb-2 flex items-center gap-1.5">
-            <Palette size={16} className="text-brand-400" />
-            <span>Profile Customizations</span>
-          </h3>
-
-          <form onSubmit={handleSaveSettings} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Primary Color</label>
-                <div className="flex items-center gap-2 bg-dark-950 p-1.5 border border-dark-800 rounded-lg">
-                  <input
-                    type="color" value={brandPrimary} onChange={e => setBrandPrimary(e.target.value)}
-                    className="w-6 h-6 bg-transparent border-0 cursor-pointer rounded"
-                  />
-                  <span className="text-[10px] font-mono text-dark-300">{brandPrimary}</span>
-                </div>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Secondary Color</label>
-                <div className="flex items-center gap-2 bg-dark-950 p-1.5 border border-dark-800 rounded-lg">
-                  <input
-                    type="color" value={brandSecondary} onChange={e => setBrandSecondary(e.target.value)}
-                    className="w-6 h-6 bg-transparent border-0 cursor-pointer rounded"
-                  />
-                  <span className="text-[10px] font-mono text-dark-300">{brandSecondary}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Default Font Family</label>
-                <select
-                  value={brandFont} onChange={e => setBrandFont(e.target.value)}
-                  className="bg-dark-950 border border-dark-800 text-white rounded-lg p-2 text-xs cursor-pointer focus:outline-none focus:border-brand-500"
-                >
-                  <option value="Inter">Inter (Classic)</option>
-                  <option value="Outfit">Outfit (Premium Rounded)</option>
-                  <option value="Roboto">Roboto (Sleek Tech)</option>
-                </select>
-              </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Notification settings</label>
-                <select
-                  value={notificationSettings} onChange={e => setNotificationSettings(e.target.value)}
-                  className="bg-dark-950 border border-dark-800 text-white rounded-lg p-2 text-xs cursor-pointer focus:outline-none focus:border-brand-500"
-                >
-                  <option value="all">Deliveries & Quotas</option>
-                  <option value="deliveries">System Alerts Only</option>
-                  <option value="none">No Alerts</option>
-                </select>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={savingSettings}
-              className="px-4 py-2 brand-gradient-bg hover:opacity-95 text-white font-bold rounded-lg text-xs transition-all w-full flex items-center justify-center gap-2"
-            >
-              {savingSettings ? "Saving configurations..." : "Save Style Preferences"}
-            </button>
-          </form>
-        </div>
-
-        {/* 2FA Verification Protection */}
-        <div className="space-y-4 border-t md:border-t-0 md:border-l border-dark-700/30 pt-4 md:pt-0 md:pl-5">
-          <h3 className="text-base font-bold text-white mb-2 flex items-center gap-1.5">
-            <Shield size={16} className="text-amber-400" />
-            <span>MFA Multi-Factor Protection</span>
-          </h3>
-
-          <p className="text-[10px] text-dark-400 leading-normal">
-            Safeguard your mailing lists, campaigns, and private SMTP settings by enforcing TOTP Google Authenticator checks.
-          </p>
-
-          {user?.two_factor_enabled ? (
-            <div className="p-4 bg-emerald-500/10 border border-emerald-500/25 rounded-2xl space-y-3">
-              <div className="flex items-center gap-2 text-emerald-400 text-xs font-bold">
-                <CheckCircle size={14} />
-                <span>2FA Protection Active</span>
-              </div>
-              <p className="text-[10px] text-dark-300">Your account is securely fortified against unauthorized logins.</p>
-              <button
-                type="button" onClick={handleDisable2FA}
-                className="w-full py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-rose-500/20"
-              >
-                Disable 2FA Protection
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {mfaSuccess && (
-                <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs rounded-xl flex items-center gap-1.5">
-                  <CheckCircle size={14} />
-                  <span>2FA successfully activated on your profile!</span>
-                </div>
-              )}
-
-              {!setup2faSecret ? (
-                <button
-                  type="button" onClick={handleSetup2FA} disabled={loading2fa}
-                  className="w-full py-2 bg-dark-900 hover:bg-dark-800 border border-dark-700 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5"
-                >
-                  {loading2fa ? "Provisioning secrets..." : "Setup Authenticator 2FA"}
-                </button>
-              ) : (
-                <form onSubmit={handleEnable2FA} className="space-y-2.5 p-3 bg-dark-900/60 border border-dark-800 rounded-xl">
-                  {mfaError && (
-                    <div className="p-2 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[9.5px] rounded">
-                      {mfaError}
-                    </div>
-                  )}
-
-                  <div className="flex flex-col items-center text-center space-y-1">
-                    <span className="text-[8.5px] font-extrabold text-amber-400 uppercase tracking-widest">Scan with Google Authenticator / Authy</span>
-                    {/* Visual QR Mock code */}
-                    <div className="h-28 w-28 bg-white p-2 rounded-xl flex items-center justify-center border border-dark-800 shadow-md">
-                      <div className="h-full w-full bg-[radial-gradient(#111_1px,transparent_1px)] [background-size:8px_8px] opacity-75 border-2 border-slate-900 rounded" />
-                    </div>
-                    <span className="text-[8.5px] text-dark-500 select-all font-mono mt-1">Secret Key: {setup2faSecret}</span>
-                  </div>
-
-                  <div className="flex flex-col gap-1">
-                    <label className="text-[9px] font-bold text-dark-400">Authenticator Code (6 Digits)</label>
-                    <input
-                      type="text" required value={mfaCode} onChange={e => setMfaCode(e.target.value)}
-                      placeholder="e.g. 123456"
-                      className="w-full px-2.5 py-1 bg-dark-950 border border-dark-800 rounded-lg text-center text-xs text-white font-mono"
-                    />
-                  </div>
-
-                  <div className="flex gap-2">
-                    <button
-                      type="button" onClick={() => { setSetup2faSecret(null); setSetup2faQr(null); }}
-                      className="flex-1 py-1.5 bg-dark-800 hover:bg-dark-700 text-dark-300 rounded text-[10px] font-bold"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      className="flex-1 py-1.5 brand-gradient-bg text-white rounded text-[10px] font-bold"
-                    >
-                      Enable Protection
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );
