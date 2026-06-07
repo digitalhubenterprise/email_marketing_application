@@ -637,18 +637,3 @@ async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
     result = await handle_dhru_api_impl(request, db, context)
     return send_response(result, context["requestformat"])
 
-
-@router.get("/debug_logs")
-async def get_debug_logs(db: AsyncSession = Depends(get_db)):
-    res = await db.execute(select(DhruApiLog).order_by(DhruApiLog.id.desc()).limit(20))
-    logs = res.scalars().all()
-    return [{
-        "id": log.id,
-        "created_at": str(log.created_at),
-        "action": log.action,
-        "username": log.username,
-        "ip_address": log.ip_address,
-        "status": log.status,
-        "message": log.message
-    } for log in logs]
-
