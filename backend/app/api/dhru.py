@@ -453,7 +453,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                             "LIST": {
                                 "Service Group": {
                                     "GROUPNAME": "Service Group",
-                                    "GROUPTYPE": "SERVER",
+                                    "GROUPTYPE": service_type,
                                     "SERVICES": services_dict
                                 }
                             }
@@ -476,7 +476,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                             "LIST": [
                                 {
                                     "GROUPNAME": "Service Group",
-                                    "GROUPTYPE": "SERVER",
+                                    "GROUPTYPE": service_type,
                                     "SERVICES": services_list
                                 }
                             ]
