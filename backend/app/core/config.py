@@ -4,7 +4,7 @@ from pydantic import Field, model_validator
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SmartCampaign API"
-    VERSION: str = "1.0"
+    VERSION: str = "3.0"
     API_V1_STR: str = "/api"
     
     # DB URL: can be swapped easily to Supabase or other postgres urls
