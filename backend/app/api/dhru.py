@@ -14,6 +14,7 @@ from app.db.session import get_db
 from app.db.models import User, SystemConfig, PaymentLog, SubscriptionPlan, DhruApiLog
 from app.core.security import get_password_hash
 from app.tasks.email_sender import send_system_email_task
+from app.api.auth import limiter
 
 def enrich_with_lowercase_keys(data, parent_key=None):
     if isinstance(data, dict):
@@ -192,7 +193,11 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
     expected_user = config.api_listener_username or "dhru_user"
     expected_key = config.api_listener_access_key or "dhru_key_123456"
 
-    if username != expected_user or apiaccesskey != expected_key:
+    # Timing-attack safe credentials comparison
+    username_valid = secrets.compare_digest(str(username), expected_user) if username else False
+    key_valid = secrets.compare_digest(str(apiaccesskey), expected_key) if apiaccesskey else False
+
+    if not (username_valid and key_valid):
         log = DhruApiLog(
             action=action or "unknown",
             username=username,
@@ -217,6 +222,9 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
         
         # 4a. Try XML parsing if parameters_str starts with "<"
         if parameters_str_stripped.startswith("<"):
+            # Prevent XML Entity Expansion / DoS attacks by limiting parameter length
+            if len(parameters_str_stripped) > 100_000:
+                raise ValueError("Parameters string exceeds maximum allowed length.")
             try:
                 import xml.etree.ElementTree as ET
                 root = ET.fromstring(parameters_str_stripped)
@@ -496,7 +504,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 return {
                     "ERROR": [
                         {
-                            "MESSAGE": "cancel Regiser and resubmit"
+                            "MESSAGE": "Not Found Account | Visit Our Website https://smartcampaign.today/ | Please Register and Submit Again Your Order"
                         }
                     ]
                 }
@@ -528,7 +536,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             from datetime import datetime, timedelta
             expire_date = (datetime.utcnow() + timedelta(days=30)).strftime("%Y-%m-%d")
 
-            success_msg = f"Order processed successfully for user '{target_email}'. | Tier upgraded to '{plan.tier}'. Expaire Date : {expire_date} | Remaing Days : 30 | Reference ID: {reference_id}. (New User: False)"
+            success_msg = f"({plan.name} Plan ({plan.quota} Emails/mo)) Subscription activated successfully | Expair Date: {expire_date} | Remaing Days: 30"
 
             # Log to DB logs
             log = DhruApiLog(
@@ -632,6 +640,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
 @router.post("/api/api.php")
 @router.post("/api/index.php")
 @router.post("/dhru_bridge")
+@limiter.limit("120/minute")
 async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
     context = {"requestformat": None}
     result = await handle_dhru_api_impl(request, db, context)
