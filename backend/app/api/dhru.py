@@ -433,7 +433,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             db.add(log)
             await db.commit()
 
-            service_type = "IMEI" if action_lower == "imeiservicelist" else "SERVER"
+            service_type = "SERVER"
 
             if is_json:
                 services_dict = {}
