@@ -33,6 +33,14 @@ def enrich_with_lowercase_keys(data, parent_key=None):
     else:
         return data
 
+def get_case_insensitive(d: dict, *keys: str):
+    if not isinstance(d, dict):
+        return None
+    for k, v in d.items():
+        if str(k).lower() in keys:
+            return v
+    return None
+
 def dict_to_xml(data: dict) -> str:
     xml_lines = ['<?xml version="1.0" encoding="UTF-8"?>', "<RESPONSE>"]
     
@@ -407,7 +415,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
 
         # --- ACTION: placeimeiorder / placeserverorder ---
         elif action_lower in ("placeimeiorder", "placeserverorder"):
-            plan_id = parameters_dict.get("ID") or parameters_dict.get("serviceid")
+            plan_id = get_case_insensitive(parameters_dict, "id", "serviceid", "service_id")
             if not plan_id:
                 raise ValueError("Missing 'ID' or 'serviceid' parameter in request.")
 
@@ -510,7 +518,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
 
         # --- ACTION: getimeiorder / getserverorder ---
         elif action_lower in ("getimeiorder", "orderstatus", "getserverorder"):
-            order_id = parameters_dict.get("ID") or parameters_dict.get("referenceid")
+            order_id = get_case_insensitive(parameters_dict, "id", "referenceid", "reference_id")
             if not order_id:
                 raise ValueError("Missing 'ID' or 'referenceid' parameter in request.")
 

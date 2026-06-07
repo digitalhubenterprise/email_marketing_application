@@ -277,3 +277,20 @@ async def test_dhru_form_array_parameter_parsing(client, db_session):
     assert "SUCCESS" in res_json
     assert "REFERENCEID" in res_json["SUCCESS"][0]
 
+    # Test case-insensitivity: lowercase parameters[id]
+    payload_lower = {
+        "username": "dhru_user",
+        "apiaccesskey": "dhru_key_123456",
+        "action": "placeimeiorder",
+        "parameters[id]": str(plan.id),
+        "parameters[customfield]": "gsmrajusatkhira@gmail.com",
+        "requestformat": "JSON"
+    }
+
+    response_lower = await client.post("/api/dhru", data=payload_lower)
+    assert response_lower.status_code == 200
+    res_json_lower = response_lower.json()
+    assert "SUCCESS" in res_json_lower
+    assert "REFERENCEID" in res_json_lower["SUCCESS"][0]
+
+
