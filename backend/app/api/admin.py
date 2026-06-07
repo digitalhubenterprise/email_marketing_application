@@ -1,6 +1,6 @@
 from datetime import datetime, date, timezone
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Query, Request
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -42,6 +42,7 @@ from app.core.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token, encrypt_smtp_password
 from app.api.admin_deps import get_current_admin
 from app.tasks.email_sender import celery
+from app.api.auth import limiter
 
 router = APIRouter()
 
@@ -68,7 +69,9 @@ async def log_audit(
 # ─── Admin Authentication & Invite Signup ─────────────────────────────
 
 @router.post("/register", response_model=AdminUserResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("5/minute")
 async def register_admin(
+    request: Request,
     admin_in: AdminUserCreate,
     invite_token: Optional[str] = Query(None),
     x_invite_token: Optional[str] = Header(None, alias="X-Admin-Registration-Secret"),
@@ -119,7 +122,9 @@ async def register_admin(
 
 
 @router.post("/login", response_model=Token)
+@limiter.limit("10/minute")
 async def login_admin(
+    request: Request,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
