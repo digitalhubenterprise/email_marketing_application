@@ -249,11 +249,6 @@ async def create_db_tables() -> None:
                         "VALUES (1, 'SmartCampaign', 'support@smartcampaign.today', false, 1000, 'noreply@smartcampaign.today', 'SmartCampaign - Modern SaaS Email Marketing Platform', 'Create, personalize, monitor, and scale email marketing campaigns dynamically.', 'email marketing, smtp, celery, dispatch, saas', 'SmartCampaign Operations', 3, false, 8, 5, 24, '', '', false, false, false, false, 'ipsabdurrazzak', 'Amin@1234')"
                     )
                 )
-            else:
-                # Force update existing configuration to match the requested API listener credentials
-                await conn.execute(
-                    text("UPDATE system_configs SET api_listener_username = 'ipsabdurrazzak', api_listener_access_key = 'Amin@1234' WHERE id = 1")
-                )
     except Exception as e:
         print(f"DB config seeding warning (non-fatal): {e}")
 
