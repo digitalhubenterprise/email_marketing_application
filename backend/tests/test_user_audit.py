@@ -294,3 +294,53 @@ async def test_dhru_form_array_parameter_parsing(client, db_session):
     assert "REFERENCEID" in res_json_lower["SUCCESS"][0]
 
 
+async def test_dhru_xml_parameter_parsing(client, db_session):
+    # Register the user
+    reg_payload = {
+        "email": "xmluser@example.com",
+        "password": "Password123#"
+    }
+    await client.post("/api/auth/register", json=reg_payload)
+
+    # Configure Dhru
+    config_res = await db_session.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = config_res.scalars().first()
+    if not config:
+        config = SystemConfig(
+            id=1,
+            api_listener_username="dhru_user",
+            api_listener_access_key="dhru_key_123456",
+            api_listener_enabled=True
+        )
+        db_session.add(config)
+    else:
+        config.api_listener_username = "dhru_user"
+        config.api_listener_access_key = "dhru_key_123456"
+        config.api_listener_enabled = True
+        db_session.add(config)
+    await db_session.commit()
+
+    # Get a valid plan ID
+    plan_res = await db_session.execute(select(SubscriptionPlan).limit(1))
+    plan = plan_res.scalars().first()
+    assert plan is not None
+
+    # Base64 for {"Email": "xmluser@example.com"}
+    xml_str = f"<PARAMETERS><CUSTOMFIELD>eyJFbWFpbCI6ICJ4bWx1c2VyQGV4YW1wbGUuY29tIn0=</CUSTOMFIELD><ID>{plan.id}</ID><SERVICEID>{plan.id}</SERVICEID><QNT>1</QNT></PARAMETERS>"
+
+    payload = {
+        "username": "dhru_user",
+        "apiaccesskey": "dhru_key_123456",
+        "action": "placeimeiorder",
+        "parameters": xml_str,
+        "requestformat": "JSON"
+    }
+
+    response = await client.post("/api/dhru", data=payload)
+    assert response.status_code == 200
+    res_json = response.json()
+    assert "SUCCESS" in res_json
+    assert "REFERENCEID" in res_json["SUCCESS"][0]
+
+
+

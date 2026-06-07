@@ -210,30 +210,64 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             ]
         }
 
-    # 4. Decode service parameters safely (handling both base64 and raw JSON formats)
+    # 4. Decode service parameters safely (handling base64 JSON, raw JSON, and XML formats)
     parameters = {}
     if parameters_str:
-        # Try base64 decoding
-        decoded_str = None
-        try:
-            # Add padding characters if missing to prevent base64 decoding failure
-            padded_str = str(parameters_str) + "=" * ((4 - len(str(parameters_str)) % 4) % 4)
-            decoded_str = base64.b64decode(padded_str.encode("utf-8")).decode("utf-8")
-        except Exception as e:
-            logger.info("Base64 decoding failed for parameters, fallback to raw parsing: %s", e)
-
-        if decoded_str:
+        parameters_str_stripped = str(parameters_str).strip()
+        
+        # 4a. Try XML parsing if parameters_str starts with "<"
+        if parameters_str_stripped.startswith("<"):
             try:
-                parameters = json.loads(decoded_str)
-            except Exception as e:
-                logger.info("JSON loading failed for base64 decoded parameters: %s", e)
-
-        # Fallback to direct raw JSON parsing
-        if not parameters:
+                import xml.etree.ElementTree as ET
+                root = ET.fromstring(parameters_str_stripped)
+                xml_params = {}
+                for child in root:
+                    child_tag = child.tag
+                    child_text = child.text
+                    
+                    if child_text:
+                        child_text_str = str(child_text).strip()
+                        # Some fields inside the XML might be base64-encoded JSON or strings
+                        try:
+                            padded_text = child_text_str + "=" * ((4 - len(child_text_str) % 4) % 4)
+                            decoded_bytes = base64.b64decode(padded_text.encode("utf-8"))
+                            decoded_str = decoded_bytes.decode("utf-8")
+                            decoded_json = json.loads(decoded_str)
+                            if isinstance(decoded_json, dict):
+                                for k_j, v_j in decoded_json.items():
+                                    xml_params[k_j] = str(v_j).strip()
+                            else:
+                                xml_params[child_tag] = decoded_str
+                        except Exception:
+                            xml_params[child_tag] = child_text_str
+                    else:
+                        xml_params[child_tag] = ""
+                parameters = xml_params
+            except Exception as xml_err:
+                logger.info("XML parsing failed for parameters: %s", xml_err)
+        
+        # 4b. Otherwise try JSON (base64 or raw)
+        else:
+            decoded_str = None
             try:
-                parameters = json.loads(parameters_str)
+                # Add padding characters if missing to prevent base64 decoding failure
+                padded_str = parameters_str_stripped + "=" * ((4 - len(parameters_str_stripped) % 4) % 4)
+                decoded_str = base64.b64decode(padded_str.encode("utf-8")).decode("utf-8")
             except Exception as e:
-                logger.info("Raw JSON parsing fallback failed for parameters: %s", e)
+                logger.info("Base64 decoding failed for parameters, fallback to raw parsing: %s", e)
+
+            if decoded_str:
+                try:
+                    parameters = json.loads(decoded_str)
+                except Exception as e:
+                    logger.info("JSON loading failed for base64 decoded parameters: %s", e)
+
+            # Fallback to direct raw JSON parsing
+            if not parameters:
+                try:
+                    parameters = json.loads(parameters_str_stripped)
+                except Exception as e:
+                    logger.info("Raw JSON parsing fallback failed for parameters: %s", e)
 
     # Standardize parameters structure (extract from bulk list if needed)
     parameters_dict = {}
