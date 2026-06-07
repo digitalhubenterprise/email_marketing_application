@@ -787,6 +787,13 @@ class SettingsUpdateRequest(BaseModel):
     brand_secondary_color: Optional[str] = None
     brand_font_family: Optional[str] = None
     notification_settings: Optional[str] = None
+    username: Optional[str] = None
+    company: Optional[str] = None
+    address: Optional[str] = None
+    country: Optional[str] = None
+    phone_number: Optional[str] = None
+    language: Optional[str] = None
+    timezone: Optional[str] = None
 
 
 class TwoFactorVerifyRequest(BaseModel):
@@ -810,7 +817,7 @@ async def update_settings(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db),
 ):
-    """Allows standard users to customize brand style tokens and alert preferences."""
+    """Allows standard users to customize brand style tokens, alert preferences, and profile details."""
     if payload.brand_primary_color is not None:
         current_user.brand_primary_color = payload.brand_primary_color
     if payload.brand_secondary_color is not None:
@@ -819,6 +826,20 @@ async def update_settings(
         current_user.brand_font_family = payload.brand_font_family
     if payload.notification_settings is not None:
         current_user.notification_settings = payload.notification_settings
+    if payload.username is not None:
+        current_user.username = payload.username
+    if payload.company is not None:
+        current_user.company = payload.company
+    if payload.address is not None:
+        current_user.address = payload.address
+    if payload.country is not None:
+        current_user.country = payload.country
+    if payload.phone_number is not None:
+        current_user.phone_number = payload.phone_number
+    if payload.language is not None:
+        current_user.language = payload.language
+    if payload.timezone is not None:
+        current_user.timezone = payload.timezone
 
     db.add(current_user)
     await db.commit()

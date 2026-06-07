@@ -1,19 +1,51 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useAuth } from '../App'
 import { 
-  Palette, Shield, CheckCircle, RefreshCw, Lock, 
-  User, Mail, EyeOff, Eye, AlertCircle, Settings, Send
+  Shield, CheckCircle, RefreshCw, Lock, 
+  User, Mail, EyeOff, Eye, AlertCircle, Settings, Send,
+  Globe, Phone, MapPin, Languages, Briefcase
 } from 'lucide-react'
 
 export default function ManageSettings() {
   const { token, user, refreshUser } = useAuth();
 
-  // Account brand settings state
-  const [brandPrimary, setBrandPrimary] = useState(user?.brand_primary_color || "#4c6ef5");
-  const [brandSecondary, setBrandSecondary] = useState(user?.brand_secondary_color || "#fab005");
-  const [brandFont, setBrandFont] = useState(user?.brand_font_family || "Inter");
-  const [notificationSettings, setNotificationSettings] = useState(user?.notification_settings || "all");
-  const [savingSettings, setSavingSettings] = useState(false);
+  // User profile details state
+  const [username, setUsername] = useState(user?.username || "");
+  const [company, setCompany] = useState(user?.company || "");
+  const [phone, setPhone] = useState(user?.phone_number || "");
+  const [country, setCountry] = useState(user?.country || "");
+  const [address, setAddress] = useState(user?.address || "");
+  const [language, setLanguage] = useState(user?.language || "English");
+  const [timezone, setTimezone] = useState(user?.timezone || "UTC");
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+
+  // Synchronize state when the user object is fetched/changed
+  useEffect(() => {
+    if (user) {
+      setUsername(user.username || "");
+      setCompany(user.company || "");
+      setPhone(user.phone_number || "");
+      setCountry(user.country || "");
+      setAddress(user.address || "");
+      setLanguage(user.language || "English");
+      setTimezone(user.timezone || "UTC");
+    }
+  }, [user]);
+
+  // Password change state
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
+
+  // Password visibility states
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // 2FA state
   const [setup2faSecret, setSetup2faSecret] = useState<string | null>(null);
@@ -31,9 +63,11 @@ export default function ManageSettings() {
   const [telegramError, setTelegramError] = useState<string | null>(null);
   const [telegramSuccess, setTelegramSuccess] = useState(false);
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    setSavingSettings(true);
+    setSavingProfile(true);
+    setProfileSuccess(false);
+    setProfileError(null);
     try {
       const res = await fetch("/api/auth/update-settings", {
         method: "POST",
@@ -42,20 +76,72 @@ export default function ManageSettings() {
           "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({
-          brand_primary_color: brandPrimary,
-          brand_secondary_color: brandSecondary,
-          brand_font_family: brandFont,
-          notification_settings: notificationSettings
+          username,
+          company,
+          phone_number: phone,
+          country,
+          address,
+          language,
+          timezone
         })
       });
       if (res.ok) {
-        alert("Account style configurations saved successfully!");
+        setProfileSuccess(true);
         await refreshUser();
+      } else {
+        const err = await res.json();
+        setProfileError(err.detail || "Failed to update profile details.");
       }
     } catch (err) {
       console.error(err);
+      setProfileError("Connection failed.");
     } finally {
-      setSavingSettings(false);
+      setSavingProfile(false);
+    }
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPasswordError(null);
+    setPasswordSuccess(false);
+
+    if (newPassword !== confirmPassword) {
+      setPasswordError("New passwords do not match.");
+      return;
+    }
+
+    if (newPassword.length < 8) {
+      setPasswordError("New password must be at least 8 characters.");
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const res = await fetch("/api/auth/change-password", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword
+        })
+      });
+
+      if (res.ok) {
+        setPasswordSuccess(true);
+        setCurrentPassword("");
+        setNewPassword("");
+        setConfirmPassword("");
+      } else {
+        const err = await res.json();
+        setPasswordError(err.detail || "Failed to update password. Verify current password is correct.");
+      }
+    } catch (err) {
+      setPasswordError("Connection failed.");
+    } finally {
+      setChangingPassword(false);
     }
   };
 
@@ -205,85 +291,302 @@ export default function ManageSettings() {
   return (
     <div className="space-y-4 sm:space-y-5 animate-fadeIn">
       {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-dark-700/20">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-dark-700/20 font-sans">
         <div>
           <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
             <Settings size={18} className="text-brand-400 shrink-0" />
             <span>Manage Settings</span>
           </h2>
-          <p className="text-[10px] text-dark-400 mt-0.5">Customize your mailing profiles, primary styling, and enforce MFA security protection</p>
+          <p className="text-[10px] text-dark-400 mt-0.5">Customize your user profile details, update password security, and enforce MFA protection</p>
         </div>
       </div>
 
       {/* Account Settings & MFA Security Center */}
-      <div className="glass-panel p-5 rounded-2xl border border-dark-700/30 grid grid-cols-1 md:grid-cols-2 gap-5 shadow-lg">
-        {/* Style & Preferences */}
-        <div className="space-y-4">
-          <h3 className="text-base font-bold text-white mb-2 flex items-center gap-1.5">
-            <Palette size={16} className="text-brand-400" />
-            <span>Profile Customizations</span>
-          </h3>
+      <div className="glass-panel p-5 rounded-2xl border border-dark-700/30 grid grid-cols-1 md:grid-cols-2 gap-5 shadow-lg font-sans">
+        {/* Left Column: Profile & Password */}
+        <div className="space-y-5">
+          {/* Profile Details Card */}
+          <div className="p-4 bg-dark-900/40 border border-dark-800 rounded-xl space-y-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <User size={15} className="text-brand-400" />
+              <span>Profile Details</span>
+            </h3>
+            <p className="text-[10px] text-dark-400">View and update your personal account information.</p>
 
-          <form onSubmit={handleSaveSettings} className="space-y-3">
-            <div className="grid grid-cols-1 xs-mid:grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Primary Color</label>
-                <div className="flex items-center gap-2 bg-dark-950 p-1.5 border border-dark-800 rounded-lg">
-                  <input
-                    type="color" value={brandPrimary} onChange={e => setBrandPrimary(e.target.value)}
-                    className="w-6 h-6 bg-transparent border-0 cursor-pointer rounded"
-                  />
-                  <span className="text-[10px] font-mono text-dark-300">{brandPrimary}</span>
+            {profileSuccess && (
+              <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] rounded-lg flex items-center gap-1.5 animate-fadeIn">
+                <CheckCircle size={12} className="shrink-0" />
+                <span>Profile details updated successfully!</span>
+              </div>
+            )}
+
+            {profileError && (
+              <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] rounded-lg flex items-center gap-1.5 animate-headShake">
+                <AlertCircle size={12} className="shrink-0" />
+                <span>{profileError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveProfile} className="space-y-3.5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Username / Name</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                      <User size={13} />
+                    </span>
+                    <input
+                      type="text"
+                      required
+                      value={username}
+                      onChange={e => setUsername(e.target.value)}
+                      placeholder="Enter name"
+                      className="w-full pl-9 pr-3 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-600 focus:border-brand-500 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Email Address</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                      <Mail size={13} />
+                    </span>
+                    <input
+                      type="email"
+                      disabled
+                      value={user?.email || ""}
+                      className="w-full pl-9 pr-3 py-1.5 bg-dark-950/40 border border-dark-850 rounded-lg text-xs text-dark-400 cursor-not-allowed focus:outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Company</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                      <Briefcase size={13} />
+                    </span>
+                    <input
+                      type="text"
+                      value={company}
+                      onChange={e => setCompany(e.target.value)}
+                      placeholder="Acme Corp"
+                      className="w-full pl-9 pr-3 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-600 focus:border-brand-500 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Phone Number</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                      <Phone size={13} />
+                    </span>
+                    <input
+                      type="text"
+                      value={phone}
+                      onChange={e => setPhone(e.target.value)}
+                      placeholder="+1 (555) 000-0000"
+                      className="w-full pl-9 pr-3 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-600 focus:border-brand-500 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Country</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                      <Globe size={13} />
+                    </span>
+                    <input
+                      type="text"
+                      value={country}
+                      onChange={e => setCountry(e.target.value)}
+                      placeholder="e.g. United States"
+                      className="w-full pl-9 pr-3 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-600 focus:border-brand-500 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Address</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                      <MapPin size={13} />
+                    </span>
+                    <input
+                      type="text"
+                      value={address}
+                      onChange={e => setAddress(e.target.value)}
+                      placeholder="123 Street name"
+                      className="w-full pl-9 pr-3 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-600 focus:border-brand-500 focus:outline-none transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Language</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                      <Languages size={13} />
+                    </span>
+                    <select
+                      value={language}
+                      onChange={e => setLanguage(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 bg-dark-950 border border-dark-800 text-white rounded-lg text-xs cursor-pointer focus:outline-none focus:border-brand-500"
+                    >
+                      <option value="English">English</option>
+                      <option value="Spanish">Spanish</option>
+                      <option value="French">French</option>
+                      <option value="German">German</option>
+                      <option value="Bengali">Bengali</option>
+                      <option value="Arabic">Arabic</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Timezone</label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                      <Globe size={13} />
+                    </span>
+                    <select
+                      value={timezone}
+                      onChange={e => setTimezone(e.target.value)}
+                      className="w-full pl-9 pr-3 py-1.5 bg-dark-950 border border-dark-800 text-white rounded-lg text-xs cursor-pointer focus:outline-none focus:border-brand-500"
+                    >
+                      <option value="UTC">UTC (GMT+0)</option>
+                      <option value="Asia/Dhaka">Asia/Dhaka (GMT+6)</option>
+                      <option value="Europe/London">Europe/London (GMT/BST)</option>
+                      <option value="America/New_York">America/New_York (EST/EDT)</option>
+                      <option value="America/Chicago">America/Chicago (CST/CDT)</option>
+                      <option value="America/Los_Angeles">America/Los_Angeles (PST/PDT)</option>
+                      <option value="Asia/Kolkata">Asia/Kolkata (GMT+5:30)</option>
+                      <option value="Asia/Singapore">Asia/Singapore (GMT+8)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
+
+              <button
+                type="submit"
+                disabled={savingProfile}
+                className="w-full py-2 brand-gradient-bg hover:opacity-95 text-white font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-brand-500/10 disabled:opacity-50 cursor-pointer"
+              >
+                {savingProfile ? "Saving Profile..." : "Save Profile Details"}
+              </button>
+            </form>
+          </div>
+
+          {/* Change Password Card */}
+          <div className="p-4 bg-dark-900/40 border border-dark-800 rounded-xl space-y-3">
+            <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+              <Lock size={15} className="text-amber-400" />
+              <span>Change Password</span>
+            </h3>
+            <p className="text-[10px] text-dark-400">Keep your account secure by modifying your password periodically.</p>
+
+            {passwordSuccess && (
+              <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] rounded-lg flex items-center gap-1.5 animate-fadeIn">
+                <CheckCircle size={12} className="shrink-0" />
+                <span>Password updated successfully!</span>
+              </div>
+            )}
+
+            {passwordError && (
+              <div className="p-2.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] rounded-lg flex items-center gap-1.5 animate-headShake">
+                <AlertCircle size={12} className="shrink-0" />
+                <span>{passwordError}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="space-y-3.5">
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Secondary Color</label>
-                <div className="flex items-center gap-2 bg-dark-950 p-1.5 border border-dark-800 rounded-lg">
+                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Current Password</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                    <Lock size={13} />
+                  </span>
                   <input
-                    type="color" value={brandSecondary} onChange={e => setBrandSecondary(e.target.value)}
-                    className="w-6 h-6 bg-transparent border-0 cursor-pointer rounded"
+                    type={showCurrentPassword ? "text" : "password"}
+                    required
+                    value={currentPassword}
+                    onChange={e => setCurrentPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-10 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-600 focus:border-brand-500 focus:outline-none transition-all font-mono"
                   />
-                  <span className="text-[10px] font-mono text-dark-300">{brandSecondary}</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-300 transition-colors"
+                  >
+                    {showCurrentPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
                 </div>
               </div>
-            </div>
 
-            <div className="grid grid-cols-1 xs-mid:grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Default Font Family</label>
-                <select
-                  value={brandFont} onChange={e => setBrandFont(e.target.value)}
-                  className="bg-dark-950 border border-dark-800 text-white rounded-lg p-2 text-xs cursor-pointer focus:outline-none focus:border-brand-500"
-                >
-                  <option value="Inter">Inter (Classic)</option>
-                  <option value="Outfit">Outfit (Premium Rounded)</option>
-                  <option value="Roboto">Roboto (Sleek Tech)</option>
-                </select>
+                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">New Password</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                    <Lock size={13} />
+                  </span>
+                  <input
+                    type={showNewPassword ? "text" : "password"}
+                    required
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-10 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-600 focus:border-brand-500 focus:outline-none transition-all font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-300 transition-colors"
+                  >
+                    {showNewPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-col gap-1">
-                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Notification settings</label>
-                <select
-                  value={notificationSettings} onChange={e => setNotificationSettings(e.target.value)}
-                  className="bg-dark-950 border border-dark-800 text-white rounded-lg p-2 text-xs cursor-pointer focus:outline-none focus:border-brand-500"
-                >
-                  <option value="all">Deliveries & Quotas</option>
-                  <option value="deliveries">System Alerts Only</option>
-                  <option value="none">No Alerts</option>
-                </select>
-              </div>
-            </div>
 
-            <button
-              type="submit"
-              disabled={savingSettings}
-              className="px-4 py-2 brand-gradient-bg hover:opacity-95 text-white font-bold rounded-lg text-xs transition-all w-full flex items-center justify-center gap-2"
-            >
-              {savingSettings ? "Saving configurations..." : "Save Style Preferences"}
-            </button>
-          </form>
+              <div className="flex flex-col gap-1">
+                <label className="text-[9px] font-bold text-dark-400 uppercase tracking-wider">Confirm New Password</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                    <Lock size={13} />
+                  </span>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-10 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-600 focus:border-brand-500 focus:outline-none transition-all font-mono"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-dark-300 transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={changingPassword}
+                className="w-full py-2 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 shadow-md shadow-amber-500/10 disabled:opacity-50 cursor-pointer"
+              >
+                {changingPassword ? "Updating Password..." : "Change Password"}
+              </button>
+            </form>
+          </div>
         </div>
 
-        {/* 2FA Verification Protection */}
+        {/* Right Column: 2FA Verification Protection */}
         <div className="space-y-5 border-t md:border-t-0 md:border-l border-dark-700/30 pt-4 md:pt-0 md:pl-5">
           <h3 className="text-base font-bold text-white mb-2 flex items-center gap-1.5">
             <Shield size={16} className="text-amber-400" />
@@ -310,7 +613,7 @@ export default function ManageSettings() {
               {user?.two_factor_enabled ? (
                 <button
                   type="button" onClick={handleDisable2FA}
-                  className="w-full py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-rose-500/20"
+                  className="w-full py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-rose-500/20 cursor-pointer"
                 >
                   Disable Google 2FA
                 </button>
@@ -318,7 +621,7 @@ export default function ManageSettings() {
                 <div className="space-y-3">
                   {mfaSuccess && (
                     <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] rounded-lg flex items-center gap-1.5">
-                      <CheckCircle size={12} />
+                      <CheckCircle size={12} className="shrink-0" />
                       <span>Google 2FA activated successfully!</span>
                     </div>
                   )}
@@ -326,7 +629,7 @@ export default function ManageSettings() {
                   {!setup2faSecret ? (
                     <button
                       type="button" onClick={handleSetup2FA} disabled={loading2fa}
-                      className="w-full py-2 brand-gradient-bg hover:opacity-95 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md"
+                      className="w-full py-2 brand-gradient-bg hover:opacity-95 text-white text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 shadow-md shadow-brand-500/10 cursor-pointer"
                     >
                       {loading2fa ? "Provisioning..." : "Link Google Authenticator"}
                     </button>
@@ -359,20 +662,20 @@ export default function ManageSettings() {
                         <input
                           type="text" required value={mfaCode} onChange={e => setMfaCode(e.target.value)}
                           placeholder="e.g. 123456"
-                          className="w-full px-2 py-1 bg-dark-950 border border-dark-800 rounded-md text-center text-xs text-white font-mono"
+                          className="w-full px-2 py-1 bg-dark-950 border border-dark-800 rounded-md text-center text-xs text-white font-mono focus:outline-none focus:border-brand-500"
                         />
                       </div>
 
                       <div className="flex gap-2">
                         <button
                           type="button" onClick={() => { setSetup2faSecret(null); setSetup2faQr(null); }}
-                          className="flex-1 py-1.5 bg-dark-800 hover:bg-dark-700 text-dark-300 rounded text-[9.5px] font-bold"
+                          className="flex-1 py-1.5 bg-dark-800 hover:bg-dark-700 text-dark-300 rounded text-[9.5px] font-bold cursor-pointer"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="flex-1 py-1.5 brand-gradient-bg text-white rounded text-[9.5px] font-bold"
+                          className="flex-1 py-1.5 brand-gradient-bg text-white rounded text-[9.5px] font-bold cursor-pointer"
                         >
                           Verify & Enable
                         </button>
@@ -387,7 +690,7 @@ export default function ManageSettings() {
             <div className="p-4 bg-dark-900/40 border border-dark-800 rounded-xl space-y-3">
               <div className="flex justify-between items-center">
                 <span className="text-xs font-bold text-white flex items-center gap-1">
-                  <Send size={12} className="text-sky-400" />
+                  <Send size={12} className="text-sky-400 shrink-0" />
                   <span>Telegram 2FA</span>
                 </span>
                 {user?.two_factor_telegram_enabled ? (
@@ -406,7 +709,7 @@ export default function ManageSettings() {
                   </div>
                   <button
                     type="button" onClick={handleDisableTelegram2FA}
-                    className="w-full py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-rose-500/20"
+                    className="w-full py-1.5 bg-rose-500/10 text-rose-400 hover:bg-rose-500 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-rose-500/20 cursor-pointer"
                   >
                     Disable Telegram 2FA
                   </button>
@@ -415,7 +718,7 @@ export default function ManageSettings() {
                 <div className="space-y-3">
                   {telegramSuccess && (
                     <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] rounded-lg flex items-center gap-1.5">
-                      <CheckCircle size={12} />
+                      <CheckCircle size={12} className="shrink-0" />
                       <span>Telegram 2FA activated successfully!</span>
                     </div>
                   )}
@@ -433,11 +736,11 @@ export default function ManageSettings() {
                           <input
                             type="text" required value={telegramChatId} onChange={e => setTelegramChatId(e.target.value)}
                             placeholder="e.g. 58392019"
-                            className="flex-1 px-2.5 py-1.5 bg-dark-950 border border-dark-800 rounded-md text-xs text-white font-mono placeholder:text-dark-600"
+                            className="flex-1 px-2.5 py-1.5 bg-dark-950 border border-dark-800 rounded-md text-xs text-white font-mono placeholder:text-dark-650 focus:outline-none focus:border-brand-500"
                           />
                           <button
                             type="submit" disabled={telegramLoading}
-                            className="px-3 bg-brand-600 hover:bg-brand-500 text-white rounded-md text-[10.5px] font-bold transition-colors disabled:opacity-50 font-semibold"
+                            className="px-3 bg-brand-600 hover:bg-brand-500 text-white rounded-md text-[10.5px] font-bold transition-colors disabled:opacity-50 cursor-pointer"
                           >
                             {telegramLoading ? "Sending..." : "Send Code"}
                           </button>
@@ -464,20 +767,20 @@ export default function ManageSettings() {
                         <input
                           type="text" required value={telegramCode} onChange={e => setTelegramCode(e.target.value)}
                           placeholder="6-digit OTP code"
-                          className="w-full px-2 py-1.5 bg-dark-950 border border-dark-800 rounded-md text-center text-xs text-white font-mono"
+                          className="w-full px-2 py-1.5 bg-dark-950 border border-dark-800 rounded-md text-center text-xs text-white font-mono focus:outline-none focus:border-brand-500"
                         />
                       </div>
 
                       <div className="flex gap-2">
                         <button
                           type="button" onClick={() => setTelegramSecret(null)}
-                          className="flex-1 py-1.5 bg-dark-800 hover:bg-dark-700 text-dark-300 rounded text-[9.5px] font-bold"
+                          className="flex-1 py-1.5 bg-dark-800 hover:bg-dark-700 text-dark-300 rounded text-[9.5px] font-bold cursor-pointer"
                         >
                           Cancel
                         </button>
                         <button
                           type="submit"
-                          className="flex-1 py-1.5 brand-gradient-bg text-white rounded text-[9.5px] font-bold"
+                          className="flex-1 py-1.5 brand-gradient-bg text-white rounded text-[9.5px] font-bold cursor-pointer"
                         >
                           Verify & Activate
                         </button>

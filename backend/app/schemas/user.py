@@ -34,6 +34,13 @@ class UserResponse(UserBase):
     two_factor_telegram_enabled: bool = False
     telegram_chat_id: Optional[str] = None
     email_verified: bool = False
+    username: Optional[str] = None
+    company: Optional[str] = None
+    address: Optional[str] = None
+    country: Optional[str] = None
+    phone_number: Optional[str] = None
+    language: Optional[str] = "English"
+    timezone: Optional[str] = "UTC"
     created_at: datetime
 
     class Config:
