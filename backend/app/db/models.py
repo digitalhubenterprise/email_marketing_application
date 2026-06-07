@@ -228,6 +228,7 @@ class SystemConfig(Base):
     api_listener_username = Column(String, default="dhru_user")
     api_listener_access_key = Column(String, default="dhru_key_123456")
     api_listener_enabled = Column(Boolean, default=True)
+    api_listener_connected_ip = Column(String, nullable=True, default="")
     created_at = Column(DateTime, default=utc_now_naive)
 
 

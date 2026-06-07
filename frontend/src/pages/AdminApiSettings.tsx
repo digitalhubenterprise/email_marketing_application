@@ -58,6 +58,28 @@ export default function AdminApiSettings() {
   const [username, setUsername] = useState('dhru_user');
   const [accessKey, setAccessKey] = useState('dhru_key_123456');
   const [enabled, setEnabled] = useState(true);
+  const [connectedIp, setConnectedIp] = useState('');
+
+  const generateStrongKey = () => {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const special = '!@#$%^&*()_+-=[]{}|;:,.<>?';
+    const allChars = uppercase + lowercase + numbers + special;
+    
+    let key = '';
+    key += uppercase.charAt(Math.floor(Math.random() * uppercase.length));
+    key += lowercase.charAt(Math.floor(Math.random() * lowercase.length));
+    key += numbers.charAt(Math.floor(Math.random() * numbers.length));
+    key += special.charAt(Math.floor(Math.random() * special.length));
+    
+    for (let i = 4; i < 25; i++) {
+      key += allChars.charAt(Math.floor(Math.random() * allChars.length));
+    }
+    
+    const shuffledKey = key.split('').sort(() => 0.5 - Math.random()).join('');
+    setAccessKey(shuffledKey);
+  };
   
   const [logs, setLogs] = useState<DhruLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -92,6 +114,7 @@ export default function AdminApiSettings() {
         setUsername(data.api_listener_username || 'dhru_user');
         setAccessKey(data.api_listener_access_key || 'dhru_key_123456');
         setEnabled(data.api_listener_enabled !== false);
+        setConnectedIp(data.api_listener_connected_ip || '');
       }
     } catch (err) {
       console.error('Failed to fetch API configurations:', err);
@@ -231,7 +254,8 @@ export default function AdminApiSettings() {
         body: JSON.stringify({
           api_listener_username: username,
           api_listener_access_key: accessKey,
-          api_listener_enabled: enabled
+          api_listener_enabled: enabled,
+          api_listener_connected_ip: connectedIp
         })
       });
 
@@ -393,8 +417,8 @@ export default function AdminApiSettings() {
                 </p>
               </div>
 
-              {/* Username & Key fields */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Username, Key & Connected IP fields */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     API Username
@@ -412,14 +436,46 @@ export default function AdminApiSettings() {
                   <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
                     API Access Key
                   </label>
-                  <input
-                    type="text"
-                    required
-                    value={accessKey}
-                    onChange={(e) => setAccessKey(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
-                    placeholder="Enter API key"
-                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      required
+                      value={accessKey}
+                      onChange={(e) => setAccessKey(e.target.value)}
+                      className="flex-1 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold font-mono"
+                      placeholder="Enter API key"
+                    />
+                    <button
+                      type="button"
+                      onClick={generateStrongKey}
+                      className="px-3 py-2.5 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center shrink-0"
+                      title="Generate a 25-character strong key"
+                    >
+                      Generate
+                    </button>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                    Connected IP (Optional lock)
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={connectedIp}
+                      onChange={(e) => setConnectedIp(e.target.value)}
+                      className="flex-1 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold font-mono"
+                      placeholder="e.g. 192.168.1.1"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setConnectedIp('')}
+                      className="px-3 py-2.5 bg-rose-600 text-white hover:bg-rose-500 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center shrink-0"
+                      title="Clear / Reset Connected IP lock"
+                    >
+                      Reset IP
+                    </button>
+                  </div>
                 </div>
               </div>
 

@@ -62,6 +62,7 @@ class SystemConfigResponse(BaseModel):
     api_listener_username: Optional[str] = None
     api_listener_access_key: Optional[str] = None
     api_listener_enabled: Optional[bool] = None
+    api_listener_connected_ip: Optional[str] = None
 
 
     class Config:
@@ -103,6 +104,7 @@ class SystemConfigUpdate(BaseModel):
     api_listener_username: Optional[str] = None
     api_listener_access_key: Optional[str] = None
     api_listener_enabled: Optional[bool] = None
+    api_listener_connected_ip: Optional[str] = None
 
 
 class PaymentLogBase(BaseModel):
