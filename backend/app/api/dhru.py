@@ -568,6 +568,20 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             payment = pay_res.scalars().first()
 
             if payment and payment.status == "paid":
+                # Get subscription plan details from plan_tier
+                plan_res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.tier == payment.plan_tier))
+                plan = plan_res.scalars().first()
+
+                from datetime import datetime, timedelta
+                expire_date = (payment.created_at + timedelta(days=30)).strftime("%Y-%m-%d")
+                elapsed_days = (datetime.utcnow() - payment.created_at).days
+                remaining_days = max(0, 30 - elapsed_days)
+
+                if plan:
+                    success_msg = f"({plan.name} Plan ({plan.quota} Emails/mo)) Subscription activated successfully | Expair Date: {expire_date} | Remaing Days: {remaining_days}"
+                else:
+                    success_msg = f"({payment.plan_tier.capitalize()} Plan) Subscription activated successfully | Expair Date: {expire_date} | Remaing Days: {remaining_days}"
+
                 log = DhruApiLog(
                     action=action_lower,
                     username=username,
@@ -582,8 +596,8 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                     "SUCCESS": [
                         {
                             "STATUS": "4",  # Conforms to completed status
-                            "MESSAGE": "Order completed successfully",
-                            "CODE": "Subscription activated successfully"
+                            "MESSAGE": success_msg,
+                            "CODE": success_msg
                         }
                     ]
                 }
