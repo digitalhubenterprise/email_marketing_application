@@ -433,14 +433,16 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             db.add(log)
             await db.commit()
 
+            service_type = "IMEI" if action_lower == "imeiservicelist" else "SERVER"
+
             if is_json:
                 services_dict = {}
                 for plan in plans:
                     services_dict[str(plan.id)] = {
                         "SERVICEID": plan.id,
-                        "SERVICETYPE": "SERVER",
+                        "SERVICETYPE": service_type,
                         "SERVICENAME": f"{plan.name} Plan ({plan.quota} Emails/mo)",
-                        "CREDIT": float(plan.price) / 100.0,
+                        "CREDIT": f"{plan.price / 100:.2f}",
                         "INFO": f"Upgrade/order subscription plan: {plan.name}",
                         "TIME": "Instant"
                     }
@@ -464,7 +466,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 for plan in plans:
                     services_list.append({
                         "SERVICEID": str(plan.id),
-                        "SERVICETYPE": "SERVER",
+                        "SERVICETYPE": service_type,
                         "SERVICENAME": f"{plan.name} Plan ({plan.quota} Emails/mo)",
                         "CREDIT": f"{plan.price / 100:.2f}"
                     })
