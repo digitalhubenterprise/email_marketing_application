@@ -128,7 +128,7 @@ export default function AdminBilling() {
   const [showCreatePackageModal, setShowCreatePackageModal] = useState(false);
   const [newPlanTier, setNewPlanTier] = useState('');
   const [newPlanName, setNewPlanName] = useState('');
-  const [newPlanPrice, setNewPlanPrice] = useState(1499);
+  const [newPlanPrice, setNewPlanPrice] = useState(14.99);
   const [newPlanQuota, setNewPlanQuota] = useState(100000);
   const [newPlanSmtpLimit, setNewPlanSmtpLimit] = useState(10);
   const [newPlanContacts, setNewPlanContacts] = useState('25,000');
@@ -346,7 +346,7 @@ export default function AdminBilling() {
         body: JSON.stringify({
           tier: selectedPlan.tier,
           name: editName,
-          price: editPrice,
+          price: Math.round(parseFloat(String(editPrice)) * 100),
           quota: editQuota,
           smtp_limit: editSmtpLimit,
           features: updatedFeatures
@@ -404,7 +404,7 @@ export default function AdminBilling() {
         body: JSON.stringify({
           tier: newPlanTier.trim().toLowerCase(),
           name: newPlanName.trim(),
-          price: newPlanPrice,
+          price: Math.round(parseFloat(String(newPlanPrice)) * 100),
           quota: newPlanQuota,
           smtp_limit: newPlanSmtpLimit,
           validity: '30 Days',
@@ -870,7 +870,7 @@ export default function AdminBilling() {
 
                   {/* Pricing Rate Tag */}
                   <div className="pb-4 border-b border-slate-100 flex items-baseline">
-                    <span className="text-4xl font-black text-slate-900 tracking-tight">${p.price}</span>
+                    <span className="text-4xl font-black text-slate-900 tracking-tight">${(p.price / 100).toFixed(2)}</span>
                     <span className="text-[9px] font-black text-slate-400 uppercase tracking-wider ml-2 block">
                       PER MONTH
                     </span>
@@ -899,7 +899,7 @@ export default function AdminBilling() {
                     onClick={() => {
                       setSelectedPlan(p);
                       setEditName(p.name);
-                      setEditPrice(p.price);
+                      setEditPrice(p.price / 100);
                       setEditQuota(p.quota);
                       setEditSmtpLimit(p.smtp_limit || p.smtpLimit || 0);
                       
@@ -1356,8 +1356,9 @@ export default function AdminBilling() {
                   <input
                     type="number"
                     required
+                    step="0.01"
                     value={editPrice}
-                    onChange={(e) => setEditPrice(parseInt(e.target.value))}
+                    onChange={(e) => setEditPrice(parseFloat(e.target.value) || 0)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
                   />
                 </div>
@@ -1507,8 +1508,9 @@ export default function AdminBilling() {
                   <input
                     type="number"
                     required
+                    step="0.01"
                     value={newPlanPrice}
-                    onChange={(e) => setNewPlanPrice(parseInt(e.target.value))}
+                    onChange={(e) => setNewPlanPrice(parseFloat(e.target.value) || 0)}
                     className="w-full px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
                   />
                 </div>
