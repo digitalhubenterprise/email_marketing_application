@@ -33,6 +33,7 @@ class UserResponse(UserBase):
     two_factor_enabled: bool = False
     two_factor_telegram_enabled: bool = False
     telegram_chat_id: Optional[str] = None
+    email_verified: bool = False
     created_at: datetime
 
     class Config:

@@ -35,6 +35,9 @@ class User(Base):
     language = Column(String, default="English")
     timezone = Column(String, default="UTC")
     send_profile_email = Column(Boolean, default=False)
+    email_verified = Column(Boolean, default=False)
+    email_verification_secret = Column(String, nullable=True)
+    email_2fa_secret = Column(String, nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
 
     smtp_servers = relationship("SMTPServer", back_populates="user", cascade="all, delete-orphan")
@@ -229,6 +232,15 @@ class SystemConfig(Base):
     api_listener_access_key = Column(String, default="dhru_key_123456")
     api_listener_enabled = Column(Boolean, default=True)
     api_listener_connected_ip = Column(String, nullable=True, default="")
+    payment_gateway_trc20 = Column(String, nullable=True, default="")
+    payment_gateway_bep20 = Column(String, nullable=True, default="")
+    payment_gateway_usdc_bep20 = Column(String, nullable=True, default="")
+    payment_gateway_merchant_id = Column(String, nullable=True, default="")
+    payment_gateway_qr_code = Column(String, nullable=True, default="")
+    payment_gateway_trc20_enabled = Column(Boolean, default=True)
+    payment_gateway_bep20_enabled = Column(Boolean, default=True)
+    payment_gateway_usdc_bep20_enabled = Column(Boolean, default=True)
+    payment_gateway_merchant_enabled = Column(Boolean, default=True)
     created_at = Column(DateTime, default=utc_now_naive)
 
 

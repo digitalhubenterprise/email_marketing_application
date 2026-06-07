@@ -974,6 +974,33 @@ async def get_system_settings(
         if config.api_listener_enabled is None:
             config.api_listener_enabled = True
             needs_commit = True
+        if config.payment_gateway_trc20 is None:
+            config.payment_gateway_trc20 = ""
+            needs_commit = True
+        if config.payment_gateway_bep20 is None:
+            config.payment_gateway_bep20 = ""
+            needs_commit = True
+        if config.payment_gateway_usdc_bep20 is None:
+            config.payment_gateway_usdc_bep20 = ""
+            needs_commit = True
+        if config.payment_gateway_merchant_id is None:
+            config.payment_gateway_merchant_id = ""
+            needs_commit = True
+        if config.payment_gateway_qr_code is None:
+            config.payment_gateway_qr_code = ""
+            needs_commit = True
+        if config.payment_gateway_trc20_enabled is None:
+            config.payment_gateway_trc20_enabled = True
+            needs_commit = True
+        if config.payment_gateway_bep20_enabled is None:
+            config.payment_gateway_bep20_enabled = True
+            needs_commit = True
+        if config.payment_gateway_usdc_bep20_enabled is None:
+            config.payment_gateway_usdc_bep20_enabled = True
+            needs_commit = True
+        if config.payment_gateway_merchant_enabled is None:
+            config.payment_gateway_merchant_enabled = True
+            needs_commit = True
         if needs_commit:
             await db.commit()
             await db.refresh(config)

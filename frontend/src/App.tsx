@@ -49,6 +49,15 @@ interface AuthConfigType {
   two_factor_email_enabled?: boolean;
   two_factor_telegram_enabled?: boolean;
   two_factor_mandatory_for_admins?: boolean;
+  payment_gateway_trc20?: string | null;
+  payment_gateway_bep20?: string | null;
+  payment_gateway_usdc_bep20?: string | null;
+  payment_gateway_merchant_id?: string | null;
+  payment_gateway_qr_code?: string | null;
+  payment_gateway_trc20_enabled?: boolean | null;
+  payment_gateway_bep20_enabled?: boolean | null;
+  payment_gateway_usdc_bep20_enabled?: boolean | null;
+  payment_gateway_merchant_enabled?: boolean | null;
 }
 
 interface AuthContextType {

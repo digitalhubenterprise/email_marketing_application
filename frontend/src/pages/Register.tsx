@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../App'
-import { Mail, Lock, AlertCircle, ArrowRight, UserPlus, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, AlertCircle, ArrowRight, UserPlus, Eye, EyeOff, CheckCircle } from 'lucide-react'
 
 export default function Register() {
   const [email, setEmail] = useState("")
@@ -11,6 +11,10 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
+  const [verifyEmailMode, setVerifyEmailMode] = useState(false)
+  const [verificationCode, setVerificationCode] = useState("")
+  const [resending, setResending] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
   const { login, appConfig } = useAuth()
   const navigate = useNavigate()
 
@@ -21,6 +25,54 @@ export default function Register() {
     if (!/\d/.test(pw)) return "Password must contain at least one digit.";
     if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(pw)) return "Password must contain at least one special character.";
     return null;
+  };
+
+  const handleVerifyEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/verify-signup-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: verificationCode.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await login(data.access_token);
+      } else {
+        const err = await res.json();
+        setError(err.detail || "Invalid verification code.");
+      }
+    } catch (err) {
+      setError("Connection failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setError(null);
+    setResending(true);
+    setResendSuccess(false);
+    try {
+      const res = await fetch("/api/auth/resend-verification-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      if (res.ok) {
+        setResendSuccess(true);
+        setTimeout(() => setResendSuccess(false), 5000);
+      } else {
+        const err = await res.json();
+        setError(err.detail || "Failed to resend code.");
+      }
+    } catch (err) {
+      setError("Resend request failed.");
+    } finally {
+      setResending(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +98,22 @@ export default function Register() {
       });
 
       if (regResponse.ok) {
+        let isVerified = true;
+        try {
+          const regData = await regResponse.clone().json();
+          if (regData && regData.email_verified === false) {
+            isVerified = false;
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        if (!isVerified) {
+          setVerifyEmailMode(true);
+          setLoading(false);
+          return;
+        }
+
         // 2. Automatically Login user
         const params = new URLSearchParams();
         params.append("username", email);
@@ -117,96 +185,148 @@ export default function Register() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="flex flex-col gap-1">
-            <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Email Address</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
-                <Mail size={13} />
-              </span>
-              <input
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@domain.com"
-                className="w-full pl-9 pr-3.5 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
-              />
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-1">
-            <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Password</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
-                <Lock size={13} />
-              </span>
-              <input
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Min. 8 chars, A-Z, 0-9, symbol"
-                className="w-full pl-9 pr-10 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white transition-colors"
-              >
-                {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
-              </button>
-            </div>
-            {/* Live password strength hints */}
-            {password.length > 0 && (
-              <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 mt-1">
-                {[
-                  { label: "8+ characters", ok: password.length >= 8 },
-                  { label: "Uppercase letter", ok: /[A-Z]/.test(password) },
-                  { label: "Lowercase letter", ok: /[a-z]/.test(password) },
-                  { label: "Number (0–9)", ok: /\d/.test(password) },
-                  { label: "Special char (!@#...)", ok: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\/~`]/.test(password) },
-                ].map(({ label, ok }) => (
-                  <span key={label} className={`flex items-center gap-1 text-[9px] font-semibold ${ok ? "text-emerald-400" : "text-dark-500"}`}>
-                    <span className={`w-1 h-1 rounded-full ${ok ? "bg-emerald-400" : "bg-dark-600"}`} />
-                    {label}
+        <form onSubmit={verifyEmailMode ? handleVerifyEmail : handleSubmit} className="space-y-4">
+          {!verifyEmailMode ? (
+            <>
+              <div className="flex flex-col gap-1">
+                <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Email Address</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                    <Mail size={13} />
                   </span>
-                ))}
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="you@domain.com"
+                    className="w-full pl-9 pr-3.5 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
+                  />
+                </div>
               </div>
-            )}
-          </div>
 
-          <div className="flex flex-col gap-1">
-            <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Confirm Password</label>
-            <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
-                <Lock size={13} />
-              </span>
-              <input
-                type={showConfirmPassword ? "text" : "password"}
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full pl-9 pr-10 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white transition-colors"
-              >
-                {showConfirmPassword ? <EyeOff size={13} /> : <Eye size={13} />}
-              </button>
+              <div className="flex flex-col gap-1">
+                <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Password</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                    <Lock size={13} />
+                  </span>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Min. 8 chars, A-Z, 0-9, symbol"
+                    className="w-full pl-9 pr-10 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white transition-colors"
+                  >
+                    {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+                {/* Live password strength hints */}
+                {password.length > 0 && (
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-0.5 mt-1">
+                    {[
+                      { label: "8+ characters", ok: password.length >= 8 },
+                      { label: "Uppercase letter", ok: /[A-Z]/.test(password) },
+                      { label: "Lowercase letter", ok: /[a-z]/.test(password) },
+                      { label: "Number (0–9)", ok: /\d/.test(password) },
+                      { label: "Special char (!@#...)", ok: /[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(password) },
+                    ].map(({ label, ok }) => (
+                      <span key={label} className={`flex items-center gap-1 text-[9px] font-semibold ${ok ? "text-emerald-400" : "text-dark-500"}`}>
+                        <span className={`w-1 h-1 rounded-full ${ok ? "bg-emerald-400" : "bg-dark-600"}`} />
+                        {label}
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Confirm Password</label>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                    <Lock size={13} />
+                  </span>
+                  <input
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-9 pr-10 py-2.5 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/50 rounded-xl text-xs focus:border-brand-500 focus:outline-none transition-colors text-white placeholder:text-dark-600"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white transition-colors"
+                  >
+                    {showConfirmPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex flex-col gap-1.5 p-3 bg-dark-900/40 border border-dark-800 rounded-xl animate-fadeIn">
+              <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider text-center">
+                Verify Your Email
+              </label>
+              <p className="text-[10px] text-dark-400 text-center leading-normal mb-2">
+                A 6-digit verification OTP has been sent to <strong>{email}</strong>. Please enter the code below to verify and activate your workspace.
+              </p>
+
+              {resendSuccess && (
+                <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9.5px] rounded text-center">
+                  Verification OTP code resent successfully!
+                </div>
+              )}
+
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                  <Lock size={13} />
+                </span>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="6-digit OTP code"
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-dark-950 border border-dark-800 rounded-xl text-center text-xs text-white font-mono placeholder:text-dark-650 focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-between items-center mt-2 px-1">
+                <button
+                  type="button"
+                  onClick={() => { setVerifyEmailMode(false); setVerificationCode(""); }}
+                  className="text-[10px] text-dark-500 hover:text-dark-300 font-semibold underline"
+                >
+                  Back to Register
+                </button>
+                <button
+                  type="button"
+                  disabled={resending}
+                  onClick={handleResendCode}
+                  className="text-[10px] text-brand-400 hover:text-brand-300 font-bold disabled:opacity-50"
+                >
+                  {resending ? "Resending..." : "Resend Code"}
+                </button>
+              </div>
             </div>
-          </div>
+          )}
 
           <button
             type="submit"
             disabled={loading}
             className="w-full py-3 px-4 brand-gradient-bg text-white font-bold rounded-xl text-xs transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5 glow-btn disabled:opacity-50 mt-1"
           >
-            {loading ? "Registering account..." : "Register & Sign In"}
-            {!loading && <UserPlus size={13} />}
+            {loading ? "Verifying..." : verifyEmailMode ? "Verify & Activate" : "Register & Sign In"}
+            {!loading && (verifyEmailMode ? <CheckCircle size={13} /> : <UserPlus size={13} />)}
           </button>
         </form>
 

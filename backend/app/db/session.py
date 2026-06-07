@@ -158,6 +158,33 @@ async def create_db_tables() -> None:
             await conn.execute(
                 text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS api_listener_connected_ip VARCHAR DEFAULT ''")
             )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_trc20 VARCHAR DEFAULT ''")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_bep20 VARCHAR DEFAULT ''")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_usdc_bep20 VARCHAR DEFAULT ''")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_merchant_id VARCHAR DEFAULT ''")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_qr_code VARCHAR DEFAULT ''")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_trc20_enabled BOOLEAN DEFAULT true")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_bep20_enabled BOOLEAN DEFAULT true")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_usdc_bep20_enabled BOOLEAN DEFAULT true")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_merchant_enabled BOOLEAN DEFAULT true")
+            )
     except Exception as e:
         print(f"DB migration warning 4 (non-fatal): {e}")
 
@@ -183,6 +210,9 @@ async def create_db_tables() -> None:
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS language VARCHAR DEFAULT 'English'"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS timezone VARCHAR DEFAULT 'UTC'"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS send_profile_email BOOLEAN DEFAULT false"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_secret VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_2fa_secret VARCHAR"))
             
             # smtp reputation
             await conn.execute(text("ALTER TABLE smtp_servers ADD COLUMN IF NOT EXISTS reputation_score INTEGER DEFAULT 100"))

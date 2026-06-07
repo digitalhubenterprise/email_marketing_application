@@ -20,7 +20,8 @@ import {
   CheckCircle2,
   Trash2,
   Activity,
-  HeartHandshake
+  HeartHandshake,
+  CreditCard
 } from 'lucide-react'
 
 interface SystemConfig {
@@ -55,6 +56,15 @@ interface SystemConfig {
   two_factor_email_enabled?: boolean | null;
   two_factor_telegram_enabled?: boolean | null;
   two_factor_mandatory_for_admins?: boolean | null;
+  payment_gateway_trc20?: string | null;
+  payment_gateway_bep20?: string | null;
+  payment_gateway_usdc_bep20?: string | null;
+  payment_gateway_merchant_id?: string | null;
+  payment_gateway_qr_code?: string | null;
+  payment_gateway_trc20_enabled?: boolean | null;
+  payment_gateway_bep20_enabled?: boolean | null;
+  payment_gateway_usdc_bep20_enabled?: boolean | null;
+  payment_gateway_merchant_enabled?: boolean | null;
 }
 
 type TabType =
@@ -67,6 +77,7 @@ type TabType =
   | 'contact'
   | 'orders'
   | 'fraud'
+  | 'gateways'
   | 'appearance'
   | 'other';
 
@@ -136,6 +147,17 @@ export default function AdminSettings() {
   const [systemSmtpFromName, setSystemSmtpFromName] = useState('');
   const [systemSmtpFromEmail, setSystemSmtpFromEmail] = useState('');
   const [systemSmtpEnabled, setSystemSmtpEnabled] = useState(false);
+
+  // Payment Gateway Configurations
+  const [paymentGatewayTrc20, setPaymentGatewayTrc20] = useState('');
+  const [paymentGatewayBep20, setPaymentGatewayBep20] = useState('');
+  const [paymentGatewayUsdcBep20, setPaymentGatewayUsdcBep20] = useState('');
+  const [paymentGatewayMerchantId, setPaymentGatewayMerchantId] = useState('');
+  const [paymentGatewayQrCode, setPaymentGatewayQrCode] = useState('');
+  const [paymentGatewayTrc20Enabled, setPaymentGatewayTrc20Enabled] = useState(true);
+  const [paymentGatewayBep20Enabled, setPaymentGatewayBep20Enabled] = useState(true);
+  const [paymentGatewayUsdcBep20Enabled, setPaymentGatewayUsdcBep20Enabled] = useState(true);
+  const [paymentGatewayMerchantEnabled, setPaymentGatewayMerchantEnabled] = useState(true);
 
   // SMTP Diagnostics
   const [testingSmtp, setTestingSmtp] = useState(false);
@@ -408,6 +430,16 @@ export default function AdminSettings() {
         setSystemSmtpFromName(data.system_smtp_from_name || '');
         setSystemSmtpFromEmail(data.system_smtp_from_email || '');
         setSystemSmtpEnabled(data.system_smtp_enabled || false);
+
+        setPaymentGatewayTrc20(data.payment_gateway_trc20 || '');
+        setPaymentGatewayBep20(data.payment_gateway_bep20 || '');
+        setPaymentGatewayUsdcBep20(data.payment_gateway_usdc_bep20 || '');
+        setPaymentGatewayMerchantId(data.payment_gateway_merchant_id || '');
+        setPaymentGatewayQrCode(data.payment_gateway_qr_code || '');
+        setPaymentGatewayTrc20Enabled(data.payment_gateway_trc20_enabled ?? true);
+        setPaymentGatewayBep20Enabled(data.payment_gateway_bep20_enabled ?? true);
+        setPaymentGatewayUsdcBep20Enabled(data.payment_gateway_usdc_bep20_enabled ?? true);
+        setPaymentGatewayMerchantEnabled(data.payment_gateway_merchant_enabled ?? true);
       } else {
         setError("Failed to fetch platform configuration settings.");
       }
@@ -555,6 +587,18 @@ export default function AdminSettings() {
           alert("Failed to update general settings.");
         }
       } else if (activeTab === 'registration') {
+        if (twoFactorTelegramEnabled && !telegramBotToken.trim()) {
+          alert("Please enter a valid Telegram Bot Token to enable Telegram Multi-Factor Authentication.");
+          setSaving(false);
+          return;
+        }
+        if ((emailVerificationRequired || twoFactorEmailEnabled) && systemSmtpEnabled) {
+          if (!systemSmtpHost.trim() || !systemSmtpUsername.trim()) {
+            alert("Please configure a valid SMTP Host and Username to enable Outgoing System SMTP Mailer.");
+            setSaving(false);
+            return;
+          }
+        }
         const res = await fetch('/api/admin/settings', {
           method: 'PUT',
           headers: {
@@ -568,7 +612,16 @@ export default function AdminSettings() {
             session_expiry_hours: sessionExpiryHours,
             two_factor_email_enabled: twoFactorEmailEnabled,
             two_factor_telegram_enabled: twoFactorTelegramEnabled,
-            two_factor_mandatory_for_admins: twoFactorMandatoryForAdmins
+            two_factor_mandatory_for_admins: twoFactorMandatoryForAdmins,
+            telegram_bot_token: telegramBotToken.trim(),
+            system_smtp_host: systemSmtpHost || null,
+            system_smtp_port: systemSmtpPort,
+            system_smtp_username: systemSmtpUsername || null,
+            ...(systemSmtpPassword ? { system_smtp_password: systemSmtpPassword } : {}),
+            system_smtp_security: systemSmtpSecurity,
+            system_smtp_from_name: systemSmtpFromName || null,
+            system_smtp_from_email: systemSmtpFromEmail || null,
+            system_smtp_enabled: systemSmtpEnabled
           })
         });
         if (res.ok) {
@@ -576,6 +629,31 @@ export default function AdminSettings() {
           fetchConfig();
         } else {
           alert("Failed to update registration policy settings.");
+        }
+      } else if (activeTab === 'gateways') {
+        const res = await fetch('/api/admin/settings', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            payment_gateway_trc20: paymentGatewayTrc20,
+            payment_gateway_bep20: paymentGatewayBep20,
+            payment_gateway_usdc_bep20: paymentGatewayUsdcBep20,
+            payment_gateway_merchant_id: paymentGatewayMerchantId,
+            payment_gateway_qr_code: paymentGatewayQrCode,
+            payment_gateway_trc20_enabled: paymentGatewayTrc20Enabled,
+            payment_gateway_bep20_enabled: paymentGatewayBep20Enabled,
+            payment_gateway_usdc_bep20_enabled: paymentGatewayUsdcBep20Enabled,
+            payment_gateway_merchant_enabled: paymentGatewayMerchantEnabled
+          })
+        });
+        if (res.ok) {
+          setSaveSuccess("Payment gateway configurations updated successfully.");
+          fetchConfig();
+        } else {
+          alert("Failed to update payment gateway configurations.");
         }
       } else {
         // Save to localStorage
@@ -691,6 +769,7 @@ export default function AdminSettings() {
     { id: 'contact', label: 'Contact Us info', icon: Mail },
     { id: 'orders', label: 'Orders Configuration', icon: ClipboardList },
     { id: 'fraud', label: 'Fraud Protection', icon: Shield },
+    { id: 'gateways', label: 'Payment Gateways', icon: CreditCard },
     { id: 'appearance', label: 'Appearance / Theme', icon: Palette },
     { id: 'other', label: 'Other Settings', icon: Sliders },
   ];
@@ -1438,62 +1517,201 @@ export default function AdminSettings() {
                     </div>
                   </div>
 
-                  <div className="space-y-3 border-t border-slate-100 pt-5 mt-5">
-                    <h4 className="text-[10px] font-bold text-slate-700 uppercase tracking-wide">🛡️ Identity Verification Policies</h4>
+                  <div className="border-t border-slate-100 pt-5 mt-5">
+                    <h4 className="text-[10px] font-bold text-slate-700 uppercase tracking-wide mb-4">🛡️ Identity Verification Policies</h4>
                     
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        id="emailVerificationRequired"
-                        checked={emailVerificationRequired}
-                        onChange={(e) => setEmailVerificationRequired(e.target.checked)}
-                        className="h-4 w-4 mt-0.5 rounded border-slate-300 text-brand-650 cursor-pointer"
-                      />
-                      <div>
-                        <label htmlFor="emailVerificationRequired" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Require Email Verification (Confirm OTP at Signup)</label>
-                        <p className="text-[9px] text-slate-400 font-semibold">User must verify their email before they can access standard SaaS client layouts.</p>
-                      </div>
-                    </div>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
+                      {/* Left Column: Checkboxes */}
+                      <div className="space-y-4">
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            id="emailVerificationRequired"
+                            checked={emailVerificationRequired}
+                            onChange={(e) => setEmailVerificationRequired(e.target.checked)}
+                            className="h-4 w-4 mt-0.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                          />
+                          <div>
+                            <label htmlFor="emailVerificationRequired" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Require Email Verification (Confirm OTP at Signup)</label>
+                            <p className="text-[9px] text-slate-400 font-semibold">User must verify their email before they can access standard SaaS client layouts.</p>
+                          </div>
+                        </div>
 
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        id="twoFactorEmailEnabled"
-                        checked={twoFactorEmailEnabled}
-                        onChange={(e) => setTwoFactorEmailEnabled(e.target.checked)}
-                        className="h-4 w-4 mt-0.5 rounded border-slate-300 text-brand-650 cursor-pointer"
-                      />
-                      <div>
-                        <label htmlFor="twoFactorEmailEnabled" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Enable Email Multi-Factor Auth (OTP on logins)</label>
-                        <p className="text-[9px] text-slate-400 font-semibold">Verify logins using an OTP code generated and sent to user email address.</p>
-                      </div>
-                    </div>
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            id="twoFactorEmailEnabled"
+                            checked={twoFactorEmailEnabled}
+                            onChange={(e) => setTwoFactorEmailEnabled(e.target.checked)}
+                            className="h-4 w-4 mt-0.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                          />
+                          <div>
+                            <label htmlFor="twoFactorEmailEnabled" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Enable Email Multi-Factor Auth (OTP on logins)</label>
+                            <p className="text-[9px] text-slate-400 font-semibold">Verify logins using an OTP code generated and sent to user email address.</p>
+                          </div>
+                        </div>
 
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        id="twoFactorTelegramEnabled"
-                        checked={twoFactorTelegramEnabled}
-                        onChange={(e) => setTwoFactorTelegramEnabled(e.target.checked)}
-                        className="h-4 w-4 mt-0.5 rounded border-slate-300 text-brand-650 cursor-pointer"
-                      />
-                      <div>
-                        <label htmlFor="twoFactorTelegramEnabled" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Enable Telegram Multi-Factor Auth (OTP on telegram)</label>
-                        <p className="text-[9px] text-slate-400 font-semibold">Verify logins using an OTP code sent via integration bot to Telegram target chats.</p>
-                      </div>
-                    </div>
+                        <div className="space-y-2">
+                          <div className="flex items-start gap-3">
+                            <input
+                              type="checkbox"
+                              id="twoFactorTelegramEnabled"
+                              checked={twoFactorTelegramEnabled}
+                              onChange={(e) => setTwoFactorTelegramEnabled(e.target.checked)}
+                              className="h-4 w-4 mt-0.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                            />
+                            <div>
+                              <label htmlFor="twoFactorTelegramEnabled" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Enable Telegram Multi-Factor Auth (OTP on telegram)</label>
+                              <p className="text-[9px] text-slate-400 font-semibold">Verify logins using an OTP code sent via integration bot to Telegram target chats.</p>
+                            </div>
+                          </div>
+                          
+                          {twoFactorTelegramEnabled && (
+                            <div className="flex flex-col gap-1.5 border-l-2 border-brand-500 pl-4 ml-2.5 mt-1.5 animate-fadeIn">
+                              <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest">Telegram Bot Token</label>
+                              <input
+                                type="text"
+                                required
+                                value={telegramBotToken}
+                                onChange={(e) => setTelegramBotToken(e.target.value)}
+                                placeholder="e.g. 123456789:ABCdefGhIJKlmNoPQRsTUVwxyZ"
+                                className="w-full max-w-md px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-mono"
+                              />
+                              <p className="text-[8.5px] text-slate-400 font-semibold leading-normal">
+                                Please provide the Telegram Bot API Token that will be used to dispatch OTP verification codes to users.
+                              </p>
+                            </div>
+                          )}
+                        </div>
 
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        id="twoFactorMandatoryForAdmins"
-                        checked={twoFactorMandatoryForAdmins}
-                        onChange={(e) => setTwoFactorMandatoryForAdmins(e.target.checked)}
-                        className="h-4 w-4 mt-0.5 rounded border-slate-300 text-brand-650 cursor-pointer"
-                      />
-                      <div>
-                        <label htmlFor="twoFactorMandatoryForAdmins" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Make 2FA Mandatory for all Administrative Accounts</label>
-                        <p className="text-[9px] text-slate-400 font-semibold">Force Super Admin and support CRM accounts to pass OTP identity validation.</p>
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            id="twoFactorMandatoryForAdmins"
+                            checked={twoFactorMandatoryForAdmins}
+                            onChange={(e) => setTwoFactorMandatoryForAdmins(e.target.checked)}
+                            className="h-4 w-4 mt-0.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                          />
+                          <div>
+                            <label htmlFor="twoFactorMandatoryForAdmins" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Make 2FA Mandatory for all Administrative Accounts</label>
+                            <p className="text-[9px] text-slate-400 font-semibold">Force Super Admin and support CRM accounts to pass OTP identity validation.</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right Column: Dynamic Outgoing SMTP configuration card */}
+                      <div className="space-y-4">
+                        {(emailVerificationRequired || twoFactorEmailEnabled) && (
+                          <div className="p-4 border border-slate-200 rounded-2xl bg-slate-50/50 shadow-sm animate-fadeIn">
+                            <h5 className="text-[10px] font-extrabold text-brand-600 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                              ✉️ Outgoing System SMTP Configuration
+                            </h5>
+                            <p className="text-[9.5px] text-slate-500 leading-normal mb-3 font-semibold">
+                              Gmail or hosting email SMTP details are required to send verification OTP emails securely.
+                            </p>
+
+                            <div className="flex items-center gap-2 px-3 py-2 bg-white border border-slate-200 rounded-xl text-[10px] font-bold text-slate-700 mb-3">
+                              <input
+                                type="checkbox"
+                                id="systemSmtpEnabledReg"
+                                checked={systemSmtpEnabled || false}
+                                onChange={(e) => setSystemSmtpEnabled(e.target.checked)}
+                                className="h-3.5 w-3.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                              />
+                              <label htmlFor="systemSmtpEnabledReg" className="cursor-pointer">Enable Outgoing System SMTP Mailer</label>
+                            </div>
+
+                            {systemSmtpEnabled && (
+                              <div className="space-y-3 bg-white p-3 border border-slate-200 rounded-xl">
+                                <div className="grid grid-cols-3 gap-2">
+                                  <div className="col-span-2">
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase">SMTP Host</label>
+                                    <input
+                                      type="text"
+                                      required={systemSmtpEnabled}
+                                      value={systemSmtpHost}
+                                      onChange={(e) => setSystemSmtpHost(e.target.value)}
+                                      placeholder="smtp.gmail.com"
+                                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-800 text-[11px] focus:outline-none focus:border-brand-500 font-semibold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase">Port</label>
+                                    <input
+                                      type="number"
+                                      required={systemSmtpEnabled}
+                                      value={systemSmtpPort}
+                                      onChange={(e) => setSystemSmtpPort(parseInt(e.target.value) || 587)}
+                                      placeholder="587"
+                                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-800 text-[11px] focus:outline-none focus:border-brand-500 font-semibold"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase">SMTP Username</label>
+                                    <input
+                                      type="text"
+                                      required={systemSmtpEnabled}
+                                      value={systemSmtpUsername}
+                                      onChange={(e) => setSystemSmtpUsername(e.target.value)}
+                                      placeholder="username@gmail.com"
+                                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-800 text-[11px] focus:outline-none focus:border-brand-500 font-semibold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase">SMTP Password</label>
+                                    <input
+                                      type="password"
+                                      required={systemSmtpEnabled}
+                                      value={systemSmtpPassword}
+                                      onChange={(e) => setSystemSmtpPassword(e.target.value)}
+                                      placeholder="••••••••"
+                                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-800 text-[11px] focus:outline-none focus:border-brand-500 font-semibold"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-2">
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase">Sender Name</label>
+                                    <input
+                                      type="text"
+                                      value={systemSmtpFromName}
+                                      onChange={(e) => setSystemSmtpFromName(e.target.value)}
+                                      placeholder="SmartCampaign OTP"
+                                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-800 text-[11px] focus:outline-none focus:border-brand-500 font-semibold"
+                                    />
+                                  </div>
+                                  <div>
+                                    <label className="block text-[8.5px] font-bold text-slate-500 uppercase">Sender Email</label>
+                                    <input
+                                      type="email"
+                                      value={systemSmtpFromEmail}
+                                      onChange={(e) => setSystemSmtpFromEmail(e.target.value)}
+                                      placeholder="noreply@gmail.com"
+                                      className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-800 text-[11px] focus:outline-none focus:border-brand-500 font-semibold"
+                                    />
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <label className="block text-[8.5px] font-bold text-slate-500 uppercase mb-0.5">SMTP Security</label>
+                                  <select
+                                    value={systemSmtpSecurity}
+                                    onChange={(e) => setSystemSmtpSecurity(e.target.value)}
+                                    className="w-full px-2 py-1.5 border border-slate-200 rounded-lg text-slate-850 text-[11px] focus:outline-none focus:border-brand-500 font-bold bg-white"
+                                  >
+                                    <option value="TLS">STARTTLS (TLS on Port 587)</option>
+                                    <option value="SSL">SSL/TLS (Explicit on Port 465)</option>
+                                    <option value="NONE">None (Plain Text on Port 25)</option>
+                                  </select>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1998,6 +2216,150 @@ export default function AdminSettings() {
                       <div>
                         <label htmlFor="enforce3dSecure" className="text-xs font-bold text-slate-700 cursor-pointer select-none">Require Enforced 3D-Secure checkouts</label>
                         <p className="text-[9px] text-slate-400 font-semibold">Trigger Stripe Radar validation rules on credit cards to stop chargebacks.</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Payment Gateways Tab */}
+              {activeTab === 'gateways' && (
+                <div className="space-y-6 animate-fadeIn">
+                  <div className="border-b border-slate-100 pb-3">
+                    <h3 className="font-extrabold text-xs text-slate-850 uppercase tracking-widest">💳 Payment Gateway Configurations</h3>
+                    <p className="text-[10px] text-slate-400 font-semibold mt-0.5">Configure deposit addresses, merchant accounts, and active gateway availability status.</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {/* TRC20 Gateway Card */}
+                    <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/50 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-red-50 text-red-650 rounded text-[9px] font-black tracking-widest border border-red-100 uppercase">TRC20</span>
+                          Deposit Address (TRC20)
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            id="trc20Enabled"
+                            checked={paymentGatewayTrc20Enabled}
+                            onChange={(e) => setPaymentGatewayTrc20Enabled(e.target.checked)}
+                            className="h-3.5 w-3.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                          />
+                          <label htmlFor="trc20Enabled" className="text-[10px] font-extrabold text-slate-500 cursor-pointer uppercase">Active</label>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">TRC20 Deposit Address</label>
+                        <input
+                          type="text"
+                          value={paymentGatewayTrc20}
+                          onChange={(e) => setPaymentGatewayTrc20(e.target.value)}
+                          placeholder="Enter TRC20 (USDT) Address"
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-mono shadow-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* BEP20 Gateway Card */}
+                    <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/50 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-yellow-50 text-yellow-650 rounded text-[9px] font-black tracking-widest border border-yellow-100 uppercase">BEP20</span>
+                          Deposit Address (BEP20)
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            id="bep20Enabled"
+                            checked={paymentGatewayBep20Enabled}
+                            onChange={(e) => setPaymentGatewayBep20Enabled(e.target.checked)}
+                            className="h-3.5 w-3.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                          />
+                          <label htmlFor="bep20Enabled" className="text-[10px] font-extrabold text-slate-500 cursor-pointer uppercase">Active</label>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">BEP20 Deposit Address</label>
+                        <input
+                          type="text"
+                          value={paymentGatewayBep20}
+                          onChange={(e) => setPaymentGatewayBep20(e.target.value)}
+                          placeholder="Enter BEP20 (USDT) Address"
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-mono shadow-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* USDC BEP20 Gateway Card */}
+                    <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/50 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-blue-50 text-blue-650 rounded text-[9px] font-black tracking-widest border border-blue-100 uppercase">USDC BEP20</span>
+                          USDC Address (BEP20)
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            id="usdcBep20Enabled"
+                            checked={paymentGatewayUsdcBep20Enabled}
+                            onChange={(e) => setPaymentGatewayUsdcBep20Enabled(e.target.checked)}
+                            className="h-3.5 w-3.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                          />
+                          <label htmlFor="usdcBep20Enabled" className="text-[10px] font-extrabold text-slate-500 cursor-pointer uppercase">Active</label>
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">USDC BEP20 Address</label>
+                        <input
+                          type="text"
+                          value={paymentGatewayUsdcBep20}
+                          onChange={(e) => setPaymentGatewayUsdcBep20(e.target.value)}
+                          placeholder="Enter USDC BEP20 Address"
+                          className="w-full px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-mono shadow-sm"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Merchant ID / Scan QR Code Gateway Card */}
+                    <div className="bg-slate-50/50 p-5 rounded-2xl border border-slate-200/50 space-y-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold text-slate-800 flex items-center gap-2">
+                          <span className="px-2 py-0.5 bg-emerald-50 text-emerald-650 rounded text-[9px] font-black tracking-widest border border-emerald-100 uppercase">Direct Merchant</span>
+                          Merchant / Payee ID
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <input
+                            type="checkbox"
+                            id="merchantEnabled"
+                            checked={paymentGatewayMerchantEnabled}
+                            onChange={(e) => setPaymentGatewayMerchantEnabled(e.target.checked)}
+                            className="h-3.5 w-3.5 rounded border-slate-300 text-brand-650 cursor-pointer"
+                          />
+                          <label htmlFor="merchantEnabled" className="text-[10px] font-extrabold text-slate-500 cursor-pointer uppercase">Active</label>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Merchant ID / Payee ID</label>
+                          <input
+                            type="text"
+                            value={paymentGatewayMerchantId}
+                            onChange={(e) => setPaymentGatewayMerchantId(e.target.value)}
+                            placeholder="Enter Merchant ID or Payee Account"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1">Merchant QR Code URL</label>
+                          <input
+                            type="text"
+                            value={paymentGatewayQrCode}
+                            onChange={(e) => setPaymentGatewayQrCode(e.target.value)}
+                            placeholder="Enter Merchant QR Code image link"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold shadow-sm"
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>

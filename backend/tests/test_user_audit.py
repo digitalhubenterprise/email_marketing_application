@@ -92,6 +92,136 @@ async def test_payment_mock_hash_allows_in_dev(client, db_session, monkeypatch):
     assert res_data["payment"]["status"] == "paid"
 
 
+async def test_payment_trc20_mock_hash_allows_in_dev(client, db_session, monkeypatch):
+    headers = await get_auth_headers(client, "dev_payment_trc20@example.com")
+    monkeypatch.setenv("ENVIRONMENT", "development")
+
+    payment_payload = {
+        "amount": 5.0,
+        "currency": "USD",
+        "plan_tier": "free",
+        "gateway": "USDT TRC20",
+        "txhash": "MOCK_TXN_TRC20_12345",
+        "notes": "Testing payment"
+    }
+
+    response = await client.post("/api/auth/my-payments", json=payment_payload, headers=headers)
+    assert response.status_code == 200
+    res_data = response.json()
+    assert res_data["success"] is True
+    assert res_data["payment"]["status"] == "paid"
+
+
+async def test_payment_trc20_invalid_format_in_production(client, db_session, monkeypatch):
+    headers = await get_auth_headers(client, "prod_payment_trc20_fmt@example.com")
+    monkeypatch.setenv("ENVIRONMENT", "production")
+
+    config_res = await db_session.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = config_res.scalars().first()
+    if not config:
+        config = SystemConfig(id=1, payment_gateway_trc20="TXdfa983Dksodlape8391Kskaiey839281")
+        db_session.add(config)
+    else:
+        config.payment_gateway_trc20 = "TXdfa983Dksodlape8391Kskaiey839281"
+        db_session.add(config)
+    await db_session.commit()
+
+    payment_payload = {
+        "amount": 5.0,
+        "currency": "USD",
+        "plan_tier": "free",
+        "gateway": "USDT TRC20",
+        "txhash": "invalid-hash-format-12345",
+        "notes": "Testing format"
+    }
+
+    response = await client.post("/api/auth/my-payments", json=payment_payload, headers=headers)
+    assert response.status_code == 400
+    assert "Invalid TRON transaction hash format" in response.json()["detail"]
+
+
+async def test_payment_trc20_duplicate_hash(client, db_session, monkeypatch):
+    headers = await get_auth_headers(client, "dev_payment_trc20_dup@example.com")
+    monkeypatch.setenv("ENVIRONMENT", "production")
+
+    config_res = await db_session.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = config_res.scalars().first()
+    if not config:
+        config = SystemConfig(id=1, payment_gateway_trc20="TXdfa983Dksodlape8391Kskaiey839281")
+        db_session.add(config)
+    else:
+        config.payment_gateway_trc20 = "TXdfa983Dksodlape8391Kskaiey839281"
+        db_session.add(config)
+    await db_session.commit()
+
+    duplicate_txid = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f61234"
+    existing_payment = PaymentLog(
+        user_email="other_user@example.com",
+        amount=5.0,
+        currency="USD",
+        plan_tier="free",
+        gateway="USDT TRC20",
+        status="paid",
+        notes=f"[ADD_FUND] Verified transfer | TXID: {duplicate_txid}"
+    )
+    db_session.add(existing_payment)
+    await db_session.commit()
+
+    payment_payload = {
+        "amount": 5.0,
+        "currency": "USD",
+        "plan_tier": "free",
+        "gateway": "USDT TRC20",
+        "txhash": duplicate_txid,
+        "notes": "Testing duplicate"
+    }
+
+    response = await client.post("/api/auth/my-payments", json=payment_payload, headers=headers)
+    assert response.status_code == 400
+    assert "Duplicate transaction ID" in response.json()["detail"]
+
+
+async def test_payment_trc20_duplicate_hash_case_insensitive(client, db_session, monkeypatch):
+    headers = await get_auth_headers(client, "dev_payment_trc20_dup_case@example.com")
+    monkeypatch.setenv("ENVIRONMENT", "production")
+
+    config_res = await db_session.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = config_res.scalars().first()
+    if not config:
+        config = SystemConfig(id=1, payment_gateway_trc20="TXdfa983Dksodlape8391Kskaiey839281")
+        db_session.add(config)
+    else:
+        config.payment_gateway_trc20 = "TXdfa983Dksodlape8391Kskaiey839281"
+        db_session.add(config)
+    await db_session.commit()
+
+    txid = "a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6abcd"
+    existing_payment = PaymentLog(
+        user_email="other_user@example.com",
+        amount=5.0,
+        currency="USD",
+        plan_tier="free",
+        gateway="USDT TRC20",
+        status="paid",
+        notes=f"[ADD_FUND] Verified transfer | TXID: {txid}"
+    )
+    db_session.add(existing_payment)
+    await db_session.commit()
+
+    payment_payload = {
+        "amount": 5.0,
+        "currency": "USD",
+        "plan_tier": "free",
+        "gateway": "USDT TRC20",
+        "txhash": txid.upper(),
+        "notes": "Testing duplicate case"
+    }
+
+    response = await client.post("/api/auth/my-payments", json=payment_payload, headers=headers)
+    assert response.status_code == 400
+    assert "Duplicate transaction ID" in response.json()["detail"]
+
+
 async def test_payment_plan_tier_validation(client, db_session, monkeypatch):
     headers = await get_auth_headers(client, "tier_validation@example.com")
     monkeypatch.setenv("ENVIRONMENT", "development")

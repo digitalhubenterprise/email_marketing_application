@@ -63,6 +63,15 @@ class SystemConfigResponse(BaseModel):
     api_listener_access_key: Optional[str] = None
     api_listener_enabled: Optional[bool] = None
     api_listener_connected_ip: Optional[str] = None
+    payment_gateway_trc20: Optional[str] = None
+    payment_gateway_bep20: Optional[str] = None
+    payment_gateway_usdc_bep20: Optional[str] = None
+    payment_gateway_merchant_id: Optional[str] = None
+    payment_gateway_qr_code: Optional[str] = None
+    payment_gateway_trc20_enabled: Optional[bool] = None
+    payment_gateway_bep20_enabled: Optional[bool] = None
+    payment_gateway_usdc_bep20_enabled: Optional[bool] = None
+    payment_gateway_merchant_enabled: Optional[bool] = None
 
 
     class Config:
@@ -105,6 +114,15 @@ class SystemConfigUpdate(BaseModel):
     api_listener_access_key: Optional[str] = None
     api_listener_enabled: Optional[bool] = None
     api_listener_connected_ip: Optional[str] = None
+    payment_gateway_trc20: Optional[str] = None
+    payment_gateway_bep20: Optional[str] = None
+    payment_gateway_usdc_bep20: Optional[str] = None
+    payment_gateway_merchant_id: Optional[str] = None
+    payment_gateway_qr_code: Optional[str] = None
+    payment_gateway_trc20_enabled: Optional[bool] = None
+    payment_gateway_bep20_enabled: Optional[bool] = None
+    payment_gateway_usdc_bep20_enabled: Optional[bool] = None
+    payment_gateway_merchant_enabled: Optional[bool] = None
 
 
 class PaymentLogBase(BaseModel):

@@ -1,7 +1,7 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../App'
-import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff } from 'lucide-react'
+import { Mail, Lock, AlertCircle, ArrowRight, Eye, EyeOff, CheckCircle } from 'lucide-react'
 
 export default function Login() {
   const [email, setEmail] = useState("")
@@ -10,8 +10,61 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
   const [mfaRequired, setMfaRequired] = useState(false)
+  const [mfaType, setMfaType] = useState<string | null>(null)
   const [mfaCode, setMfaCode] = useState("")
+  const [emailVerifyRequired, setEmailVerifyRequired] = useState(false)
+  const [verificationCode, setVerificationCode] = useState("")
+  const [resending, setResending] = useState(false)
+  const [resendSuccess, setResendSuccess] = useState(false)
   const { login, appConfig } = useAuth()
+
+  const handleVerifyEmail = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/verify-signup-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: verificationCode.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        await login(data.access_token);
+      } else {
+        const err = await res.json();
+        setError(err.detail || "Invalid verification code.");
+      }
+    } catch (err) {
+      setError("Connection failed.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendCode = async () => {
+    setError(null);
+    setResending(true);
+    setResendSuccess(false);
+    try {
+      const res = await fetch("/api/auth/resend-verification-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email })
+      });
+      if (res.ok) {
+        setResendSuccess(true);
+        setTimeout(() => setResendSuccess(false), 5000);
+      } else {
+        const err = await res.json();
+        setError(err.detail || "Failed to resend code.");
+      }
+    } catch (err) {
+      setError("Resend request failed.");
+    } finally {
+      setResending(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,12 +92,18 @@ export default function Login() {
         const data = await response.json();
         await login(data.access_token);
       } else {
-        if (response.status === 401 && !mfaRequired) {
+        if (response.status === 401) {
           const clone = response.clone();
           try {
             const data = await clone.json();
-            if (data && data.detail === "2FA_REQUIRED") {
+            if (data && (data.detail === "2FA_REQUIRED" || data.detail === "2FA_EMAIL_REQUIRED")) {
               setMfaRequired(true);
+              setMfaType(data.detail);
+              setLoading(false);
+              return;
+            }
+            if (data && data.detail === "EMAIL_VERIFICATION_REQUIRED") {
+              setEmailVerifyRequired(true);
               setLoading(false);
               return;
             }
@@ -106,8 +165,56 @@ export default function Login() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {!mfaRequired ? (
+        <form onSubmit={emailVerifyRequired ? handleVerifyEmail : handleSubmit} className="space-y-4">
+          {emailVerifyRequired ? (
+            <div className="flex flex-col gap-1.5 p-3 bg-dark-900/40 border border-dark-800 rounded-xl animate-fadeIn">
+              <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider text-center">
+                Verify Your Email
+              </label>
+              <p className="text-[10px] text-dark-400 text-center leading-normal mb-2">
+                A verification OTP code was sent to <strong>{email}</strong>. Please enter the code below to complete your registration.
+              </p>
+
+              {resendSuccess && (
+                <div className="p-2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[9.5px] rounded text-center">
+                  Verification OTP code resent successfully!
+                </div>
+              )}
+
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
+                  <Lock size={13} />
+                </span>
+                <input
+                  type="text"
+                  required
+                  autoFocus
+                  value={verificationCode}
+                  onChange={(e) => setVerificationCode(e.target.value)}
+                  placeholder="6-digit OTP code"
+                  className="w-full pl-9 pr-3.5 py-2.5 bg-dark-950 border border-dark-800 rounded-xl text-center text-xs text-white font-mono placeholder:text-dark-650 focus:border-brand-500 focus:outline-none"
+                />
+              </div>
+
+              <div className="flex justify-between items-center mt-2 px-1">
+                <button
+                  type="button"
+                  onClick={() => { setEmailVerifyRequired(false); setVerificationCode(""); }}
+                  className="text-[10px] text-dark-500 hover:text-dark-300 font-semibold underline"
+                >
+                  Back to Login
+                </button>
+                <button
+                  type="button"
+                  disabled={resending}
+                  onClick={handleResendCode}
+                  className="text-[10px] text-brand-400 hover:text-brand-300 font-bold disabled:opacity-50"
+                >
+                  {resending ? "Resending..." : "Resend Code"}
+                </button>
+              </div>
+            </div>
+          ) : !mfaRequired ? (
             <>
               <div className="flex flex-col gap-1">
                 <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider">Email Address</label>
@@ -159,7 +266,9 @@ export default function Login() {
                 MFA Verification Required
               </label>
               <p className="text-[9.5px] text-dark-400 text-center leading-normal mb-1">
-                Please enter the 6-digit verification code from Google Authenticator or your Telegram 2FA chat.
+                {mfaType === "2FA_EMAIL_REQUIRED"
+                  ? "Please enter the 6-digit login OTP code sent to your email address."
+                  : "Please enter the 6-digit verification code from Google Authenticator or your Telegram 2FA chat."}
               </p>
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500">
@@ -177,7 +286,7 @@ export default function Login() {
               </div>
               <button
                 type="button"
-                onClick={() => { setMfaRequired(false); setMfaCode(""); }}
+                onClick={() => { setMfaRequired(false); setMfaCode(""); setMfaType(null); }}
                 className="text-center text-[10px] text-dark-500 hover:text-dark-300 font-semibold mt-1.5 underline"
               >
                 Back to credentials
@@ -190,8 +299,8 @@ export default function Login() {
             disabled={loading}
             className="w-full py-3 px-4 brand-gradient-bg text-white font-bold rounded-xl text-xs transition-transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5 glow-btn disabled:opacity-50 mt-1"
           >
-            {loading ? "Verifying..." : mfaRequired ? "Confirm Login" : "Sign In to Dashboard"}
-            {!loading && <ArrowRight size={13} />}
+            {loading ? "Verifying..." : emailVerifyRequired ? "Verify & Activate" : mfaRequired ? "Confirm Login" : "Sign In to Dashboard"}
+            {!loading && (emailVerifyRequired ? <CheckCircle size={13} /> : <ArrowRight size={13} />)}
           </button>
         </form>
 
