@@ -155,6 +155,9 @@ async def create_db_tables() -> None:
             await conn.execute(
                 text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS api_listener_enabled BOOLEAN DEFAULT true")
             )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS api_listener_connected_ip VARCHAR DEFAULT ''")
+            )
     except Exception as e:
         print(f"DB migration warning 4 (non-fatal): {e}")
 
