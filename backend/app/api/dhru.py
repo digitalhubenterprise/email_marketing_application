@@ -99,6 +99,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
 
     client_ip = request.client.host if request.client else "unknown"
     form_data = None
+    body_json = None
 
     # 1. Parse incoming parameters safely
     content_type = request.headers.get("content-type", "")
@@ -232,6 +233,54 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
         parameters_dict = parameters[0]
     elif isinstance(parameters, dict):
         parameters_dict = parameters
+
+    # 4b. Robust fallback/enrichment for parameter extraction (e.g. form arrays or direct keys)
+    sources = []
+    if body_json is not None:
+        sources.append(body_json)
+    if form_data is not None:
+        sources.append(form_data)
+    sources.append(request.query_params)
+
+    for src in sources:
+        if not src:
+            continue
+        try:
+            for k, v in src.items():
+                k_str = str(k)
+                # Handle array-like patterns e.g., parameters[ID], parameters[customfield]
+                if k_str.startswith("parameters[") and k_str.endswith("]"):
+                    inner_key = k_str[len("parameters["):-1]
+                    if inner_key and inner_key not in parameters_dict:
+                        parameters_dict[inner_key] = str(v).strip()
+                elif k_str.startswith("parameters[") and "][" in k_str:
+                    parts = k_str[len("parameters["):-1].split("][")
+                    if parts and parts[0] not in parameters_dict:
+                        parameters_dict[parts[0]] = str(v).strip()
+                
+                # Handle direct parameter fields if not already populated
+                k_lower = k_str.lower()
+                if k_lower in ("id", "serviceid", "customfield", "customfield1", "email", "username", "imei"):
+                    std_key = None
+                    if k_lower == "id":
+                        std_key = "ID"
+                    elif k_lower == "serviceid":
+                        std_key = "serviceid"
+                    elif k_lower == "customfield":
+                        std_key = "customfield"
+                    elif k_lower == "customfield1":
+                        std_key = "customfield1"
+                    elif k_lower == "email":
+                        std_key = "email"
+                    elif k_lower == "username":
+                        std_key = "username"
+                    elif k_lower == "imei":
+                        std_key = "imei"
+                    
+                    if std_key and std_key not in parameters_dict:
+                        parameters_dict[std_key] = str(v).strip()
+        except Exception as fallback_err:
+            logger.info("Fallback parameter extraction raised: %s", fallback_err)
 
     # 5. Handle requested API actions
     action_lower = str(action).lower().strip() if action else ""
@@ -520,7 +569,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             username=username,
             ip_address=client_ip,
             status="failed",
-            message=f"Internal handler error: {err_msg}"
+            message=f"Internal handler error: {err_msg} | Parsed parameters: {parameters_dict} | Raw parameters: {parameters_str}"
         )
         db.add(log)
         await db.commit()

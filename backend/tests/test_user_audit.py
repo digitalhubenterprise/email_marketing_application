@@ -229,3 +229,51 @@ async def test_dhru_xml_response(client, db_session):
     assert "<CURRENCY>USD</CURRENCY>" in body
     assert "<balance>" not in body
     assert "<currency>" not in body
+
+
+async def test_dhru_form_array_parameter_parsing(client, db_session):
+    # Register the user
+    reg_payload = {
+        "email": "gsmrajusatkhira@gmail.com",
+        "password": "Password123#"
+    }
+    await client.post("/api/auth/register", json=reg_payload)
+
+    # Configure Dhru
+    config_res = await db_session.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = config_res.scalars().first()
+    if not config:
+        config = SystemConfig(
+            id=1,
+            api_listener_username="dhru_user",
+            api_listener_access_key="dhru_key_123456",
+            api_listener_enabled=True
+        )
+        db_session.add(config)
+    else:
+        config.api_listener_username = "dhru_user"
+        config.api_listener_access_key = "dhru_key_123456"
+        config.api_listener_enabled = True
+        db_session.add(config)
+    await db_session.commit()
+
+    # Get a valid plan ID
+    plan_res = await db_session.execute(select(SubscriptionPlan).limit(1))
+    plan = plan_res.scalars().first()
+    assert plan is not None
+
+    payload = {
+        "username": "dhru_user",
+        "apiaccesskey": "dhru_key_123456",
+        "action": "placeimeiorder",
+        "parameters[ID]": str(plan.id),
+        "parameters[customfield]": "gsmrajusatkhira@gmail.com",
+        "requestformat": "JSON"
+    }
+
+    response = await client.post("/api/dhru", data=payload)
+    assert response.status_code == 200
+    res_json = response.json()
+    assert "SUCCESS" in res_json
+    assert "REFERENCEID" in res_json["SUCCESS"][0]
+
