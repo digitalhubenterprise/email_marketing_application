@@ -12,6 +12,7 @@ import Billing from './pages/Billing'
 import Wallet from './pages/Wallet'
 import TelegramMarketing from './pages/TelegramMarketing'
 import ManageSettings from './pages/ManageSettings'
+import SmsMarketing from './pages/SmsMarketing'
 
 // Administrative Portal pages imports
 import AdminLayout from './components/AdminLayout'
@@ -314,6 +315,10 @@ export default function App() {
           <Route path="wallet" element={<Wallet />} />
           <Route path="settings" element={<ManageSettings />} />
           <Route path="telegram-marketing" element={<TelegramMarketing />} />
+          <Route path="sms-marketing" element={<SmsMarketing />} />
+          <Route path="sms-marketing/numbers" element={<SmsMarketing defaultTab="numbers" />} />
+          <Route path="sms-marketing/settings" element={<SmsMarketing defaultTab="settings" />} />
+          <Route path="sms-marketing/templates" element={<SmsMarketing defaultTab="templates" />} />
           <Route path="telegram-marketing/imei" element={<TelegramMarketing defaultTab="imei" />} />
           <Route path="telegram-marketing/server" element={<TelegramMarketing defaultTab="server" />} />
           <Route path="telegram-marketing/remote" element={<TelegramMarketing defaultTab="remote" />} />

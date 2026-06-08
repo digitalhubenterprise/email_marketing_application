@@ -479,3 +479,14 @@ select option {
 
 :root .divide-dark-800\/20 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(255, 255, 255, 0.2) !important; }
 .dark .divide-dark-800\/20 > :not([hidden]) ~ :not([hidden]) { border-color: rgba(48, 51, 79, 0.2) !important; }
+
+/* Force contrast colors for gradient banners to prevent light theme black text override */
+.force-text-white {
+  color: #ffffff !important;
+}
+.force-text-brand-100 {
+  color: #ede9fe !important;
+}
+.force-text-brand-200 {
+  color: #ddd6fe !important;
+}

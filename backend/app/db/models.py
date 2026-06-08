@@ -47,6 +47,11 @@ class User(Base):
     telegram_config = relationship("TelegramMarketingConfig", back_populates="user", uselist=False, cascade="all, delete-orphan")
     telegram_services = relationship("TelegramService", back_populates="user", cascade="all, delete-orphan")
     telegram_logs = relationship("TelegramLog", back_populates="user", cascade="all, delete-orphan")
+    sms_config = relationship("SMSMarketingConfig", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    sms_campaigns = relationship("SMSCampaign", back_populates="user", cascade="all, delete-orphan")
+    sms_logs = relationship("SMSLog", back_populates="user", cascade="all, delete-orphan")
+    sms_groups = relationship("SMSGroup", back_populates="user", cascade="all, delete-orphan")
+    sms_templates = relationship("SMSTemplate", back_populates="user", cascade="all, delete-orphan")
 
 
 class SMTPServer(Base):
@@ -332,3 +337,96 @@ class DhruApiLog(Base):
     status = Column(String, nullable=False)  # "success" or "failed"
     message = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
+
+
+class SMSMarketingConfig(Base):
+    __tablename__ = "sms_marketing_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, unique=True)
+    api_key = Column(String, nullable=True)
+    sender_id = Column(String, nullable=True)
+    provider = Column(String, default="bulksmsbd", nullable=False)  # "bulksmsbd", "twilio", "vonage", "custom"
+    is_active = Column(Boolean, default=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+    # Provider specific credentials
+    bulksmsbd_api_key = Column(String, nullable=True)
+    bulksmsbd_sender_id = Column(String, nullable=True)
+    twilio_api_key = Column(String, nullable=True)
+    twilio_sender_id = Column(String, nullable=True)
+    vonage_api_key = Column(String, nullable=True)
+    vonage_sender_id = Column(String, nullable=True)
+    custom_api_key = Column(String, nullable=True)
+    custom_sender_id = Column(String, nullable=True)
+
+    user = relationship("User", back_populates="sms_config")
+
+
+class SMSCampaign(Base):
+    __tablename__ = "sms_campaigns"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    sender_id = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    total_recipients = Column(Integer, default=0)
+    sent_count = Column(Integer, default=0)
+    status = Column(String, default="draft")  # "draft", "sending", "sent", "failed"
+    created_at = Column(DateTime, default=utc_now_naive)
+
+    user = relationship("User", back_populates="sms_campaigns")
+
+
+class SMSLog(Base):
+    __tablename__ = "sms_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    timestamp = Column(DateTime, default=utc_now_naive)
+    recipient = Column(String, nullable=False)
+    sender_id = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    status = Column(String, nullable=False)  # "delivered", "sent", "failed"
+    response_code = Column(String, nullable=True)
+    response_message = Column(String, nullable=True)
+
+    user = relationship("User", back_populates="sms_logs")
+
+
+class SMSGroup(Base):
+    __tablename__ = "sms_groups"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+    user = relationship("User", back_populates="sms_groups")
+    numbers = relationship("SMSNumber", back_populates="group", cascade="all, delete-orphan")
+
+
+class SMSNumber(Base):
+    __tablename__ = "sms_numbers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    group_id = Column(Integer, ForeignKey("sms_groups.id", ondelete="CASCADE"), nullable=False)
+    phone_number = Column(String, nullable=False, index=True)
+    name = Column(String, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+    group = relationship("SMSGroup", back_populates="numbers")
+
+
+class SMSTemplate(Base):
+    __tablename__ = "sms_templates"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    title = Column(String, nullable=False)
+    body = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=utc_now_naive)
+
+    user = relationship("User", back_populates="sms_templates")

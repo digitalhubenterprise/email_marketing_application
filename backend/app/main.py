@@ -11,7 +11,7 @@ from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
 from app.db.session import create_db_tables
-from app.api import auth, smtp, contacts, templates, campaigns, tracker, admin, telegram_marketing, dhru
+from app.api import auth, smtp, contacts, templates, campaigns, tracker, admin, telegram_marketing, dhru, sms_marketing
 
 
 # ─── Environment detection ───────────────────────────────────────────
@@ -161,6 +161,7 @@ app.include_router(campaigns.router, prefix=f"{settings.API_V1_STR}/campaigns", 
 app.include_router(tracker.router,   prefix="/api/track",                        tags=["Email Tracking"])
 app.include_router(admin.router,     prefix="/api/admin",                        tags=["Super Admin"])
 app.include_router(telegram_marketing.router, prefix=f"{settings.API_V1_STR}/telegram-marketing", tags=["Telegram Marketing"])
+app.include_router(sms_marketing.router, prefix=f"{settings.API_V1_STR}/sms-marketing", tags=["SMS Marketing"])
 app.include_router(dhru.router, prefix="/api/dhru", tags=["Dhru Fusion API Standards"])
 
 

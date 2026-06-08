@@ -244,6 +244,16 @@ async def create_db_tables() -> None:
             # subscription_plans upgrades
             await conn.execute(text("ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS public_price INTEGER DEFAULT 0"))
             await conn.execute(text("ALTER TABLE subscription_plans ADD COLUMN IF NOT EXISTS discount INTEGER DEFAULT 0"))
+
+            # sms_marketing_configs upgrades
+            await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS bulksmsbd_api_key VARCHAR"))
+            await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS bulksmsbd_sender_id VARCHAR"))
+            await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS twilio_api_key VARCHAR"))
+            await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS twilio_sender_id VARCHAR"))
+            await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS vonage_api_key VARCHAR"))
+            await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS vonage_sender_id VARCHAR"))
+            await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS custom_api_key VARCHAR"))
+            await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS custom_sender_id VARCHAR"))
     except Exception as e:
         print(f"DB feature upgrades migration warning (non-fatal): {e}")
 
