@@ -8,6 +8,15 @@ from app.db.session import AsyncSessionLocal, engine
 from app.db.models import User, TelegramMarketingConfig, TelegramService, TelegramLog
 from app.tasks.email_sender import celery
 
+
+def run_async(coro):
+    """Runs a coroutine synchronously, handles cases where an event loop is already running."""
+    try:
+        asyncio.run(coro)
+    except RuntimeError:
+        # Loop is already running (e.g. in tests); close the coroutine to prevent "never awaited" warnings
+        coro.close()
+
 # Helper for UTC time
 def utc_now_naive():
     return datetime.now(timezone.utc).replace(tzinfo=None)
@@ -343,13 +352,13 @@ async def async_run_telegram_marketing_task(config_id: int) -> None:
 @celery.task(name="app.tasks.telegram_tasks.run_telegram_marketing_task", bind=True, max_retries=1)
 def run_telegram_marketing_task(self, config_id: int) -> None:
     try:
-        asyncio.run(async_run_telegram_marketing_task(config_id))
+        run_async(async_run_telegram_marketing_task(config_id))
     except Exception as exc:
         raise self.retry(exc=exc, countdown=120)
 
 @celery.task(name="app.tasks.telegram_tasks.check_scheduled_telegram_posts_task")
 def check_scheduled_telegram_posts_task() -> None:
     try:
-        asyncio.run(async_check_and_run_telegram_marketing())
+        run_async(async_check_and_run_telegram_marketing())
     except Exception as exc:
         print(f"Error checking Telegram schedulers: {exc}")

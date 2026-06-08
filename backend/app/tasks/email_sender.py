@@ -22,6 +22,15 @@ celery = Celery(
     backend=settings.REDIS_URL,
 )
 
+
+def run_async(coro):
+    """Runs a coroutine synchronously, handles cases where an event loop is already running."""
+    try:
+        asyncio.run(coro)
+    except RuntimeError:
+        # Loop is already running (e.g. in tests); close the coroutine to prevent "never awaited" warnings
+        coro.close()
+
 # Regex to find <a href="..."> links in HTML for click tracking injection
 LINK_REGEX = re.compile(r'href="([^"]+)"', re.IGNORECASE)
 
@@ -377,7 +386,7 @@ async def async_send_campaign(campaign_id: int) -> None:
 def send_campaign_task(self, campaign_id: int) -> None:
     """Celery worker entry point — wraps async send routine in sync context."""
     try:
-        asyncio.run(async_send_campaign(campaign_id))
+        run_async(async_send_campaign(campaign_id))
     except Exception as exc:
         # Retry up to 2 times with 60s delay on unexpected failure
         raise self.retry(exc=exc, countdown=60)
@@ -422,7 +431,7 @@ def evaluate_ab_test_task(campaign_id: int) -> None:
             send_campaign_task.delay(campaign.id)
 
     try:
-        asyncio.run(run())
+        run_async(run())
     except Exception as exc:
         print(f"Error evaluating A/B test campaign {campaign_id}: {exc}")
 
@@ -440,7 +449,7 @@ async def async_reset_monthly_quotas() -> None:
 def reset_monthly_quotas_task() -> None:
     """Resets all users' quota_sent to 0 monthly."""
     try:
-        asyncio.run(async_reset_monthly_quotas())
+        run_async(async_reset_monthly_quotas())
     except Exception as exc:
         print(f"Error resetting monthly quotas: {exc}")
 
@@ -461,7 +470,7 @@ async def async_prune_old_dhru_logs() -> None:
 def prune_old_dhru_logs_task() -> None:
     """Prunes old Dhru API logs."""
     try:
-        asyncio.run(async_prune_old_dhru_logs())
+        run_async(async_prune_old_dhru_logs())
     except Exception as exc:
         print(f"Error pruning old Dhru logs: {exc}")
 
@@ -527,7 +536,7 @@ async def async_check_scheduled_campaigns() -> None:
 def check_scheduled_campaigns_task() -> None:
     """Beat periodic task wrapper — runs scheduled check async."""
     try:
-        asyncio.run(async_check_scheduled_campaigns())
+        run_async(async_check_scheduled_campaigns())
     except Exception as exc:
         print(f"Error executing scheduled campaigns check: {exc}")
 
@@ -595,6 +604,6 @@ def send_system_email_task(recipient_email: str, subject: str, html_body: str) -
                 print(f"[SYSTEM EMAIL LOG] NOTE: Configure System SMTP in Admin Settings to enable real delivery.")
 
     try:
-        asyncio.run(run())
+        run_async(run())
     except Exception as exc:
         print(f"Error executing system email task: {exc}")

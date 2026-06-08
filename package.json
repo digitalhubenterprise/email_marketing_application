@@ -1,0 +1,24 @@
+{
+  "name": "email_marketing_application",
+  "version": "1.0.0",
+  "description": "SmartCampaign is an enterprise-grade, high-performance Email & Telegram AI Marketing SaaS platform designed to support robust mass email broadcasts, automated drip campaigns, and scheduled AI Telegram rotations. Equipped with an interactive glassmorphic dashboard, multi-SMTP load rotation, CSV imports, jinja-style dynamic templates, and pixel-perfect real-time engagement tracking, SmartCampaign is fully hardened for production-ready deployments.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/digitalhubenterprise/email_marketing_application.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/digitalhubenterprise/email_marketing_application/issues"
+  },
+  "homepage": "https://github.com/digitalhubenterprise/email_marketing_application#readme",
+  "devDependencies": {
+    "playwright": "^1.60.0"
+  }
+}
