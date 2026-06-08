@@ -80,7 +80,7 @@ export const useAuth = () => {
 };
 
 export default function App() {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("token"));
+  const [token, setToken] = useState<string | null>(localStorage.getItem("is_logged_in"));
   const [user, setUser] = useState<any | null>(null);
   const [appConfig, setAppConfig] = useState<AuthConfigType | null>(null);
   const [inMaintenance, setInMaintenance] = useState(false);
@@ -105,16 +105,14 @@ export default function App() {
   };
 
   const refreshUser = async () => {
-    const currentToken = localStorage.getItem("token");
-    if (!currentToken) {
+    const isLoggedIn = localStorage.getItem("is_logged_in");
+    if (!isLoggedIn) {
       setUser(null);
       setLoading(false);
       return;
     }
     try {
-      const response = await fetch("/api/auth/me", {
-        headers: { "Authorization": `Bearer ${currentToken}` }
-      });
+      const response = await fetch("/api/auth/me");
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
@@ -122,7 +120,7 @@ export default function App() {
         // Under maintenance - let fetch interceptor handle or manually flag
         setInMaintenance(true);
       } else {
-        // Token expired/invalid
+        // Session expired/invalid
         logout();
       }
     } catch (error) {
@@ -135,17 +133,29 @@ export default function App() {
   // Global Fetch Interceptor for 503 Maintenance Mode and 401 Admin Session Expirations
   useEffect(() => {
     const originalFetch = window.fetch;
-    window.fetch = async (...args) => {
-      const response = await originalFetch(...args);
+    window.fetch = async (input, init) => {
+      const options = init || {};
+      options.credentials = "include";
 
-      // Handle Admin Session Expiration (401 Unauthorized)
-      const requestUrl = typeof args[0] === 'string' ? args[0] : (args[0] && typeof args[0] === 'object' && 'url' in args[0] ? (args[0] as any).url : '');
-      if (response.status === 401 && (requestUrl.includes('/api/admin') || window.location.pathname.startsWith('/admin'))) {
-        localStorage.removeItem("admin_token");
-        localStorage.removeItem("admin_email");
-        localStorage.removeItem("admin_role");
-        if (window.location.pathname !== '/admin/login') {
-          window.location.href = "/admin/login";
+      const response = await originalFetch(input, options);
+
+      // Handle Admin/User Session Expiration (401 Unauthorized)
+      const requestUrl = typeof input === 'string' ? input : (input && typeof input === 'object' && 'url' in input ? (input as any).url : '');
+      if (response.status === 401) {
+        if (requestUrl.includes('/api/admin') || window.location.pathname.startsWith('/admin')) {
+          localStorage.removeItem("admin_logged_in");
+          localStorage.removeItem("admin_email");
+          localStorage.removeItem("admin_role");
+          if (window.location.pathname !== '/admin/login') {
+            window.location.href = "/admin/login";
+          }
+        } else if (requestUrl.includes('/api/auth/me') || !window.location.pathname.startsWith('/admin')) {
+          localStorage.removeItem("is_logged_in");
+          setToken(null);
+          setUser(null);
+          if (window.location.pathname !== '/login') {
+            window.location.href = "/login";
+          }
         }
       }
 
@@ -198,17 +208,22 @@ export default function App() {
     }
   }, [appConfig]);
 
-  const login = async (newToken: string) => {
-    localStorage.setItem("token", newToken);
-    setToken(newToken);
+  const login = async (newToken?: string) => {
+    localStorage.setItem("is_logged_in", "true");
+    setToken("logged_in");
     await refreshUser();
     navigate("/");
   };
 
-  const logout = () => {
-    localStorage.removeItem("token");
+  const logout = async () => {
+    localStorage.removeItem("is_logged_in");
     setToken(null);
     setUser(null);
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Logout request failed:", e);
+    }
     navigate("/login");
   };
 

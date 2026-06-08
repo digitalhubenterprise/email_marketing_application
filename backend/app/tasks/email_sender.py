@@ -445,6 +445,27 @@ def reset_monthly_quotas_task() -> None:
         print(f"Error resetting monthly quotas: {exc}")
 
 
+async def async_prune_old_dhru_logs() -> None:
+    """Deletes Dhru Api Log entries older than 30 days."""
+    from app.db.models import DhruApiLog
+    from sqlalchemy import delete
+    await engine.dispose()
+    async with AsyncSessionLocal() as db:
+        cutoff = datetime.utcnow() - timedelta(days=30)
+        await db.execute(delete(DhruApiLog).where(DhruApiLog.created_at < cutoff))
+        await db.commit()
+    await engine.dispose()
+
+
+@celery.task(name="app.tasks.email_sender.prune_old_dhru_logs_task")
+def prune_old_dhru_logs_task() -> None:
+    """Prunes old Dhru API logs."""
+    try:
+        asyncio.run(async_prune_old_dhru_logs())
+    except Exception as exc:
+        print(f"Error pruning old Dhru logs: {exc}")
+
+
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Check for scheduled campaigns every 10 seconds
@@ -459,6 +480,13 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(day_of_month="1", hour="0", minute="0"),
         reset_monthly_quotas_task.s(),
         name="reset-monthly-quotas-task"
+    )
+
+    # Prune old Dhru API logs daily at midnight UTC
+    sender.add_periodic_task(
+        crontab(hour="0", minute="0"),
+        prune_old_dhru_logs_task.s(),
+        name="prune-old-dhru-logs-task"
     )
 
     # Check for scheduled Telegram AI posts every 60 seconds

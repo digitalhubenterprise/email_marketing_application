@@ -13,14 +13,7 @@ interface Transaction {
 
 export default function Wallet() {
   const { token, user, appConfig } = useAuth();
-  const [balance, setBalance] = useState(() => {
-    const saved = localStorage.getItem("wallet_balance");
-    return saved ? parseFloat(saved) : 25.40;
-  });
-
-  useEffect(() => {
-    localStorage.setItem("wallet_balance", balance.toString());
-  }, [balance]);
+  const [balance, setBalance] = useState(25.40);
   const [loading, setLoading] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState("");
   const [showSimModal, setShowSimModal] = useState(false);
@@ -73,92 +66,68 @@ export default function Wallet() {
     }
   }, [appConfig, gateway]);
 
-  // Mock billing history transaction details
-  const [transactions, setTransactions] = useState<Transaction[]>(() => {
-    const saved = localStorage.getItem("wallet_transactions");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.error(e);
-      }
-    }
-    return [
-      { id: "TXN-849302", desc: "Balance Recharge (Credit Card)", amount: 25.00, date: "2026-05-20", type: "credit", status: "Completed" },
-      { id: "TXN-748291", desc: "Campaign Blast: 'Promo Lifetime Deal'", amount: -3.60, date: "2026-05-18", type: "debit", status: "Completed" },
-      { id: "TXN-639102", desc: "Campaign Blast: 'Monthly Newsletter'", amount: -1.20, date: "2026-05-15", type: "debit", status: "Completed" },
-      { id: "TXN-528190", desc: "Initial Welcome Signup Credit", amount: 5.20, date: "2026-05-01", type: "credit", status: "Completed" }
-    ];
-  });
-
-  useEffect(() => {
-    localStorage.setItem("wallet_transactions", JSON.stringify(transactions));
-  }, [transactions]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
 
   // Load real transactions and compute real balance from backend paid payments
-  useEffect(() => {
-    const fetchWalletLogs = async () => {
-      try {
-        const res = await fetch('/api/auth/my-payments', {
-          headers: { "Authorization": `Bearer ${token}` }
+  const fetchWalletLogs = async () => {
+    try {
+      const res = await fetch('/api/auth/my-payments', {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Map to Transaction objects with custom descriptive action tags
+        const apiTxns: Transaction[] = data.map((p: any) => {
+          let desc = `Balance Recharge (${p.gateway})`;
+          let rawNotes = p.notes || '';
+          let type = p.amount >= 0 ? 'credit' : 'debit';
+          
+          if (rawNotes.startsWith("[ADD_FUND]")) {
+            desc = "Wallet Fund Recharge";
+            rawNotes = rawNotes.substring(10).trim();
+          } else if (rawNotes.startsWith("[REBATE]")) {
+            desc = "SaaS Balance Rebate Credit";
+            rawNotes = rawNotes.substring(8).trim();
+          } else if (rawNotes.startsWith("[DEBIT]")) {
+            desc = "Wallet Plan Deduction";
+            rawNotes = rawNotes.substring(7).trim();
+          } else if (rawNotes.startsWith("[OVERDRIVE]")) {
+            desc = `Email Quota Overdrive (${p.plan_tier.toUpperCase()})`;
+            rawNotes = rawNotes.substring(11).trim();
+          }
+          
+          return {
+            id: `TXN-${p.id}`,
+            desc: desc + (rawNotes ? ` - ${rawNotes}` : ''),
+            amount: p.amount,
+            date: p.created_at.split('T')[0],
+            type: type,
+            status: p.status === 'paid' ? 'Completed' : p.status === 'pending' ? 'Pending' : 'Failed'
+          };
         });
-        if (res.ok) {
-          const data = await res.json();
-          // Map to Transaction objects with custom descriptive action tags
-          const apiTxns: Transaction[] = data.map((p: any) => {
-            let desc = `Balance Recharge (${p.gateway})`;
-            let rawNotes = p.notes || '';
-            let type = p.amount >= 0 ? 'credit' : 'debit';
-            
-            if (rawNotes.startsWith("[ADD_FUND]")) {
-              desc = "Wallet Fund Recharge";
-              rawNotes = rawNotes.substring(10).trim();
-            } else if (rawNotes.startsWith("[REBATE]")) {
-              desc = "SaaS Balance Rebate Credit";
-              rawNotes = rawNotes.substring(8).trim();
-            } else if (rawNotes.startsWith("[OVERDRIVE]")) {
-              desc = `Email Quota Overdrive (${p.plan_tier.toUpperCase()})`;
-              rawNotes = rawNotes.substring(11).trim();
-            }
-            
-            return {
-              id: `TXN-${p.id}`,
-              desc: desc + (rawNotes ? ` - ${rawNotes}` : ''),
-              amount: p.amount,
-              date: p.created_at.split('T')[0],
-              type: type,
-              status: p.status === 'paid' ? 'Completed' : p.status === 'pending' ? 'Pending' : 'Failed'
-            };
-          });
 
-          // Sum paid add_fund or rebate transactions for wallet cash balance (exclude overdrive which applies to email limits)
-          const paidSum = data
-            .filter((p: any) => {
-              const isPaid = p.status === 'paid';
-              const isOverdrive = p.notes && p.notes.startsWith("[OVERDRIVE]");
-              return isPaid && !isOverdrive;
-            })
-            .reduce((sum: number, p: any) => {
-              const isRebate = p.notes && p.notes.startsWith("[REBATE]");
-              const amt = isRebate ? -Math.abs(p.amount) : p.amount;
-              return sum + amt;
-            }, 0);
+        // Sum paid add_fund or rebate transactions for wallet cash balance (exclude overdrive which applies to email limits)
+        const paidSum = data
+          .filter((p: any) => {
+            const isPaid = p.status === 'paid';
+            const isOverdrive = p.notes && p.notes.startsWith("[OVERDRIVE]");
+            return isPaid && !isOverdrive;
+          })
+          .reduce((sum: number, p: any) => {
+            const isRebate = p.notes && p.notes.startsWith("[REBATE]");
+            const amt = isRebate ? -Math.abs(p.amount) : p.amount;
+            return sum + amt;
+          }, 0);
 
-          setBalance(25.40 + paidSum);
-
-          const defaultMock = [
-            { id: "TXN-849302", desc: "Balance Recharge (Credit Card)", amount: 25.00, date: "2026-05-20", type: "credit", status: "Completed" },
-            { id: "TXN-748291", desc: "Campaign Blast: 'Promo Lifetime Deal'", amount: -3.60, date: "2026-05-18", type: "debit", status: "Completed" },
-            { id: "TXN-639102", desc: "Campaign Blast: 'Monthly Newsletter'", amount: -1.20, date: "2026-05-15", type: "debit", status: "Completed" },
-            { id: "TXN-528190", desc: "Initial Welcome Signup Credit", amount: 5.20, date: "2026-05-01", type: "credit", status: "Completed" }
-          ];
-
-          setTransactions([...apiTxns, ...defaultMock]);
-        }
-      } catch (err) {
-        console.error(err);
+        setBalance(25.40 + paidSum);
+        setTransactions(apiTxns);
       }
-    };
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  useEffect(() => {
     if (token) {
       fetchWalletLogs();
     }
@@ -187,8 +156,7 @@ export default function Wallet() {
     const res = await fetch('/api/auth/my-payments', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        'Content-Type': 'application/json'
       },
       body: JSON.stringify({
         amount: amount,
@@ -266,19 +234,7 @@ export default function Wallet() {
             setVerifyProgress(100);
             setVerifyLog("TRON TRC20 payment verified successfully! Balance credited.");
             setSuccessAmount(amt);
-            
-            setBalance(prev => prev + amt);
-            setTransactions(prev => [
-              {
-                id: txnId,
-                desc: `Balance Recharge (USDT TRC20 Verified)`,
-                amount: amt,
-                date: new Date().toISOString().split("T")[0],
-                type: "credit",
-                status: "Completed"
-              },
-              ...prev
-            ]);
+            await fetchWalletLogs();
             setLoading(false);
             setVerifyStatus("success");
           } catch (err: any) {
@@ -415,19 +371,7 @@ export default function Wallet() {
               await savePaymentToBackend(txnId, verifiedAmount, gateway === "usdt_bep20" ? "USDT BEP20" : "USDC BEP20");
               setVerifyProgress(100);
               setVerifyLog("Realtime payment verified! SaaS balance credited.");
-              
-              setBalance(prev => prev + verifiedAmount);
-              setTransactions(prev => [
-                {
-                  id: txnId,
-                  desc: `Balance Recharge (${gateway === "usdt_bep20" ? "USDT" : "USDC"} BEP20 Verified)`,
-                  amount: verifiedAmount,
-                  date: new Date().toISOString().split("T")[0],
-                  type: "credit",
-                  status: "Completed"
-                },
-                ...prev
-              ]);
+              await fetchWalletLogs();
               setLoading(false);
               setVerifyStatus("success");
             } catch (err: any) {
@@ -450,19 +394,7 @@ export default function Wallet() {
               await savePaymentToBackend(txnId, amt, label);
               setVerifyProgress(100);
               setVerifyLog("Payment verified successfully! Balance credited.");
-              
-              setBalance(prev => prev + amt);
-              setTransactions(prev => [
-                {
-                  id: txnId,
-                  desc: `Balance Recharge (${label} Gateway)`,
-                  amount: amt,
-                  date: new Date().toISOString().split("T")[0],
-                  type: "credit",
-                  status: "Completed"
-                },
-                ...prev
-              ]);
+              await fetchWalletLogs();
               setLoading(false);
               setVerifyStatus("success");
             } catch (err: any) {

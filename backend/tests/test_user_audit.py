@@ -473,4 +473,86 @@ async def test_dhru_xml_parameter_parsing(client, db_session):
     assert "REFERENCEID" in res_json["SUCCESS"][0]
 
 
+async def test_smtp_create_ssrf_block_in_production(client, db_session, monkeypatch):
+    headers = await get_auth_headers(client, "smtp_create_ssrf@example.com")
+    monkeypatch.setenv("ENVIRONMENT", "production")
+
+    payload = {
+        "name": "Local SMTP",
+        "host": "127.0.0.1",
+        "port": 25,
+        "username": "test",
+        "password": "Password123#",
+        "security": "TLS",
+        "from_name": "Test",
+        "from_email": "test@example.com"
+    }
+
+    # Creating SMTP server with loopback IP should be blocked in production
+    response = await client.post("/api/smtp", json=payload, headers=headers)
+    assert response.status_code == 400
+    assert "Testing connections to private or loopback IP ranges is not allowed" in response.json()["detail"]
+
+
+async def test_html_sanitizer_entity_decoding():
+    from app.core.security import sanitize_html
+    # Obfuscated alert(1) using HTML hex entities
+    payload = '<a href="&#x6A;&#x61;&#x76;&#x61;&#x73;&#x63;&#x72;&#x69;&#x70;&#x74;:alert(1)">Click Me</a>'
+    sanitized = sanitize_html(payload)
+    assert "javascript:" not in sanitized
+    assert "alert(1)" not in sanitized
+    
+    # Check data URI injection block
+    payload_data = '<object data="data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg=="></object>'
+    sanitized_data = sanitize_html(payload_data)
+    assert "data:" not in sanitized_data
+    assert "<object" not in sanitized_data
+
+
+async def test_password_change_token_invalidation(client, db_session):
+    email = "pass_invalidate@example.com"
+    reg_payload = {
+        "email": email,
+        "password": "Password123#"
+    }
+    await client.post("/api/auth/register", json=reg_payload)
+
+    login_payload = {
+        "username": email,
+        "password": "Password123#"
+    }
+    response_login = await client.post(
+        "/api/auth/login",
+        data=login_payload,
+        headers={"Content-Type": "application/x-www-form-urlencoded"}
+    )
+    token = response_login.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Verify token works initially
+    response_me = await client.get("/api/auth/me", headers=headers)
+    assert response_me.status_code == 200
+
+    # Change password
+    change_payload = {
+        "current_password": "Password123#",
+        "new_password": "NewPassword456!"
+    }
+    response_change = await client.post("/api/auth/change-password", json=change_payload, headers=headers)
+    assert response_change.status_code == 200
+
+    # Access /me again using the old token — should be unauthorized!
+    response_me_invalidated = await client.get("/api/auth/me", headers=headers)
+    assert response_me_invalidated.status_code == 401
+
+
+async def test_csp_headers_present(client):
+    response = await client.get("/api/health")
+    assert response.status_code == 200
+    assert "Content-Security-Policy" in response.headers
+    csp = response.headers["Content-Security-Policy"]
+    assert "default-src 'self'" in csp
+    assert "script-src 'self'" in csp
+
+
 

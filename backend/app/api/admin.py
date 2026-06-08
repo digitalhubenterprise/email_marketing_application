@@ -1,6 +1,6 @@
 from datetime import datetime, date, timezone
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Header, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Header, Query, Request, Response
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -83,7 +83,8 @@ async def register_admin(
     """
     secret = settings.ADMIN_REGISTRATION_SECRET
     provided_token = invite_token or x_invite_token
-    if provided_token != secret:
+    import secrets
+    if not provided_token or not secrets.compare_digest(provided_token, secret):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Invalid or missing admin invitation token."
@@ -125,6 +126,7 @@ async def register_admin(
 @limiter.limit("10/minute")
 async def login_admin(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db)
 ):
@@ -155,8 +157,27 @@ async def login_admin(
     )
     await db.commit()  # commit transaction
 
-    token = create_access_token(subject=admin.id, role="admin")
+    token = create_access_token(subject=admin.id, role="admin", password_hash=admin.hashed_password)
+    response.set_cookie(
+        key="admin_token",
+        value=token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
     return {"access_token": token, "token_type": "bearer", "role": admin.role, "email": admin.email}  # nosec
+
+
+@router.get("/verify")
+async def verify_admin(current_admin: AdminUser = Depends(get_current_admin)):
+    """Verifies administrator session and returns admin credentials."""
+    return {
+        "email": current_admin.email,
+        "role": current_admin.role,
+        "is_active": current_admin.is_active
+    }
+
 
 
 # ─── Dashboard Overview ───────────────────────────────────────────────
@@ -690,7 +711,7 @@ async def impersonate_user(
         raise HTTPException(status_code=404, detail="User account not found.")
         
     # Generate customer access token
-    access_token = create_access_token(subject=user.id)
+    access_token = create_access_token(subject=user.id, password_hash=user.hashed_password)
     
     await log_audit(
         db,
@@ -1665,4 +1686,12 @@ async def delete_subscription_plan(
 
     await db.delete(plan)
     await db.commit()
+
+
+@router.post("/logout")
+async def logout_admin(response: Response):
+    """Logs out the admin by deleting the HttpOnly admin_token cookie."""
+    response.delete_cookie(key="admin_token", httponly=True, secure=True, samesite="lax")
+    return {"message": "Admin logged out successfully."}
+
 

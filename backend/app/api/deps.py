@@ -1,6 +1,6 @@
-from typing import AsyncGenerator
+from typing import AsyncGenerator, Optional
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -10,18 +10,26 @@ from app.db.session import get_db
 from app.db.models import User
 from app.schemas.user import TokenData
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False)
 
 
 async def get_current_user(
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(oauth2_scheme)
+    token: Optional[str] = Depends(oauth2_scheme)
 ) -> User:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials. Please log in again.",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    cookie_token = request.cookies.get("access_token")
+    if cookie_token:
+        token = cookie_token
+
+    if not token:
+        raise credentials_exception
+
     try:
         payload = jwt.decode(
             token,
@@ -47,6 +55,15 @@ async def get_current_user(
     user = result.scalars().first()
 
     if user is None:
+        raise credentials_exception
+
+    # Enforce token rotation signature check (pws)
+    import secrets
+    token_pws = payload.get("pws")
+    if not token_pws or not user.hashed_password:
+        raise credentials_exception
+    
+    if not secrets.compare_digest(token_pws, user.hashed_password[-10:]):
         raise credentials_exception
 
     if not user.is_active:

@@ -64,18 +64,12 @@ export default function Billing() {
 
   // Cash desk states
   const [payMethod, setPayMethod] = useState<"wallet" | "direct">("wallet");
-  const [walletBalance, setWalletBalance] = useState(() => {
-    const saved = localStorage.getItem("wallet_balance");
-    return saved ? parseFloat(saved) : 25.40;
-  });
+  const [walletBalance, setWalletBalance] = useState(25.40);
 
-  // Load real transactions and compute real balance from backend paid payments
   React.useEffect(() => {
     const fetchWalletBalance = async () => {
       try {
-        const res = await fetch('/api/auth/my-payments', {
-          headers: { "Authorization": `Bearer ${token}` }
-        });
+        const res = await fetch('/api/auth/my-payments');
         if (res.ok) {
           const data = await res.json();
           // Sum paid add_fund or rebate transactions for wallet cash balance (exclude overdrive which applies to email limits)
@@ -93,7 +87,6 @@ export default function Billing() {
 
           const finalBalance = 25.40 + paidSum;
           setWalletBalance(finalBalance);
-          localStorage.setItem("wallet_balance", finalBalance.toString());
         }
       } catch (err) {
         console.error(err);
@@ -228,49 +221,14 @@ export default function Billing() {
 
       if (method === "wallet") {
         setProcessingLog("Deducting SaaS credits from wallet balance...");
-        const currentBalance = parseFloat(localStorage.getItem("wallet_balance") || "25.40");
-        if (currentBalance < price) {
+        if (walletBalance < price) {
           alert("Insufficient balance!");
           setCheckoutStatus("idle");
           setLoading(false);
           return;
         }
-        
-        const newBalance = currentBalance - price;
-        localStorage.setItem("wallet_balance", newBalance.toString());
-        setWalletBalance(newBalance);
-        
-        // Log transaction to transactions list in localStorage
-        const savedTx = localStorage.getItem("wallet_transactions");
-        let transactions = [];
-        if (savedTx) {
-          try { transactions = JSON.parse(savedTx); } catch (e) {}
-        }
-        transactions.unshift({
-          id: txnId,
-          desc: `Plan Upgrade to ${tier.toUpperCase()} (Wallet Deduction)`,
-          amount: -price,
-          date: new Date().toISOString().split("T")[0],
-          type: "debit",
-          status: "Completed"
-        });
-        localStorage.setItem("wallet_transactions", JSON.stringify(transactions));
       } else {
         setProcessingLog("Authorizing card payment with Stripe simulator...");
-        const savedTx = localStorage.getItem("wallet_transactions");
-        let transactions = [];
-        if (savedTx) {
-          try { transactions = JSON.parse(savedTx); } catch (e) {}
-        }
-        transactions.unshift({
-          id: txnId,
-          desc: `Plan Upgrade to ${tier.toUpperCase()} (Direct Card Pay)`,
-          amount: -price,
-          date: new Date().toISOString().split("T")[0],
-          type: "debit",
-          status: "Completed"
-        });
-        localStorage.setItem("wallet_transactions", JSON.stringify(transactions));
       }
 
       await new Promise(resolve => setTimeout(resolve, 800));
@@ -280,14 +238,36 @@ export default function Billing() {
       const res = await fetch("/api/auth/upgrade", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          "Content-Type": "application/json"
         },
-        body: JSON.stringify({ tier })
+        body: JSON.stringify({ tier, payment_method: method })
       });
 
       if (!res.ok) {
-        throw new Error("Failed to upgrade subscription tier in backend database.");
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || "Failed to upgrade subscription tier in backend database.");
+      }
+
+      // Dynamic reload of payment log transactions to sync real-time wallet credits
+      try {
+        const paymentsRes = await fetch('/api/auth/my-payments');
+        if (paymentsRes.ok) {
+          const data = await paymentsRes.json();
+          const paidSum = data
+            .filter((p: any) => {
+              const isPaid = p.status === 'paid';
+              const isOverdrive = p.notes && p.notes.startsWith("[OVERDRIVE]");
+              return isPaid && !isOverdrive;
+            })
+            .reduce((sum: number, p: any) => {
+              const isRebate = p.notes && p.notes.startsWith("[REBATE]");
+              const amt = isRebate ? -Math.abs(p.amount) : p.amount;
+              return sum + amt;
+            }, 0);
+          setWalletBalance(25.40 + paidSum);
+        }
+      } catch (err) {
+        console.error("Failed to refresh wallet balance:", err);
       }
 
       setProcessingProgress(100);

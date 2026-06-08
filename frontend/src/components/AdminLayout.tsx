@@ -30,14 +30,11 @@ export default function AdminLayout() {
   });
   const [maintenanceMode, setMaintenanceMode] = useState(false);
   const [togglingMaintenance, setTogglingMaintenance] = useState(false);
+  const [verifying, setVerifying] = useState(true);
 
   const fetchMaintenanceMode = async () => {
-    const token = localStorage.getItem("admin_token");
-    if (!token) return;
     try {
-      const res = await fetch("/api/admin/settings", {
-        headers: { "Authorization": `Bearer ${token}` }
-      });
+      const res = await fetch("/api/admin/settings");
       if (res.ok) {
         const data = await res.json();
         setMaintenanceMode(data.maintenance_mode);
@@ -64,23 +61,36 @@ export default function AdminLayout() {
   }, []);
 
   useEffect(() => {
-    const token = localStorage.getItem("admin_token");
-    const email = localStorage.getItem("admin_email");
-    const role = localStorage.getItem("admin_role");
+    const checkAdminSession = async () => {
+      try {
+        const res = await fetch("/api/admin/verify");
+        if (res.ok) {
+          const data = await res.json();
+          setAdminEmail(data.email);
+          setAdminRole(data.role);
+          setVerifying(false);
+          fetchMaintenanceMode();
+        } else {
+          localStorage.removeItem("admin_logged_in");
+          localStorage.removeItem("admin_email");
+          localStorage.removeItem("admin_role");
+          navigate("/admin/login");
+        }
+      } catch (err) {
+        console.error("Session verification failed:", err);
+        navigate("/admin/login");
+      }
+    };
 
-    if (!token) {
+    const loggedIn = localStorage.getItem("admin_logged_in");
+    if (!loggedIn) {
       navigate("/admin/login");
     } else {
-      setAdminEmail(email);
-      setAdminRole(role);
-      fetchMaintenanceMode();
+      checkAdminSession();
     }
   }, [location, navigate]);
 
   const handleToggleMaintenance = async () => {
-    const token = localStorage.getItem("admin_token");
-    if (!token) return;
-
     const nextState = !maintenanceMode;
     const confirmMsg = nextState
       ? "ACTIVATE GLOBAL MAINTENANCE MODE?\nStandard customers will be blocked immediately with 503 downtime responses."
@@ -91,10 +101,7 @@ export default function AdminLayout() {
     setTogglingMaintenance(true);
     try {
       const res = await fetch(`/api/admin/settings/maintenance?enabled=${nextState}`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
+        method: 'POST'
       });
       if (res.ok) {
         setMaintenanceMode(nextState);
@@ -110,10 +117,15 @@ export default function AdminLayout() {
     }
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem("admin_token");
+  const handleSignOut = async () => {
+    localStorage.removeItem("admin_logged_in");
     localStorage.removeItem("admin_email");
     localStorage.removeItem("admin_role");
+    try {
+      await fetch("/api/admin/logout", { method: "POST" });
+    } catch (e) {
+      console.error("Admin logout failed:", e);
+    }
     navigate("/admin/login");
   };
 
@@ -127,6 +139,14 @@ export default function AdminLayout() {
     { to: "/admin/audits", icon: <ShieldAlert size={18} />, label: "Audit Ledger" },
     { to: "/admin/register", icon: <UserPlus size={18} />, label: "Invite Admin" },
   ];
+
+  if (verifying) {
+    return (
+      <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen bg-[#f4f6fa] text-slate-800 font-sans relative overflow-x-hidden">

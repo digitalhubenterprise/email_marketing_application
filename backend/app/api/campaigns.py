@@ -8,6 +8,7 @@ from app.db.session import get_db
 from app.db.models import Campaign, SMTPServer, ContactList, Contact, User, CampaignLog
 from app.schemas.campaign import CampaignCreate, CampaignResponse, CampaignLogResponse, DashboardStats
 from app.api.deps import get_current_user
+from app.core.security import sanitize_html
 
 router = APIRouter()
 
@@ -177,7 +178,7 @@ async def create_campaign(
         throttle_limit=campaign_in.throttle_limit or 0,
         category=campaign_in.category or "Newsletter",
         is_archived=campaign_in.is_archived or False,
-        content_html=campaign_in.content_html,
+        content_html=sanitize_html(campaign_in.content_html),
         smtp_server_id=campaign_in.smtp_server_id,
         contact_list_id=campaign_in.contact_list_id,
         status=status_to_set,

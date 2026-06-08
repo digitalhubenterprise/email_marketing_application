@@ -21,6 +21,42 @@ MAX_SMTP_SERVERS_FREE = 1
 MAX_SMTP_SERVERS_PAID = 20
 
 
+async def validate_ssrf_host(host: str) -> None:
+    """Resolves host and blocks loopback/private networks in production."""
+    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+    if not is_production:
+        return
+
+    host_clean = host.strip()
+    is_private = False
+    try:
+        # Check if it is an IP address
+        ip = ipaddress.ip_address(host_clean)
+        if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
+            is_private = True
+    except ValueError:
+        # Resolve DNS hostname
+        try:
+            loop = asyncio.get_running_loop()
+            addr_info = await loop.run_in_executor(
+                None, lambda: socket.getaddrinfo(host_clean, None)
+            )
+            for family, socktype, proto, canonname, sockaddr in addr_info:
+                ip_str = sockaddr[0]
+                ip = ipaddress.ip_address(ip_str)
+                if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
+                    is_private = True
+                    break
+        except (socket.gaierror, ValueError, OSError):
+            pass
+
+    if is_private:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Testing connections to private or loopback IP ranges is not allowed in production."
+        )
+
+
 @router.get("", response_model=List[SMTPServerResponse])
 async def list_smtp_servers(
     db: AsyncSession = Depends(get_db),
@@ -38,6 +74,9 @@ async def create_smtp_server(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    # Prevent SSRF loopback/private network scanning
+    await validate_ssrf_host(smtp_in.host)
+
     # Enforce dynamic tier-based SMTP server limits
     count_result = await db.execute(
         select(SMTPServer).where(SMTPServer.user_id == current_user.id)
@@ -114,36 +153,7 @@ async def test_smtp_connection(
     Tests SMTP socket connectivity and credential authentication.
     Requires a valid JWT session — endpoint cannot be abused anonymously.
     """
-    is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
-    if is_production:
-        host_clean = req.host.strip()
-        is_private = False
-        try:
-            # Check if it is an IP address
-            ip = ipaddress.ip_address(host_clean)
-            if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
-                is_private = True
-        except ValueError:
-            # Resolve DNS hostname
-            try:
-                loop = asyncio.get_running_loop()
-                addr_info = await loop.run_in_executor(
-                    None, lambda: socket.getaddrinfo(host_clean, None)
-                )
-                for family, socktype, proto, canonname, sockaddr in addr_info:
-                    ip_str = sockaddr[0]
-                    ip = ipaddress.ip_address(ip_str)
-                    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_multicast:
-                        is_private = True
-                        break
-            except (socket.gaierror, ValueError, OSError):  # nosec B110
-                pass
-
-        if is_private:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Testing connections to private or loopback IP ranges is not allowed in production."
-            )
+    await validate_ssrf_host(req.host)
 
     use_tls = req.security.upper() == "SSL"
     start_tls = req.security.upper() == "TLS"

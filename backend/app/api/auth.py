@@ -1,6 +1,6 @@
 from datetime import timedelta
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel, field_validator, EmailStr
 from slowapi import Limiter
@@ -18,6 +18,7 @@ from app.core.security import (
 )
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.api.deps import get_current_user
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -41,6 +42,7 @@ limiter = Limiter(key_func=get_real_client_ip, enabled=not is_testing)
 
 class UpgradeRequest(BaseModel):
     tier: str
+    payment_method: Optional[str] = "Stripe"
 
 
 class ChangePasswordRequest(BaseModel):
@@ -132,6 +134,7 @@ async def register(request: Request, user_in: UserCreate, db: AsyncSession = Dep
 @limiter.limit("20/minute")          # Max 20 login attempts per minute per IP
 async def login(
     request: Request,
+    response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
@@ -282,7 +285,16 @@ async def login(
                 detail="Incorrect 2FA verification code."
             )
 
-    return {"access_token": create_access_token(subject=user.id, role="user"), "token_type": "bearer", "role": "user", "email": user.email}  # nosec
+    access_token = create_access_token(subject=user.id, role="user", password_hash=user.hashed_password)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return {"access_token": access_token, "token_type": "bearer", "role": "user", "email": user.email}  # nosec
 
 
 # ─── Current User ─────────────────────────────────────────────────────
@@ -333,31 +345,66 @@ async def upgrade_tier(
     if not plan:
         raise HTTPException(status_code=404, detail="Subscription plan not found in catalogs.")
     
-    current_user.subscription_tier = tier_lower
-    current_user.quota_limit = plan.quota
-    current_user.is_active = True
-    db.add(current_user)
-    
     # Calculate amount: (public_price - discount) if configured, else fallback to standard price
     upgrade_amount = plan.price
     if plan.public_price and plan.public_price > 0:
         discount_val = plan.discount or 0
         upgrade_amount = max(0, plan.public_price - discount_val)
         
+    price_in_dollars = float(upgrade_amount) / 100.0
+    gateway_val = payload.payment_method or "Stripe"
+    
+    if gateway_val.lower() == "wallet":
+        # Compute user's wallet balance securely from database logs
+        result = await db.execute(
+            select(PaymentLog)
+            .where(PaymentLog.user_email == current_user.email)
+            .where(PaymentLog.status == "paid")
+        )
+        payments = result.scalars().all()
+        
+        balance = 25.40
+        for p in payments:
+            if p.notes and p.notes.startswith("[OVERDRIVE]"):
+                continue
+            # Since debit amount is stored as negative, adding it naturally subtracts
+            balance += p.amount
+            
+        if balance < price_in_dollars:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Insufficient wallet balance. Required: ${price_in_dollars:.2f}, Available: ${balance:.2f}."
+            )
+            
+        # Create wallet debit transaction
+        gateway_val = "Wallet"
+        notes_val = f"[DEBIT] Plan Upgrade to {plan.name} (Wallet Deduction)"
+        payment_amount = -price_in_dollars
+    else:
+        gateway_val = "Stripe"
+        notes_val = f"Simulated upgrade to {plan.name} plan."
+        payment_amount = price_in_dollars
+
+    current_user.subscription_tier = tier_lower
+    current_user.quota_limit = plan.quota
+    current_user.is_active = True
+    db.add(current_user)
+    
     new_payment = PaymentLog(
         user_id=current_user.id,
         user_email=current_user.email,
-        amount=float(upgrade_amount) / 100.0,
+        amount=payment_amount,
         currency="USD",
         plan_tier=tier_lower,
-        gateway="Stripe",
+        gateway=gateway_val,
         status="paid",
-        notes=f"Simulated upgrade to {plan.name} plan."
+        notes=notes_val
     )
     db.add(new_payment)
     await db.commit()
     await db.refresh(current_user)
     return current_user
+
 
 
 # ─── Subscription Plans Public Fetch ───────────────────────────────────
@@ -1076,6 +1123,7 @@ class ResendVerificationRequest(BaseModel):
 @limiter.limit("10/minute")
 async def verify_signup_email(
     request: Request,
+    response: Response,
     payload: EmailVerificationRequest,
     db: AsyncSession = Depends(get_db)
 ):
@@ -1086,7 +1134,16 @@ async def verify_signup_email(
         raise HTTPException(status_code=404, detail="User not found.")
 
     if user.email_verified:
-        return {"access_token": create_access_token(subject=user.id, role="user"), "token_type": "bearer", "role": "user", "email": user.email}
+        access_token = create_access_token(subject=user.id, role="user", password_hash=user.hashed_password)
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        )
+        return {"access_token": access_token, "token_type": "bearer", "role": "user", "email": user.email}
 
     if not user.email_verification_secret:
         raise HTTPException(status_code=400, detail="Email verification has not been initiated for this account.")
@@ -1112,7 +1169,16 @@ async def verify_signup_email(
     except Exception as e:
         print(f"Error queuing registration welcome email: {e}")
 
-    return {"access_token": create_access_token(subject=user.id, role="user"), "token_type": "bearer", "role": "user", "email": user.email}
+    access_token = create_access_token(subject=user.id, role="user", password_hash=user.hashed_password)
+    response.set_cookie(
+        key="access_token",
+        value=access_token,
+        httponly=True,
+        secure=True,
+        samesite="lax",
+        max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+    )
+    return {"access_token": access_token, "token_type": "bearer", "role": "user", "email": user.email}
 
 
 @router.post("/resend-verification-email")
@@ -1156,4 +1222,12 @@ async def resend_verification_email(
         raise HTTPException(status_code=500, detail=f"Failed to queue email task: {str(e)}")
 
     return {"message": "Verification email dispatched successfully."}
+
+
+@router.post("/logout")
+async def logout_user(response: Response):
+    """Logs out the user by deleting the HttpOnly access_token cookie."""
+    response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="lax")
+    return {"message": "Logged out successfully."}
+
 

@@ -1,5 +1,6 @@
+from typing import Optional
 import jwt
-from fastapi import Depends, HTTPException, status
+from fastapi import Depends, HTTPException, status, Request
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
@@ -9,18 +10,26 @@ from app.db.session import get_db
 from app.db.models import AdminUser
 
 # Admin-specific OAuth2 password bearer
-oauth2_scheme_admin = OAuth2PasswordBearer(tokenUrl="/api/admin/login")
+oauth2_scheme_admin = OAuth2PasswordBearer(tokenUrl="/api/admin/login", auto_error=False)
 
 
 async def get_current_admin(
+    request: Request,
     db: AsyncSession = Depends(get_db),
-    token: str = Depends(oauth2_scheme_admin)
+    token: Optional[str] = Depends(oauth2_scheme_admin)
 ) -> AdminUser:
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate admin credentials. Please log in again.",
         headers={"WWW-Authenticate": "Bearer"},
     )
+    cookie_token = request.cookies.get("admin_token")
+    if cookie_token:
+        token = cookie_token
+
+    if not token:
+        raise credentials_exception
+
     try:
         payload = jwt.decode(
             token,
@@ -46,6 +55,15 @@ async def get_current_admin(
     admin = result.scalars().first()
 
     if admin is None:
+        raise credentials_exception
+
+    # Enforce token rotation signature check (pws)
+    import secrets
+    token_pws = payload.get("pws")
+    if not token_pws or not admin.hashed_password:
+        raise credentials_exception
+
+    if not secrets.compare_digest(token_pws, admin.hashed_password[-10:]):
         raise credentials_exception
 
     if not admin.is_active:

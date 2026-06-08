@@ -87,7 +87,8 @@ def get_password_hash(password: str) -> str:
 def create_access_token(
     subject: Union[str, Any],
     role: str = "user",
-    expires_delta: Optional[timedelta] = None
+    expires_delta: Optional[timedelta] = None,
+    password_hash: Optional[str] = None
 ) -> str:
     """Creates a signed JWT access token with role, expiry, and issued-at timestamps."""
     now = datetime.now(timezone.utc)
@@ -103,4 +104,39 @@ def create_access_token(
         "iat": now,          # Issued-at claim — enables token age checks
         "iss": "smartcampaign-api",  # Issuer claim
     }
+    if password_hash is not None:
+        to_encode["pws"] = password_hash[-10:]
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm="HS256")
+
+
+def sanitize_html(html_content: str) -> str:
+    """
+    Sanitizes raw HTML to block XSS execution vectors.
+    Strips out script/iframe/object/embed/applet/meta tags, inline on* events, and javascript:/data: links.
+    """
+    if not html_content:
+        return ""
+    
+    # First, unescape HTML entities to prevent obfuscation bypasses (e.g., &#x6A;...)
+    import html
+    clean_html = html.unescape(html_content)
+
+    # 1. Remove script tags and their content
+    clean_html = re.sub(r'(?is)<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '', clean_html)
+    # 2. Remove iframe tags and their content
+    clean_html = re.sub(r'(?is)<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>', '', clean_html)
+    # 3. Remove object, embed, applet, meta tags and content
+    clean_html = re.sub(r'(?is)<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>', '', clean_html)
+    clean_html = re.sub(r'(?is)<embed\b[^>]*>(?:.*?</embed>)?', '', clean_html)
+    clean_html = re.sub(r'(?is)<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>', '', clean_html)
+    clean_html = re.sub(r'(?is)<meta\b[^>]*>(?:.*?</meta>)?', '', clean_html)
+    
+    # 4. Remove inline event handlers like onload, onerror, onclick, etc.
+    clean_html = re.sub(r'(?is)\bon[a-z]+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)', '', clean_html)
+    
+    # 5. Remove javascript: and data: links in href/src
+    clean_html = re.sub(r'(?is)\bhref\s*=\s*(?:"\s*(javascript|data)\s*:[^"]*"|\'\s*(javascript|data)\s*:[^\']*\'|(javascript|data)\s*:[^\s>]+)', '', clean_html)
+    clean_html = re.sub(r'(?is)\bsrc\s*=\s*(?:"\s*(javascript|data)\s*:[^"]*"|\'\s*(javascript|data)\s*:[^\']*\'|(javascript|data)\s*:[^\s>]+)', '', clean_html)
+    
+    return clean_html
+

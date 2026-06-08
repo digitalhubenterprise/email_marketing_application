@@ -20,6 +20,8 @@ async def list_templates(
     )
     return result.scalars().all()
 
+from app.core.security import sanitize_html
+
 @router.post("", response_model=EmailTemplateResponse, status_code=status.HTTP_201_CREATED)
 async def create_template(
     template_in: EmailTemplateCreate,
@@ -30,7 +32,7 @@ async def create_template(
         user_id=current_user.id,
         name=template_in.name,
         subject=template_in.subject,
-        content_html=template_in.content_html
+        content_html=sanitize_html(template_in.content_html)
     )
     db.add(new_template)
     await db.commit()
