@@ -28,6 +28,15 @@ def is_valid_email(email: str) -> bool:
     return bool(EMAIL_REGEX.match(email.strip()))
 
 
+def sanitize_csv_value(val: str) -> str:
+    """Sanitizes spreadsheet values against formula injection (CSV injection)."""
+    val_clean = val.strip()
+    if val_clean and val_clean[0] in ('=', '+', '-', '@', '\t', '\r'):
+        # Prefix with a single quote to neutralize formula evaluation in Excel/Sheets
+        return f"'{val_clean}"
+    return val_clean
+
+
 # ─────────────────────── Contact Lists ───────────────────────
 
 @router.get("/lists", response_model=List[ContactListResponse])
@@ -386,12 +395,12 @@ async def upload_csv(
 
             name = ""
             if name_idx != -1 and len(row) > name_idx:
-                name = row[name_idx].strip()[:200]  # Cap name length
+                name = sanitize_csv_value(row[name_idx])[:200]  # Cap name length and sanitize
 
             custom_data = {}
             for h_name, h_idx in custom_header_mappings:
                 if len(row) > h_idx:
-                    custom_data[h_name] = row[h_idx].strip()
+                    custom_data[h_name] = sanitize_csv_value(row[h_idx])
 
             contact = Contact(
                 list_id=list_id,
