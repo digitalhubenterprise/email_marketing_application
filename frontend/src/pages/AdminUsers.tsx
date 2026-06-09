@@ -1022,7 +1022,7 @@ export default function AdminUsers() {
 
                     {drawerTab === 'financial' && (() => {
                       const paidPayments = selectedUser.payments || [];
-                      const currentBalance = 25.40 + paidPayments
+                      const currentBalance = 0.00 + paidPayments
                         .filter((p: any) => p.status === 'paid' && p.notes && !p.notes.startsWith("[OVERDRIVE]"))
                         .reduce((sum: number, p: any) => {
                           const isRebate = p.notes && p.notes.startsWith("[REBATE]");

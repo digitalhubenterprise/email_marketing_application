@@ -363,7 +363,7 @@ async def upgrade_tier(
         )
         payments = result.scalars().all()
         
-        balance = 25.40
+        balance = 0.00
         for p in payments:
             if p.notes and p.notes.startswith("[OVERDRIVE]"):
                 continue

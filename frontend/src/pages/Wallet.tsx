@@ -13,7 +13,7 @@ interface Transaction {
 
 export default function Wallet() {
   const { token, user, appConfig } = useAuth();
-  const [balance, setBalance] = useState(25.40);
+  const [balance, setBalance] = useState(0.00);
   const [loading, setLoading] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState("");
   const [showSimModal, setShowSimModal] = useState(false);
@@ -119,7 +119,7 @@ export default function Wallet() {
             return sum + amt;
           }, 0);
 
-        setBalance(25.40 + paidSum);
+        setBalance(0.00 + paidSum);
         setTransactions(apiTxns);
       }
     } catch (err) {

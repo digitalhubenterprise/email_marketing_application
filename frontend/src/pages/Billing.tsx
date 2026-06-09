@@ -64,7 +64,7 @@ export default function Billing() {
 
   // Cash desk states
   const [payMethod, setPayMethod] = useState<"wallet" | "direct">("wallet");
-  const [walletBalance, setWalletBalance] = useState(25.40);
+  const [walletBalance, setWalletBalance] = useState(0.00);
 
   React.useEffect(() => {
     const fetchWalletBalance = async () => {
@@ -85,7 +85,7 @@ export default function Billing() {
               return sum + amt;
             }, 0);
 
-          const finalBalance = 25.40 + paidSum;
+          const finalBalance = 0.00 + paidSum;
           setWalletBalance(finalBalance);
         }
       } catch (err) {
@@ -264,7 +264,7 @@ export default function Billing() {
               const amt = isRebate ? -Math.abs(p.amount) : p.amount;
               return sum + amt;
             }, 0);
-          setWalletBalance(25.40 + paidSum);
+          setWalletBalance(0.00 + paidSum);
         }
       } catch (err) {
         console.error("Failed to refresh wallet balance:", err);
