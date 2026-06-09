@@ -1,30 +1,34 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, lazy, Suspense } from 'react'
 import { Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+
+// Layout imports
 import Layout from './components/Layout'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Dashboard from './pages/Dashboard'
-import SMTPServers from './pages/SMTPServers'
-import ContactLists from './pages/ContactLists'
-import Templates from './pages/Templates'
-import Campaigns from './pages/Campaigns'
-import Billing from './pages/Billing'
-import Wallet from './pages/Wallet'
-import TelegramMarketing from './pages/TelegramMarketing'
-import ManageSettings from './pages/ManageSettings'
-import SmsMarketing from './pages/SmsMarketing'
+import AdminLayout from './components/AdminLayout'
+
+// Lazily loaded page components for optimal route-based code-splitting
+const Login = lazy(() => import('./pages/Login'))
+const Register = lazy(() => import('./pages/Register'))
+const Dashboard = lazy(() => import('./pages/Dashboard'))
+const SMTPServers = lazy(() => import('./pages/SMTPServers'))
+const ContactLists = lazy(() => import('./pages/ContactLists'))
+const Templates = lazy(() => import('./pages/Templates'))
+const Campaigns = lazy(() => import('./pages/Campaigns'))
+const Billing = lazy(() => import('./pages/Billing'))
+const Wallet = lazy(() => import('./pages/Wallet'))
+const TelegramMarketing = lazy(() => import('./pages/TelegramMarketing'))
+const ManageSettings = lazy(() => import('./pages/ManageSettings'))
+const SmsMarketing = lazy(() => import('./pages/SmsMarketing'))
 
 // Administrative Portal pages imports
-import AdminLayout from './components/AdminLayout'
-import AdminLogin from './pages/AdminLogin'
-import AdminDashboard from './pages/AdminDashboard'
-import AdminUsers from './pages/AdminUsers'
-import AdminBilling from './pages/AdminBilling'
-import AdminSettings from './pages/AdminSettings'
-import AdminAudits from './pages/AdminAudits'
-import AdminRegister from './pages/AdminRegister'
-import AdminCampaigns from './pages/AdminCampaigns'
-import AdminApiSettings from './pages/AdminApiSettings'
+const AdminLogin = lazy(() => import('./pages/AdminLogin'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const AdminUsers = lazy(() => import('./pages/AdminUsers'))
+const AdminBilling = lazy(() => import('./pages/AdminBilling'))
+const AdminSettings = lazy(() => import('./pages/AdminSettings'))
+const AdminAudits = lazy(() => import('./pages/AdminAudits'))
+const AdminRegister = lazy(() => import('./pages/AdminRegister'))
+const AdminCampaigns = lazy(() => import('./pages/AdminCampaigns'))
+const AdminApiSettings = lazy(() => import('./pages/AdminApiSettings'))
 
 
 // Define AuthContext shape
@@ -299,48 +303,54 @@ export default function App() {
 
   return (
     <AuthContext.Provider value={{ token, user, appConfig, login, logout, loading, refreshUser, refreshConfig }}>
-      <Routes>
-        {/* Auth routes */}
-        <Route path="/login" element={!token ? <Login /> : <Navigate to="/" />} />
-        <Route path="/register" element={!token ? <Register /> : <Navigate to="/" />} />
+      <Suspense fallback={
+        <div className="min-h-screen bg-dark-950 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-brand-500"></div>
+        </div>
+      }>
+        <Routes>
+          {/* Auth routes */}
+          <Route path="/login" element={!token ? <Login /> : <Navigate to="/" />} />
+          <Route path="/register" element={!token ? <Register /> : <Navigate to="/" />} />
 
-        {/* Authenticated routes */}
-        <Route path="/" element={token ? <Layout /> : <Navigate to="/login" />}>
-          <Route index element={<Dashboard />} />
-          <Route path="smtp" element={<SMTPServers />} />
-          <Route path="lists" element={<ContactLists />} />
-          <Route path="templates" element={<Templates />} />
-          <Route path="campaigns" element={<Campaigns />} />
-          <Route path="billing" element={<Billing />} />
-          <Route path="wallet" element={<Wallet />} />
-          <Route path="settings" element={<ManageSettings />} />
-          <Route path="telegram-marketing" element={<TelegramMarketing />} />
-          <Route path="sms-marketing" element={<SmsMarketing />} />
-          <Route path="sms-marketing/numbers" element={<SmsMarketing defaultTab="numbers" />} />
-          <Route path="sms-marketing/settings" element={<SmsMarketing defaultTab="settings" />} />
-          <Route path="sms-marketing/templates" element={<SmsMarketing defaultTab="templates" />} />
-          <Route path="telegram-marketing/imei" element={<TelegramMarketing defaultTab="imei" />} />
-          <Route path="telegram-marketing/server" element={<TelegramMarketing defaultTab="server" />} />
-          <Route path="telegram-marketing/remote" element={<TelegramMarketing defaultTab="remote" />} />
-          <Route path="telegram-marketing/logs" element={<TelegramMarketing defaultTab="logs" />} />
-          <Route path="telegram-marketing/settings" element={<TelegramMarketing defaultTab="settings" />} />
-        </Route>
+          {/* Authenticated routes */}
+          <Route path="/" element={token ? <Layout /> : <Navigate to="/login" />}>
+            <Route index element={<Dashboard />} />
+            <Route path="smtp" element={<SMTPServers />} />
+            <Route path="lists" element={<ContactLists />} />
+            <Route path="templates" element={<Templates />} />
+            <Route path="campaigns" element={<Campaigns />} />
+            <Route path="billing" element={<Billing />} />
+            <Route path="wallet" element={<Wallet />} />
+            <Route path="settings" element={<ManageSettings />} />
+            <Route path="telegram-marketing" element={<TelegramMarketing />} />
+            <Route path="sms-marketing" element={<SmsMarketing />} />
+            <Route path="sms-marketing/numbers" element={<SmsMarketing defaultTab="numbers" />} />
+            <Route path="sms-marketing/settings" element={<SmsMarketing defaultTab="settings" />} />
+            <Route path="sms-marketing/templates" element={<SmsMarketing defaultTab="templates" />} />
+            <Route path="telegram-marketing/imei" element={<TelegramMarketing defaultTab="imei" />} />
+            <Route path="telegram-marketing/server" element={<TelegramMarketing defaultTab="server" />} />
+            <Route path="telegram-marketing/remote" element={<TelegramMarketing defaultTab="remote" />} />
+            <Route path="telegram-marketing/logs" element={<TelegramMarketing defaultTab="logs" />} />
+            <Route path="telegram-marketing/settings" element={<TelegramMarketing defaultTab="settings" />} />
+          </Route>
 
-        {/* Super Admin Center Protected Routes */}
-        <Route path="/admin/login" element={<AdminLogin />} />
-        <Route path="/admin/register" element={<AdminRegister />} />
-        <Route path="/admin" element={<AdminLayout />}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<AdminUsers />} />
-          <Route path="billing" element={<AdminBilling />} />
-          <Route path="settings" element={<AdminSettings />} />
-          <Route path="api-settings" element={<AdminApiSettings />} />
-          <Route path="audits" element={<AdminAudits />} />
-          <Route path="campaigns" element={<AdminCampaigns />} />
-        </Route>
+          {/* Super Admin Center Protected Routes */}
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin/register" element={<AdminRegister />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<AdminDashboard />} />
+            <Route path="users" element={<AdminUsers />} />
+            <Route path="billing" element={<AdminBilling />} />
+            <Route path="settings" element={<AdminSettings />} />
+            <Route path="api-settings" element={<AdminApiSettings />} />
+            <Route path="audits" element={<AdminAudits />} />
+            <Route path="campaigns" element={<AdminCampaigns />} />
+          </Route>
 
-        <Route path="*" element={<Navigate to="/" />} />
-      </Routes>
+          <Route path="*" element={<Navigate to="/" />} />
+        </Routes>
+      </Suspense>
     </AuthContext.Provider>
   );
 }
