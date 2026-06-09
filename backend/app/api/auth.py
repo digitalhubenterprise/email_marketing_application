@@ -475,6 +475,21 @@ async def verify_trc20_transaction(db: AsyncSession, tx_hash: str, expected_amou
     if existing:
         return False, 0.0, "Duplicate transaction ID. This transaction has already been credited."
 
+    # Redis-based distributed double-spending lock check
+    import redis.asyncio as aioredis
+    try:
+        redis_client = aioredis.from_url(settings.REDIS_URL)
+        lock_key = f"tx_lock:{tx_hash}"
+        acquired = await redis_client.set(lock_key, "1", ex=60, nx=True)
+        await redis_client.close()
+        if not acquired:
+            return False, 0.0, "This transaction is currently being processed. Please wait a moment."
+    except Exception as redis_err:
+        import logging
+        logging.getLogger("app.api.auth").warning("Redis lock connection failed: %s", redis_err)
+        if is_production:
+            return False, 0.0, "Payment verification system is busy. Please try again in a moment."
+
     # Fetch admin configuration
     res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
     config = res.scalars().first()
@@ -594,6 +609,21 @@ async def verify_bep20_transaction(db: AsyncSession, tx_hash: str, expected_amou
     existing = res.scalars().first()
     if existing:
         return False, 0.0, "Duplicate transaction ID. This transaction has already been credited."
+
+    # Redis-based distributed double-spending lock check
+    import redis.asyncio as aioredis
+    try:
+        redis_client = aioredis.from_url(settings.REDIS_URL)
+        lock_key = f"tx_lock:{tx_hash}"
+        acquired = await redis_client.set(lock_key, "1", ex=60, nx=True)
+        await redis_client.close()
+        if not acquired:
+            return False, 0.0, "This transaction is currently being processed. Please wait a moment."
+    except Exception as redis_err:
+        import logging
+        logging.getLogger("app.api.auth").warning("Redis lock connection failed: %s", redis_err)
+        if is_production:
+            return False, 0.0, "Payment verification system is busy. Please try again in a moment."
 
     import aiohttp
     import asyncio
