@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+html {
+  scroll-behavior: smooth;
+}
+
 :root {
   /* Default Light Mode Theme Colors (Micro-CRON design) */
   --color-brand-50: #f5f3ff;
@@ -309,10 +313,12 @@ select option {
   from {
     opacity: 0;
     transform: translateY(8px);
+    -webkit-transform: translateY(8px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    -webkit-transform: translateY(0);
   }
 }
 
@@ -320,10 +326,12 @@ select option {
   from {
     opacity: 0;
     transform: translateY(12px);
+    -webkit-transform: translateY(12px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    -webkit-transform: translateY(0);
   }
 }
 
@@ -331,10 +339,12 @@ select option {
   from {
     opacity: 0;
     transform: translateY(-12px);
+    -webkit-transform: translateY(-12px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    -webkit-transform: translateY(0);
   }
 }
 
@@ -342,10 +352,12 @@ select option {
   from {
     opacity: 0;
     transform: translateX(12px);
+    -webkit-transform: translateX(12px);
   }
   to {
     opacity: 1;
     transform: translateX(0);
+    -webkit-transform: translateX(0);
   }
 }
 
@@ -353,10 +365,12 @@ select option {
   from {
     opacity: 0;
     transform: scale(0.97);
+    -webkit-transform: scale(0.97);
   }
   to {
     opacity: 1;
     transform: scale(1);
+    -webkit-transform: scale(1);
   }
 }
 
@@ -489,4 +503,14 @@ select option {
 }
 .force-text-brand-200 {
   color: #ddd6fe !important;
+}
+
+/* Accessibility Keyboard Focus Rings */
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--color-brand-500) !important;
+  outline-offset: 2px !important;
 }
