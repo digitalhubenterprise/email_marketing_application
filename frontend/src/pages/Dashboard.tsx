@@ -36,12 +36,72 @@ interface DashboardData {
   recent_campaigns: any[];
 }
 
+function DashboardSkeleton() {
+  return (
+    <div className="space-y-4 sm:space-y-5 animate-pulse">
+      {/* Skeleton Metric Cards Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 animate-fadeIn">
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="flex items-center p-2.5 sm:p-3.5 rounded-2xl glass-panel border border-dark-700/30 relative overflow-hidden h-14 sm:h-20 bg-dark-900/40">
+            <div className="w-8 h-8 sm:w-11 sm:h-11 rounded-xl bg-dark-700/50 dark:bg-dark-800/60 shrink-0"></div>
+            <div className="ml-2 sm:ml-3 flex-1 space-y-1.5 min-w-0">
+              <div className="h-2 w-16 bg-dark-700/50 dark:bg-dark-800/60 rounded"></div>
+              <div className="h-3.5 w-24 bg-dark-700/50 dark:bg-dark-800/60 rounded"></div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Skeleton Analytics Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fadeIn" style={{ animationDelay: '100ms' }}>
+        <div className="lg:col-span-2 glass-panel p-5 rounded-2xl border border-dark-700/30 h-80 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="h-4 w-40 bg-dark-700/50 dark:bg-dark-800/60 rounded"></div>
+            <div className="h-2.5 w-60 bg-dark-700/50 dark:bg-dark-800/60 rounded"></div>
+          </div>
+          <div className="h-48 w-full bg-dark-700/20 dark:bg-dark-800/30 rounded-xl mt-4"></div>
+        </div>
+
+        <div className="glass-panel p-5 rounded-2xl border border-dark-700/30 h-80 flex flex-col justify-between">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <div className="h-4 w-28 bg-dark-700/50 dark:bg-dark-800/60 rounded"></div>
+              <div className="h-4 w-4 bg-dark-700/50 dark:bg-dark-800/60 rounded-full"></div>
+            </div>
+            <div className="space-y-3">
+              <div className="h-12 w-full bg-dark-700/35 dark:bg-dark-800/40 rounded-xl"></div>
+              <div className="h-12 w-full bg-dark-700/35 dark:bg-dark-800/40 rounded-xl"></div>
+            </div>
+          </div>
+          <div className="h-10 w-full bg-dark-700/35 dark:bg-dark-800/40 rounded-xl"></div>
+        </div>
+      </div>
+
+      {/* Skeleton List Card */}
+      <div className="glass-panel p-5 rounded-2xl border border-dark-700/30 space-y-4 animate-fadeIn" style={{ animationDelay: '200ms' }}>
+        <div className="h-4 w-32 bg-dark-700/50 dark:bg-dark-800/60 rounded"></div>
+        <div className="space-y-3">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="flex justify-between items-center py-2 border-b border-dark-700/10">
+              <div className="space-y-1">
+                <div className="h-3 w-32 bg-dark-700/50 dark:bg-dark-800/60 rounded"></div>
+                <div className="h-2 w-20 bg-dark-700/30 dark:bg-dark-800/40 rounded"></div>
+              </div>
+              <div className="h-3 w-10 bg-dark-700/30 dark:bg-dark-800/40 rounded"></div>
+              <div className="h-3 w-10 bg-dark-700/30 dark:bg-dark-800/40 rounded"></div>
+              <div className="h-5 w-16 bg-dark-700/40 dark:bg-dark-800/50 rounded-full"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { token, user, refreshUser } = useAuth();
   const [stats, setStats] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
-
-
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -62,14 +122,8 @@ export default function Dashboard() {
     fetchStats();
   }, [token]);
 
-
-
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-500"></div>
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   const chartData = stats?.recent_campaigns && stats.recent_campaigns.length > 0
@@ -132,9 +186,12 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-4 sm:space-y-5 animate-fadeIn">
+    <div className="space-y-4 sm:space-y-5">
       {/* Grid of Metric Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
+      <div 
+        className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 opacity-0 animate-fadeIn"
+        style={{ animationDelay: '50ms' }}
+      >
         {cards.map((c, i) => (
           <div 
             key={i} 
@@ -175,8 +232,11 @@ export default function Dashboard() {
       </div>
 
       {/* Recharts Analytics Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        <div className="lg:col-span-2 glass-panel p-5 rounded-2xl border border-dark-700/30">
+      <div 
+        className="grid grid-cols-1 lg:grid-cols-3 gap-5 opacity-0 animate-fadeIn"
+        style={{ animationDelay: '150ms' }}
+      >
+        <div className="lg:col-span-2 glass-panel p-5 rounded-2xl border border-dark-700/30 hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.005] transition-all duration-300">
           <div className="flex justify-between items-center mb-4">
             <div>
               <h3 className="text-base font-bold text-white">Campaign Performance Trend</h3>
@@ -253,7 +313,10 @@ export default function Dashboard() {
       </div>
 
       {/* Recent Campaigns List */}
-      <div className="glass-panel p-5 rounded-2xl border border-dark-700/30">
+      <div 
+        className="glass-panel p-5 rounded-2xl border border-dark-700/30 opacity-0 animate-fadeIn hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.005] transition-all duration-300"
+        style={{ animationDelay: '250ms' }}
+      >
         <h3 className="text-base font-bold text-white mb-4">Recent Campaigns</h3>
         {stats?.recent_campaigns && stats.recent_campaigns.length > 0 ? (
           <div className="overflow-x-auto">

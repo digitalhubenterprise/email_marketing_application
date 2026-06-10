@@ -25,6 +25,62 @@ interface Stats {
   recent_activities: any[];
 }
 
+function AdminDashboardSkeleton() {
+  return (
+    <div className="space-y-6 sm:space-y-8 animate-pulse text-slate-800">
+      {/* Title block skeleton */}
+      <div className="flex justify-between items-center animate-fadeIn">
+        <div className="space-y-2">
+          <div className="h-6 w-48 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+          <div className="h-3 w-28 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+        </div>
+        <div className="h-9 w-24 bg-slate-200 dark:bg-dark-700/50 rounded-xl"></div>
+      </div>
+
+      {/* Grid of Metric Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-5 animate-fadeIn" style={{ animationDelay: '50ms' }}>
+        {[...Array(4)].map((_, i) => (
+          <div key={i} className="bg-white dark:bg-dark-900 rounded-2xl p-5 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] h-28 space-y-3">
+            <div className="h-3 w-28 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+            <div className="h-6 w-16 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+            <div className="h-4 w-20 bg-slate-200 dark:bg-dark-700/50 rounded-full"></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Splits and Queue Diagnostics Row */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeIn" style={{ animationDelay: '100ms' }}>
+        <div className="bg-white dark:bg-dark-900 rounded-2xl p-6 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] md:col-span-2 space-y-6 h-60">
+          <div className="space-y-2">
+            <div className="h-4 w-40 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+            <div className="h-2.5 w-60 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+          </div>
+          <div className="space-y-4 mt-6">
+            {[...Array(3)].map((_, i) => (
+              <div key={i} className="space-y-1">
+                <div className="h-3 w-32 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+                <div className="h-2 w-full bg-slate-100 dark:bg-dark-800/40 rounded-full"></div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-dark-900 rounded-2xl p-6 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] space-y-4 h-60 flex flex-col justify-between">
+          <div className="space-y-2">
+            <div className="h-4 w-36 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+            <div className="h-2.5 w-48 bg-slate-200 dark:bg-dark-700/50 rounded"></div>
+          </div>
+          <div className="space-y-3">
+            <div className="h-8 w-full bg-slate-100 dark:bg-dark-800/40 rounded-xl"></div>
+            <div className="h-8 w-full bg-slate-100 dark:bg-dark-800/40 rounded-xl"></div>
+          </div>
+          <div className="h-3 w-24 bg-slate-200 dark:bg-dark-700/50 rounded mx-auto mt-2"></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AdminDashboard() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -82,12 +138,7 @@ export default function AdminDashboard() {
   }, []);
 
   if (loading) {
-    return (
-      <div className="flex-1 flex flex-col items-center justify-center min-h-[400px]">
-        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-brand-500"></div>
-        <p className="text-xs text-slate-500 mt-3 font-semibold">Aggregating platform datasets...</p>
-      </div>
-    );
+    return <AdminDashboardSkeleton />;
   }
 
   if (error || !stats) {
@@ -108,9 +159,9 @@ export default function AdminDashboard() {
   const expiredPercent = subscriptionTotal > 0 ? (stats.expired_subscriptions / subscriptionTotal) * 100 : 0;
 
   return (
-    <div className="space-y-8 animate-fadeIn text-slate-800">
+    <div className="space-y-8 text-slate-800">
       {/* Page Title & Refresh */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between opacity-0 animate-fadeIn" style={{ animationDelay: '30ms' }}>
         <div>
           <h2 className="text-xl font-extrabold text-slate-900 tracking-tight">
             Plan Billing <span className="text-brand-500">Overview</span>
@@ -134,9 +185,12 @@ export default function AdminDashboard() {
       </div>
 
       {/* Top Aggregates Metrics Row */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-5">
+      <div 
+        className="grid grid-cols-1 md:grid-cols-4 gap-5 opacity-0 animate-fadeIn"
+        style={{ animationDelay: '100ms' }}
+      >
         {/* Total Users */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] relative overflow-hidden">
+        <div className="bg-white dark:bg-dark-900 rounded-2xl p-5 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] relative overflow-hidden hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.01] transition-all duration-300">
           <div className="absolute top-0 right-0 p-3 text-brand-500/5">
             <Users size={70} />
           </div>
@@ -144,15 +198,15 @@ export default function AdminDashboard() {
             <Users size={14} className="text-brand-500" />
             <span>Platform Customers</span>
           </div>
-          <p className="text-2xl font-black text-slate-900">{stats.total_users}</p>
-          <span className="text-[10px] text-emerald-700 font-extrabold flex items-center gap-1 mt-1 bg-emerald-50 border border-emerald-100 px-2 py-0.5 rounded-full w-fit">
+          <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.total_users}</p>
+          <span className="text-[10px] text-emerald-700 dark:text-emerald-400 font-extrabold flex items-center gap-1 mt-1 bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-900/35 px-2 py-0.5 rounded-full w-fit">
             <TrendingUp size={10} />
             +{stats.new_users_today} today
           </span>
         </div>
 
         {/* System Email sends */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] relative overflow-hidden">
+        <div className="bg-white dark:bg-dark-900 rounded-2xl p-5 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] relative overflow-hidden hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.01] transition-all duration-300">
           <div className="absolute top-0 right-0 p-3 text-indigo-500/5">
             <Mail size={70} />
           </div>
@@ -160,14 +214,14 @@ export default function AdminDashboard() {
             <Mail size={14} className="text-indigo-500" />
             <span>Emails Sent Today</span>
           </div>
-          <p className="text-2xl font-black text-slate-900">{stats.emails_sent_today}</p>
-          <span className="text-[10px] text-slate-500 font-bold block mt-1">
-            Month: <span className="text-slate-900 font-extrabold">{stats.emails_sent_month}</span> • Total: <span className="text-slate-900 font-extrabold">{stats.emails_sent_all_time}</span>
+          <p className="text-2xl font-black text-slate-900 dark:text-white">{stats.emails_sent_today}</p>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block mt-1">
+            Month: <span className="text-slate-900 dark:text-slate-200 font-extrabold">{stats.emails_sent_month}</span> • Total: <span className="text-slate-900 dark:text-slate-200 font-extrabold">{stats.emails_sent_all_time}</span>
           </span>
         </div>
 
         {/* USD Month Revenue */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] relative overflow-hidden">
+        <div className="bg-white dark:bg-dark-900 rounded-2xl p-5 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] relative overflow-hidden hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.01] transition-all duration-300">
           <div className="absolute top-0 right-0 p-3 text-emerald-500/5">
             <DollarSign size={70} />
           </div>
@@ -175,14 +229,14 @@ export default function AdminDashboard() {
             <DollarSign size={14} className="text-emerald-500" />
             <span>USD Revenue (Month)</span>
           </div>
-          <p className="text-2xl font-black text-slate-900">${stats.revenue_usd_month}</p>
-          <span className="text-[10px] text-slate-500 font-bold block mt-1 bg-slate-550 px-2 py-0.5 border border-slate-200 rounded w-fit bg-slate-50">
+          <p className="text-2xl font-black text-slate-900 dark:text-white">${stats.revenue_usd_month}</p>
+          <span className="text-[10px] text-slate-500 dark:text-slate-400 font-bold block mt-1 bg-slate-50 dark:bg-dark-800 px-2 py-0.5 border border-slate-200 dark:border-dark-700 rounded w-fit">
             Stripe gateway
           </span>
         </div>
 
         {/* BDT Month Revenue */}
-        <div className="bg-white rounded-2xl p-5 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] relative overflow-hidden">
+        <div className="bg-white dark:bg-dark-900 rounded-2xl p-5 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] relative overflow-hidden hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.01] transition-all duration-300">
           <div className="absolute top-0 right-0 p-3 text-pink-500/5">
             <Briefcase size={70} />
           </div>
@@ -190,19 +244,22 @@ export default function AdminDashboard() {
             <Briefcase size={14} className="text-pink-500" />
             <span>Additional Revenue (Month)</span>
           </div>
-          <p className="text-2xl font-black text-slate-900">${stats.revenue_bdt_month}</p>
-          <span className="text-[10px] text-brand-600 font-bold block mt-1 bg-brand-50 px-2 py-0.5 border border-brand-100 rounded w-fit">
+          <p className="text-2xl font-black text-slate-900 dark:text-white">${stats.revenue_bdt_month}</p>
+          <span className="text-[10px] text-brand-600 dark:text-brand-400 font-bold block mt-1 bg-brand-50 dark:bg-brand-950/20 px-2 py-0.5 border border-brand-100 dark:border-brand-900/35 rounded w-fit">
             bKash & offline
           </span>
         </div>
       </div>
 
       {/* Subscriptions Breakdowns & Celery Gauges */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div 
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 opacity-0 animate-fadeIn"
+        style={{ animationDelay: '180ms' }}
+      >
         {/* Subscription breakdown cards */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] md:col-span-2 space-y-6">
+        <div className="bg-white dark:bg-dark-900 rounded-2xl p-6 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] md:col-span-2 space-y-6 hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.005] transition-all duration-300">
           <div>
-            <h3 className="font-extrabold text-sm text-slate-900 tracking-wide">Client Subscriptions Splits</h3>
+            <h3 className="font-extrabold text-sm text-slate-900 dark:text-white tracking-wide">Client Subscriptions Splits</h3>
             <p className="text-[10px] text-slate-400">Visual layout of subscription cohorts across the current database.</p>
           </div>
 
@@ -210,8 +267,8 @@ export default function AdminDashboard() {
             {/* Active Pro/Business */}
             <div>
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-semibold text-slate-800">Active Subscriptions</span>
-                <span className="font-extrabold text-brand-600">{stats.active_subscriptions} users ({activePercent.toFixed(1)}%)</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">Active Subscriptions</span>
+                <span className="font-extrabold text-brand-600 dark:text-brand-400">{stats.active_subscriptions} users ({activePercent.toFixed(1)}%)</span>
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/40">
                 <div className="h-full bg-brand-500" style={{ width: `${activePercent}%` }} />
@@ -221,8 +278,8 @@ export default function AdminDashboard() {
             {/* Free Trials */}
             <div>
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-semibold text-slate-800">Free Trial Tier</span>
-                <span className="font-extrabold text-indigo-500">{stats.free_trials} users ({freePercent.toFixed(1)}%)</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">Free Trial Tier</span>
+                <span className="font-extrabold text-indigo-500 dark:text-indigo-400">{stats.free_trials} users ({freePercent.toFixed(1)}%)</span>
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/40">
                 <div className="h-full bg-indigo-500" style={{ width: `${freePercent}%` }} />
@@ -232,8 +289,8 @@ export default function AdminDashboard() {
             {/* Suspended/Expired */}
             <div>
               <div className="flex items-center justify-between text-xs mb-1">
-                <span className="font-semibold text-slate-800">Disabled / Suspended Profiles</span>
-                <span className="font-extrabold text-rose-600">{stats.expired_subscriptions} users ({expiredPercent.toFixed(1)}%)</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">Disabled / Expended Profiles</span>
+                <span className="font-extrabold text-rose-600 dark:text-rose-400">{stats.expired_subscriptions} users ({expiredPercent.toFixed(1)}%)</span>
               </div>
               <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden border border-slate-200/40">
                 <div className="h-full bg-rose-500" style={{ width: `${expiredPercent}%` }} />
@@ -243,9 +300,9 @@ export default function AdminDashboard() {
         </div>
 
         {/* System Queue Diagnostics */}
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] space-y-4 flex flex-col justify-between">
+        <div className="bg-white dark:bg-dark-900 rounded-2xl p-6 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] space-y-4 flex flex-col justify-between hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.005] transition-all duration-300">
           <div className="space-y-1">
-            <h3 className="font-extrabold text-sm text-slate-900 tracking-wide flex items-center gap-1.5">
+            <h3 className="font-extrabold text-sm text-slate-900 dark:text-white tracking-wide flex items-center gap-1.5">
               <span>Celery Cluster Diagnostics</span>
               {diagnostics && diagnostics.celery.status === 'online' ? (
                 <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping" />
@@ -306,10 +363,13 @@ export default function AdminDashboard() {
       </div>
 
       {/* Activity Logger feed */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.015)] space-y-5">
+      <div 
+        className="bg-white dark:bg-dark-900 rounded-2xl p-6 border border-slate-200/60 dark:border-dark-700/30 shadow-[0_8px_30px_rgb(0,0,0,0.015)] space-y-5 opacity-0 animate-fadeIn hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.002] transition-all duration-300"
+        style={{ animationDelay: '260ms' }}
+      >
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-extrabold text-sm text-slate-900 tracking-wide">Recent Activity Feed Logger</h3>
+            <h3 className="font-extrabold text-sm text-slate-900 dark:text-white tracking-wide">Recent Activity Feed Logger</h3>
             <p className="text-[10px] text-slate-400">Last 20 administrative transactions and platform audit trails.</p>
           </div>
           <span className="text-[9px] font-black text-brand-600 uppercase tracking-wider bg-brand-50 px-2 py-0.5 border border-brand-100 rounded">
