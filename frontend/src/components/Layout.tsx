@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, Suspense } from 'react'
 import { Outlet } from 'react-router-dom'
 import Sidebar from './Sidebar'
 import { useAuth } from '../App'
@@ -139,7 +139,13 @@ export default function Layout() {
         {/* Dynamic page component */}
         <main className="flex-1 p-3.5 sm:p-5 overflow-y-auto flex flex-col justify-between min-w-0 overflow-x-hidden">
           <div className="flex-1 pb-4">
-            <Outlet />
+            <Suspense fallback={
+              <div className="flex items-center justify-center min-h-[300px]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-brand-500"></div>
+              </div>
+            }>
+              <Outlet />
+            </Suspense>
           </div>
 
           {/* Footer */}
