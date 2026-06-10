@@ -72,4 +72,26 @@ async def get_current_user(
             detail="Account is disabled. Please contact support.",
         )
 
+    # Check if subscription has expired
+    if user.subscription_tier != "expired" and user.subscription_expires_at:
+        from app.db.models import utc_now_naive
+        if user.subscription_expires_at < utc_now_naive():
+            user.subscription_tier = "expired"
+            db.add(user)
+            await db.commit()
+            await db.refresh(user)
+
     return user
+
+
+async def verify_active_subscription(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """Enforces active subscription/trial check for functional endpoints."""
+    if current_user.subscription_tier == "expired":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="SUBSCRIPTION_EXPIRED"
+        )
+    return current_user
+

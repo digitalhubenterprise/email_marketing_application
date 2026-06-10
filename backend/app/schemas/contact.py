@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 
 # Contact List schemas
 class ContactListBase(BaseModel):
@@ -16,8 +16,7 @@ class ContactListResponse(ContactListBase):
     created_at: datetime
     contacts_count: Optional[int] = 0
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Contact schemas
 class ContactBase(BaseModel):
@@ -36,8 +35,8 @@ class ContactResponse(ContactBase):
     is_unsubscribed: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
 
 class ContactUpdate(BaseModel):
     email: Optional[EmailStr] = None

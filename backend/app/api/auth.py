@@ -43,6 +43,7 @@ limiter = Limiter(key_func=get_real_client_ip, enabled=not is_testing)
 class UpgradeRequest(BaseModel):
     tier: str
     payment_method: Optional[str] = "Stripe"
+    billing_cycle: Optional[str] = "monthly"
 
 
 class ChangePasswordRequest(BaseModel):
@@ -73,13 +74,16 @@ async def register(request: Request, user_in: UserCreate, db: AsyncSession = Dep
     sys_config = res.scalars().first()
     email_verification_required = sys_config.email_verification_required if sys_config else False
 
+    from app.db.models import utc_now_naive
     new_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
-        subscription_tier="free",
+        subscription_tier="trial",
         quota_limit=5000,
         quota_sent=0,
+        subscription_expires_at=utc_now_naive() + timedelta(days=15),
     )
+
 
     if email_verification_required:
         import pyotp
@@ -339,6 +343,7 @@ async def upgrade_tier(
 ):
     """Plan upgrades processed via the Billing & Checkout interface."""
     tier_lower = payload.tier.strip().lower()
+    billing_cycle_lower = (payload.billing_cycle or "monthly").strip().lower()
     
     plan_res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.tier == tier_lower))
     plan = plan_res.scalars().first()
@@ -346,13 +351,28 @@ async def upgrade_tier(
         raise HTTPException(status_code=404, detail="Subscription plan not found in catalogs.")
     
     # Calculate amount: (public_price - discount) if configured, else fallback to standard price
-    upgrade_amount = plan.price
+    base_amount = plan.price
     if plan.public_price and plan.public_price > 0:
         discount_val = plan.discount or 0
-        upgrade_amount = max(0, plan.public_price - discount_val)
+        base_amount = max(0, plan.public_price - discount_val)
+        
+    if billing_cycle_lower == "yearly":
+        upgrade_amount = int(base_amount * 12 * 0.8)  # 20% discount on yearly billing
+    else:
+        upgrade_amount = base_amount
         
     price_in_dollars = float(upgrade_amount) / 100.0
     gateway_val = payload.payment_method or "Stripe"
+    
+    from datetime import timedelta
+    from app.db.models import utc_now_naive
+    
+    if billing_cycle_lower == "yearly":
+        expiry_date = utc_now_naive() + timedelta(days=365)
+        cycle_label = "Yearly"
+    else:
+        expiry_date = utc_now_naive() + timedelta(days=30)
+        cycle_label = "Monthly"
     
     if gateway_val.lower() == "wallet":
         # Compute user's wallet balance securely from database logs
@@ -378,15 +398,16 @@ async def upgrade_tier(
             
         # Create wallet debit transaction
         gateway_val = "Wallet"
-        notes_val = f"[DEBIT] Plan Upgrade to {plan.name} (Wallet Deduction)"
+        notes_val = f"[DEBIT] {cycle_label} Plan Upgrade to {plan.name} (Wallet Deduction)"
         payment_amount = -price_in_dollars
     else:
         gateway_val = "Stripe"
-        notes_val = f"Simulated upgrade to {plan.name} plan."
+        notes_val = f"Simulated {cycle_label.lower()} upgrade to {plan.name} plan."
         payment_amount = price_in_dollars
 
     current_user.subscription_tier = tier_lower
     current_user.quota_limit = plan.quota
+    current_user.subscription_expires_at = expiry_date
     current_user.is_active = True
     db.add(current_user)
     

@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 class SMTPServerBase(BaseModel):
     name: str
@@ -34,8 +34,7 @@ class SMTPServerResponse(SMTPServerBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SMTPTestRequest(BaseModel):
     host: str

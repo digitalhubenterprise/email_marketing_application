@@ -475,6 +475,38 @@ def prune_old_dhru_logs_task() -> None:
         print(f"Error pruning old Dhru logs: {exc}")
 
 
+async def async_deactivate_expired_subscriptions() -> None:
+    """Scan and reset expired subscriptions back to expired tier."""
+    await engine.dispose()
+    async with AsyncSessionLocal() as db:
+        from app.db.models import utc_now_naive, User
+        now = utc_now_naive()
+        result = await db.execute(
+            select(User).where(
+                User.subscription_tier != "expired",
+                User.subscription_expires_at != None,
+                User.subscription_expires_at < now
+            )
+        )
+        expired_users = result.scalars().all()
+        for user in expired_users:
+            user.subscription_tier = "expired"
+            db.add(user)
+        if expired_users:
+            await db.commit()
+    await engine.dispose()
+
+
+
+@celery.task(name="app.tasks.email_sender.deactivate_expired_subscriptions_task")
+def deactivate_expired_subscriptions_task() -> None:
+    """Periodic task to sweep and deactivate expired subscriptions."""
+    try:
+        run_async(async_deactivate_expired_subscriptions())
+    except Exception as exc:
+        print(f"Error deactivating expired subscriptions: {exc}")
+
+
 @celery.on_after_configure.connect
 def setup_periodic_tasks(sender, **kwargs):
     # Check for scheduled campaigns every 10 seconds
@@ -496,6 +528,13 @@ def setup_periodic_tasks(sender, **kwargs):
         crontab(hour="0", minute="0"),
         prune_old_dhru_logs_task.s(),
         name="prune-old-dhru-logs-task"
+    )
+
+    # Sweep and deactivate expired subscriptions every 10 minutes
+    sender.add_periodic_task(
+        600.0,
+        deactivate_expired_subscriptions_task.s(),
+        name="deactivate-expired-subscriptions-every-10m"
     )
 
     # Check for scheduled Telegram AI posts every 60 seconds

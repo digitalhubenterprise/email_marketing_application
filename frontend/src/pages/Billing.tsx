@@ -8,14 +8,22 @@ export default function Billing() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showSimModal, setShowSimModal] = useState<string | null>(null);
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
   
   // Active tier details states & helpers
   const [autoRenew, setAutoRenew] = useState(true);
   const [showPortalModal, setShowPortalModal] = useState(false);
 
+  const queryParams = new URLSearchParams(window.location.search);
+  const isExpiredParam = queryParams.get('expired') === 'true';
+  const isExpiredTier = user?.subscription_tier === 'expired';
+  const isExpired = isExpiredParam || isExpiredTier;
+
   const getActiveTierName = (tier: string) => {
     switch (tier?.toLowerCase()) {
       case 'free': return 'Starter Free 🚀';
+      case 'trial': return '15-Day Free Trial 🚀';
+      case 'expired': return 'Subscription Expired 🔒';
       case 'pro': return 'Standard V2 🏆';
       case 'business': return 'Business Elite 💎';
       case 'enterprise': return 'Diamond V2 🏆';
@@ -173,13 +181,10 @@ export default function Billing() {
 
             return {
               name: p.name,
-              price: displayPriceStr,
-              priceNum: displayPriceNum,
               costPrice: costPriceUSD,
               publicPrice: publicPriceUSD,
               discount: discountUSD,
               desc: desc,
-              priceDetail: displayPriceNum > 0 ? `Annual $${(displayPriceNum * 9).toFixed(2)}` : 'Always free',
               specs: [
                 { label: "Contacts", value: contactsVal },
                 { label: "Sends/mo", value: sendsVal },
@@ -191,7 +196,8 @@ export default function Billing() {
               icon: icon,
               btnText: `Upgrade to ${p.name}`,
               tierCode: p.tier,
-              color: color
+              color: color,
+              baseMonthlyPrice: displayPriceNum
             };
           });
           setPlans(mappedPlans);
@@ -240,7 +246,7 @@ export default function Billing() {
         headers: {
           "Content-Type": "application/json"
         },
-        body: JSON.stringify({ tier, payment_method: method })
+        body: JSON.stringify({ tier, payment_method: method, billing_cycle: billingCycle })
       });
 
       if (!res.ok) {
@@ -286,6 +292,17 @@ export default function Billing() {
   };
 
   const selectedPlan = plans.find(p => p.tierCode === showSimModal);
+  const selectedPlanPrice = selectedPlan 
+    ? (billingCycle === 'yearly' 
+        ? selectedPlan.baseMonthlyPrice * 12 * 0.8 
+        : selectedPlan.baseMonthlyPrice)
+    : 0;
+
+  const selectedPlanPriceStr = selectedPlan 
+    ? (billingCycle === 'yearly'
+        ? `$${selectedPlanPrice.toFixed(2)} / yr`
+        : `$${selectedPlanPrice.toFixed(2)} / mo`)
+    : '';
 
   return (
     <div className="space-y-3.5 animate-fadeIn">
@@ -297,6 +314,20 @@ export default function Billing() {
         </h2>
         <p className="text-[10px] text-dark-400 mt-0.5">Select the pricing model that best scales with your audience assets</p>
       </div>
+
+      {isExpired && (
+        <div className="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-4 flex gap-3 text-left">
+          <div className="h-9 w-9 rounded-xl bg-rose-500/20 flex items-center justify-center text-rose-450 dark:text-rose-400 shrink-0 font-bold text-lg">
+            ⚠️
+          </div>
+          <div>
+            <h4 className="text-xs font-bold text-rose-500 dark:text-rose-400">Subscription Expired</h4>
+            <p className="text-[10px] text-dark-300 dark:text-dark-300 mt-0.5 leading-relaxed font-semibold">
+              Your trial or plan subscription has expired. All sending channels, SMTP nodes, contact operations, and templates are temporarily locked. Please select a package below to renew your subscription.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* Currently Active Tier Section */}
       <div className="glass-panel rounded-2xl overflow-hidden border border-dark-700/30 shadow-lg">
@@ -313,7 +344,7 @@ export default function Billing() {
           </div>
 
           {/* Spec Columns Grid */}
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 flex-[3.5] md:px-6 md:py-0 py-1 border-b md:border-b-0 border-dark-800/40">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 flex-[3.5] md:px-6 md:py-0 py-1 border-b md:border-b-0 border-dark-800/40">
             {/* Net Speed */}
             <div className="min-w-0">
               <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider block mb-0.5">Network Speed</span>
@@ -333,6 +364,17 @@ export default function Billing() {
             <div className="min-w-0">
               <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider block mb-0.5">SLA Status</span>
               <span className="text-[10px] font-semibold text-white truncate block">{getSlaStatus(user?.subscription_tier)}</span>
+            </div>
+            {/* Expiration Date */}
+            <div className="min-w-0">
+              <span className="text-[8px] font-bold text-dark-450 uppercase tracking-wider block mb-0.5">Expires On</span>
+              <span className="text-[10px] font-bold text-amber-400 truncate block">
+                {user?.subscription_tier === 'free'
+                  ? 'Never (Lifetime)'
+                  : user?.subscription_expires_at 
+                    ? new Date(user.subscription_expires_at).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' })
+                    : 'Lifetime (Manual)'}
+              </span>
             </div>
           </div>
 
@@ -358,6 +400,22 @@ export default function Billing() {
             </button>
           </div>
         </div>
+      </div>
+
+      {/* Monthly / Yearly Billing Cycle Toggle */}
+      <div className="flex justify-center items-center gap-3 py-3 bg-dark-900/10 border border-dark-800/40 rounded-xl max-w-xs mx-auto mb-2 animate-fadeIn">
+        <span className={`text-[11px] font-bold tracking-wide transition-colors ${billingCycle === 'monthly' ? 'text-white' : 'text-dark-450'}`}>Monthly Billing</span>
+        <button
+          type="button"
+          onClick={() => setBillingCycle(prev => prev === 'monthly' ? 'yearly' : 'monthly')}
+          className="w-10 h-5.5 flex items-center bg-dark-800 border border-dark-700/60 rounded-full p-0.5 transition-all duration-300 relative focus:outline-none"
+        >
+          <div className={`w-4 h-4 rounded-full bg-brand-500 shadow-md transform transition-transform duration-300 ${billingCycle === 'yearly' ? 'translate-x-[18px]' : 'translate-x-0'}`} />
+        </button>
+        <span className={`text-[11px] font-bold tracking-wide transition-colors flex items-center gap-1.5 ${billingCycle === 'yearly' ? 'text-white' : 'text-dark-450'}`}>
+          <span>Yearly Billing</span>
+          <span className="px-1.5 py-0.2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded text-[7px] font-extrabold tracking-wider uppercase animate-pulse">Save 20%</span>
+        </span>
       </div>
 
       {/* Plans Grid */}
@@ -429,24 +487,39 @@ export default function Billing() {
                       <p className="text-[9px] sm:text-[10px] text-dark-400 mt-0.5 sm:mt-1 leading-normal max-w-[190px] line-clamp-2 sm:line-clamp-none">{p.desc}</p>
                     </div>
  
-                    <div className="flex flex-col items-center justify-center py-0.5 sm:py-1 text-center">
-                      {token && p.discount > 0 && (
-                        <div className="flex items-center gap-1 mb-1">
-                          <span className="text-[10px] text-dark-500 line-through">${p.publicPrice.toFixed(2)}</span>
-                          <span className="text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-450 border border-emerald-500/20 px-1 py-0.2 rounded">
-                            Save ${p.discount.toFixed(2)}
+                    {(() => {
+                      const displayPriceNum = billingCycle === 'yearly' 
+                        ? p.baseMonthlyPrice * 0.8  // 20% off monthly average
+                        : p.baseMonthlyPrice;
+                      
+                      const displayPriceStr = `$${displayPriceNum.toFixed(2)}`;
+                      const yearlyTotalStr = `$${(p.baseMonthlyPrice * 12 * 0.8).toFixed(2)}`;
+
+                      return (
+                        <div className="flex flex-col items-center justify-center py-0.5 sm:py-1 text-center">
+                          {token && p.discount > 0 && (
+                            <div className="flex items-center gap-1 mb-1">
+                              <span className="text-[10px] text-dark-500 line-through">
+                                ${((billingCycle === 'yearly' ? p.publicPrice * 12 : p.publicPrice)).toFixed(2)}
+                              </span>
+                              <span className="text-[9px] font-black uppercase bg-emerald-500/10 text-emerald-450 border border-emerald-500/20 px-1 py-0.2 rounded">
+                                Save ${((billingCycle === 'yearly' ? p.discount * 12 + (p.publicPrice - p.discount) * 12 * 0.2 : p.discount)).toFixed(2)}
+                              </span>
+                            </div>
+                          )}
+                          <div className="flex items-baseline justify-center gap-0.5">
+                            <span className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">{displayPriceStr}</span>
+                            <span className="text-[8.5px] sm:text-[10px] text-dark-450 font-semibold">/ mo</span>
+                          </div>
+                          <span className="text-[8px] sm:text-[9px] text-dark-500 mt-0.5 font-medium">
+                            {billingCycle === 'yearly' 
+                              ? `Billed annually: ${yearlyTotalStr}/yr`
+                              : p.baseMonthlyPrice > 0 ? `Annual $${(p.baseMonthlyPrice * 9).toFixed(2)}` : 'Always free'}
                           </span>
                         </div>
-                      )}
-                      <div className="flex items-baseline justify-center gap-0.5">
-                        <span className="text-xl sm:text-3xl font-extrabold text-white tracking-tight">{p.price}</span>
-                        <span className="text-[8.5px] sm:text-[10px] text-dark-450 font-semibold">/ mo</span>
-                      </div>
-                      {p.priceDetail && (
-                        <span className="text-[8px] sm:text-[9px] text-dark-500 mt-0.5 font-medium">{p.priceDetail}</span>
-                      )}
-                    </div>
- 
+                      );
+                    })()}
+
                     <div className="h-[1px] bg-dark-800/40" />
  
                     {/* Specifications Grid */}
@@ -539,8 +612,35 @@ export default function Billing() {
                   </div>
                   <div className="text-right">
                     <span className="text-[8px] text-dark-500 font-extrabold uppercase tracking-widest block">Price</span>
-                    <span className="text-xs font-mono font-black text-brand-400">{selectedPlan.price} / mo</span>
+                    <span className="text-xs font-mono font-black text-brand-400">{selectedPlanPriceStr}</span>
                   </div>
+                </div>
+
+                {/* Billing Cycle Selector Tabs */}
+                <div className="flex gap-1.5 p-1 bg-dark-950 rounded-xl border border-dark-850 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle("monthly")}
+                    className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 ${
+                      billingCycle === 'monthly'
+                        ? 'bg-brand-500 text-white shadow'
+                        : 'text-dark-450 hover:text-white'
+                    }`}
+                  >
+                    Monthly Billing
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBillingCycle("yearly")}
+                    className={`flex-1 py-1.5 rounded-lg text-[10px] font-bold transition-all duration-200 flex items-center justify-center gap-1.5 ${
+                      billingCycle === 'yearly'
+                        ? 'bg-brand-500 text-white shadow'
+                        : 'text-dark-450 hover:text-white'
+                    }`}
+                  >
+                    <span>Yearly Billing</span>
+                    <span className="px-1 py-0.2 bg-emerald-500/10 border border-emerald-500/20 text-emerald-450 rounded text-[7px] font-extrabold tracking-wider uppercase">Save 20%</span>
+                  </button>
                 </div>
 
                 {/* Payment Method Tabs */}
@@ -582,25 +682,25 @@ export default function Billing() {
                       </div>
                       <div className="flex justify-between items-center text-dark-300">
                         <span>Upgrade Cost</span>
-                        <span className="font-mono font-bold text-white">-${selectedPlan.priceNum.toFixed(2)}</span>
+                        <span className="font-mono font-bold text-white">-${selectedPlanPrice.toFixed(2)}</span>
                       </div>
                       
                       <div className="h-[1px] bg-dark-800/40 my-1" />
                       
-                      {walletBalance >= selectedPlan.priceNum ? (
+                      {walletBalance >= selectedPlanPrice ? (
                         <div className="flex justify-between items-center text-dark-300">
                           <span>Remaining Balance</span>
-                          <span className="font-mono font-bold text-emerald-400">${(walletBalance - selectedPlan.priceNum).toFixed(2)}</span>
+                          <span className="font-mono font-bold text-emerald-400">${(walletBalance - selectedPlanPrice).toFixed(2)}</span>
                         </div>
                       ) : (
                         <div className="flex justify-between items-center text-rose-400 font-bold">
                           <span>Shortage</span>
-                          <span className="font-mono font-bold text-rose-400">${(selectedPlan.priceNum - walletBalance).toFixed(2)}</span>
+                          <span className="font-mono font-bold text-rose-400">${(selectedPlanPrice - walletBalance).toFixed(2)}</span>
                         </div>
                       )}
                     </div>
 
-                    {walletBalance < selectedPlan.priceNum && (
+                    {walletBalance < selectedPlanPrice && (
                       <div className="p-2.5 bg-rose-500/5 rounded-xl border border-rose-500/10 text-[9px] text-rose-450 leading-normal flex items-start gap-1.5 font-semibold">
                         <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mt-1 shrink-0 animate-ping" />
                         <span>Your Wallet balance is insufficient. Please recharge your wallet balance or use Direct Card Pay to proceed.</span>
@@ -626,7 +726,7 @@ export default function Billing() {
                         <input
                           type="text"
                           value={cardNumber}
-                          onChange={(e) => setCardNumber(e.target.value)}
+                           onChange={(e) => setCardNumber(e.target.value)}
                           placeholder="4242 4242 4242 4242"
                           className="w-full pl-3.5 pr-10 py-1.5 bg-dark-950 border border-dark-850 rounded-lg text-xs text-brand-300 font-mono focus:outline-none placeholder:text-dark-700 transition-colors"
                         />
@@ -677,10 +777,10 @@ export default function Billing() {
                   </button>
 
                   {payMethod === "wallet" ? (
-                    walletBalance >= selectedPlan.priceNum ? (
+                    walletBalance >= selectedPlanPrice ? (
                       <button
                         type="button"
-                        onClick={() => handleUpgrade(selectedPlan.tierCode, "wallet", selectedPlan.priceNum)}
+                        onClick={() => handleUpgrade(selectedPlan.tierCode, "wallet", selectedPlanPrice)}
                         className="flex-1 py-2 brand-gradient-bg text-white text-xs font-bold rounded-lg shadow-md transition-transform hover:scale-[1.01] active:scale-[0.99]"
                       >
                         Deduct & Upgrade
@@ -702,7 +802,7 @@ export default function Billing() {
                     <button
                       type="button"
                       disabled={!cardNumber || !cardExpiry || !cardCvv}
-                      onClick={() => handleUpgrade(selectedPlan.tierCode, "direct", selectedPlan.priceNum)}
+                      onClick={() => handleUpgrade(selectedPlan.tierCode, "direct", selectedPlanPrice)}
                       className="flex-1 py-2 brand-gradient-bg text-white text-xs font-bold rounded-lg shadow-md transition-transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed"
                     >
                       Pay & Upgrade

@@ -22,20 +22,20 @@ interface SidebarProps {
 
 export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarProps) {
   const { logout, user, appConfig } = useAuth();
-  
-  const isAdmin = !!localStorage.getItem("admin_token");
+  const isExpired = user?.subscription_tier === 'expired';
+
 
   const navItems = [
-    { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard" },
-    { to: "/smtp", icon: <Server size={20} />, label: "SMTP Servers" },
-    { to: "/lists", icon: <Users size={20} />, label: "Contact Lists" },
-    { to: "/templates", icon: <FileText size={20} />, label: "Email Templates" },
-    { to: "/campaigns", icon: <Send size={20} />, label: "Campaigns" },
-    { to: "/sms-marketing", icon: <MessageSquare size={20} />, label: "SMS Marketing" },
-    { to: "/telegram-marketing", icon: <Send size={20} className="rotate-[320deg]" />, label: "Telegram Marketing" },
+    { to: "/", icon: <LayoutDashboard size={20} />, label: "Dashboard", disabled: isExpired },
+    { to: "/smtp", icon: <Server size={20} />, label: "SMTP Servers", disabled: isExpired },
+    { to: "/lists", icon: <Users size={20} />, label: "Contact Lists", disabled: isExpired },
+    { to: "/templates", icon: <FileText size={20} />, label: "Email Templates", disabled: isExpired },
+    { to: "/campaigns", icon: <Send size={20} />, label: "Campaigns", disabled: isExpired },
+    { to: "/sms-marketing", icon: <MessageSquare size={20} />, label: "SMS Marketing", disabled: isExpired },
+    { to: "/telegram-marketing", icon: <Send size={20} className="rotate-[320deg]" />, label: "Telegram Marketing", disabled: isExpired },
     { to: "/wallet", icon: <Wallet size={20} />, label: "Wallet" },
     { to: "/billing", icon: <CreditCard size={20} />, label: "Subscription" },
-    { to: "/settings", icon: <Settings size={20} />, label: "Manage Settings" },
+    { to: "/settings", icon: <Settings size={20} />, label: "Manage Settings", disabled: isExpired },
   ];
 
   return (
@@ -57,7 +57,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
           )}
           <div>
             <h1 className="font-bold text-sm text-white font-sans tracking-wide truncate max-w-[120px]">
-              {appConfig?.site_name || "SmartCampaign"}
+               {appConfig?.site_name || "SmartCampaign"}
             </h1>
             <span className="text-[10px] text-brand-400 font-bold tracking-wider uppercase">SaaS V1.0</span>
           </div>
@@ -75,21 +75,34 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
         {navItems.map((item) => (
           <NavLink
             key={item.to}
-            to={item.to}
+            to={item.disabled ? "#" : item.to}
             end={item.to === "/"}
-            onClick={onClose}
+            onClick={(e) => {
+              if (item.disabled) {
+                e.preventDefault();
+                alert("Your subscription or trial has expired. Please renew your subscription to reactivate all features.");
+                return;
+              }
+              onClose();
+            }}
             className={({ isActive }) => `
-              flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
-              ${isActive 
-                ? 'brand-gradient-bg text-white shadow-sm shadow-brand-500/10 dark:shadow-md dark:shadow-brand-500/25' 
-                : 'text-dark-300 dark:text-dark-400 hover:text-dark-100 dark:hover:text-dark-50 hover:bg-dark-700/50 dark:hover:bg-dark-700/30'}
+              flex items-center justify-between px-3 py-2 rounded-lg text-xs font-semibold transition-all duration-200
+              ${item.disabled 
+                ? 'opacity-40 cursor-not-allowed text-dark-400 hover:bg-transparent'
+                : isActive 
+                  ? 'brand-gradient-bg text-white shadow-sm shadow-brand-500/10 dark:shadow-md dark:shadow-brand-500/25' 
+                  : 'text-dark-300 dark:text-dark-400 hover:text-dark-100 dark:hover:text-dark-55 hover:bg-dark-700/50 dark:hover:bg-dark-700/30'}
             `}
           >
-            {item.icon}
-            {item.label}
+            <div className="flex items-center gap-3">
+              {item.icon}
+              <span>{item.label}</span>
+            </div>
+            {item.disabled && <span className="text-[10px]" title="Expired">🔒</span>}
           </NavLink>
         ))}
       </nav>
+
 
       {/* User profile & logout footer */}
       <div className="p-3 border-t border-dark-700 space-y-2">

@@ -1,6 +1,6 @@
 import os
 import uuid
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI, Request, Response, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
@@ -12,6 +12,7 @@ from slowapi.middleware import SlowAPIMiddleware
 from app.core.config import settings
 from app.db.session import create_db_tables
 from app.api import auth, smtp, contacts, templates, campaigns, tracker, admin, telegram_marketing, dhru, sms_marketing
+from app.api.deps import verify_active_subscription
 
 
 # ─── Environment detection ───────────────────────────────────────────
@@ -154,14 +155,14 @@ async def add_security_headers(request: Request, call_next) -> Response:
 # ─── Routers ──────────────────────────────────────────────────────────
 
 app.include_router(auth.router,      prefix=f"{settings.API_V1_STR}/auth",      tags=["Authentication"])
-app.include_router(smtp.router,      prefix=f"{settings.API_V1_STR}/smtp",      tags=["SMTP Servers"])
-app.include_router(contacts.router,  prefix=f"{settings.API_V1_STR}/contacts",  tags=["Contacts & Lists"])
-app.include_router(templates.router, prefix=f"{settings.API_V1_STR}/templates", tags=["Email Templates"])
-app.include_router(campaigns.router, prefix=f"{settings.API_V1_STR}/campaigns", tags=["Campaigns"])
+app.include_router(smtp.router,      prefix=f"{settings.API_V1_STR}/smtp",      tags=["SMTP Servers"],      dependencies=[Depends(verify_active_subscription)])
+app.include_router(contacts.router,  prefix=f"{settings.API_V1_STR}/contacts",  tags=["Contacts & Lists"],  dependencies=[Depends(verify_active_subscription)])
+app.include_router(templates.router, prefix=f"{settings.API_V1_STR}/templates", tags=["Email Templates"], dependencies=[Depends(verify_active_subscription)])
+app.include_router(campaigns.router, prefix=f"{settings.API_V1_STR}/campaigns", tags=["Campaigns"],        dependencies=[Depends(verify_active_subscription)])
 app.include_router(tracker.router,   prefix="/api/track",                        tags=["Email Tracking"])
 app.include_router(admin.router,     prefix="/api/admin",                        tags=["Super Admin"])
-app.include_router(telegram_marketing.router, prefix=f"{settings.API_V1_STR}/telegram-marketing", tags=["Telegram Marketing"])
-app.include_router(sms_marketing.router, prefix=f"{settings.API_V1_STR}/sms-marketing", tags=["SMS Marketing"])
+app.include_router(telegram_marketing.router, prefix=f"{settings.API_V1_STR}/telegram-marketing", tags=["Telegram Marketing"], dependencies=[Depends(verify_active_subscription)])
+app.include_router(sms_marketing.router, prefix=f"{settings.API_V1_STR}/sms-marketing", tags=["SMS Marketing"], dependencies=[Depends(verify_active_subscription)])
 app.include_router(dhru.router, prefix="/api/dhru", tags=["Dhru Fusion API Standards"])
 
 

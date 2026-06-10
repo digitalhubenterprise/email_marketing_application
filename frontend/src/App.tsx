@@ -164,6 +164,20 @@ export default function App() {
         }
       }
 
+      if (response.status === 403 && !window.location.pathname.startsWith('/admin')) {
+        try {
+          const clone = response.clone();
+          const body = await clone.json();
+          if (body && body.detail === "SUBSCRIPTION_EXPIRED") {
+            if (window.location.pathname !== '/billing' && window.location.pathname !== '/wallet') {
+              window.location.href = "/billing?expired=true";
+            }
+          }
+        } catch (e) {
+          // ignore parsing error
+        }
+      }
+
       if (response.status === 503 && !window.location.pathname.startsWith('/admin')) {
         try {
           const clone = response.clone();
@@ -176,6 +190,7 @@ export default function App() {
         }
       }
       return response;
+
     };
 
     // Load initial configurations

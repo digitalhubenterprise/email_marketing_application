@@ -213,6 +213,7 @@ async def create_db_tables() -> None:
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT false"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verification_secret VARCHAR"))
             await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS email_2fa_secret VARCHAR"))
+            await conn.execute(text("ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_expires_at TIMESTAMP"))
             
             # smtp reputation
             await conn.execute(text("ALTER TABLE smtp_servers ADD COLUMN IF NOT EXISTS reputation_score INTEGER DEFAULT 100"))

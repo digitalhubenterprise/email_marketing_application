@@ -487,8 +487,12 @@ async def override_user_plan(
     old_tier = user.subscription_tier
     old_quota = user.quota_limit
 
+    from datetime import timedelta
+    from app.db.models import utc_now_naive
+    
     user.subscription_tier = tier.lower()
     user.quota_limit = quota_limit
+    user.subscription_expires_at = utc_now_naive() + timedelta(days=30)
     user.is_active = True
 
     await log_audit(
@@ -791,6 +795,12 @@ async def create_payment_entry(
 
     # If transaction is PAID and user exists, apply the changes immediately!
     if status_val == "paid" and user:
+        from datetime import timedelta
+        from app.db.models import utc_now_naive
+        days = 30
+        if notes_val and "yearly" in notes_val.lower():
+            days = 365
+
         if action_type == "add_fund":
             # Dynamic quota allocation based on plan_tier
             plan_tier_lower = pay_in.plan_tier.lower()
@@ -810,12 +820,14 @@ async def create_payment_entry(
             
             user.subscription_tier = plan_tier_lower
             user.quota_limit = quota_limit
+            user.subscription_expires_at = utc_now_naive() + timedelta(days=days)
             user.is_active = True
             
         elif action_type == "overdrive":
             # Direct quota limit override using the amount field!
             user.subscription_tier = pay_in.plan_tier.lower()
             user.quota_limit = pay_in.amount
+            user.subscription_expires_at = utc_now_naive() + timedelta(days=days)
             user.is_active = True
             
         elif action_type == "rebate":
@@ -873,6 +885,12 @@ async def mark_payment_paid(
     
     quota_limit = 5000
     if user:
+        from datetime import timedelta
+        from app.db.models import utc_now_naive
+        days = 30
+        if payment.notes and "yearly" in payment.notes.lower():
+            days = 365
+
         payment.user_id = user.id
         if action_type == "add_fund":
             plan_tier_lower = payment.plan_tier.lower()
@@ -892,12 +910,14 @@ async def mark_payment_paid(
             
             user.subscription_tier = plan_tier_lower
             user.quota_limit = quota_limit
+            user.subscription_expires_at = utc_now_naive() + timedelta(days=days)
             user.is_active = True
             
         elif action_type == "overdrive":
             # Direct quota override using the payment amount
             user.subscription_tier = payment.plan_tier.lower()
             user.quota_limit = payment.amount
+            user.subscription_expires_at = utc_now_naive() + timedelta(days=days)
             user.is_active = True
             quota_limit = payment.amount
             

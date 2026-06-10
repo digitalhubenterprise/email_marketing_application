@@ -16,6 +16,7 @@ class User(Base):
     hashed_password = Column(String, nullable=False)
     is_active = Column(Boolean, default=True)
     subscription_tier = Column(String, default="free")  # free, pro, business
+    subscription_expires_at = Column(DateTime, nullable=True)
     quota_limit = Column(Integer, default=1000)        # Max monthly sends
     quota_sent = Column(Integer, default=0)            # Current month sends
     brand_primary_color = Column(String, default="#4c6ef5")

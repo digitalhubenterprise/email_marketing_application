@@ -10,9 +10,16 @@ from app.tasks.email_sender import celery
 # Configure Celery in eager mode for tests to run tasks synchronously without Redis broker
 celery.conf.task_always_eager = True
 
+from sqlalchemy.pool import StaticPool
+
 DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-engine = create_async_engine(DATABASE_URL, echo=False)
+engine = create_async_engine(
+    DATABASE_URL,
+    poolclass=StaticPool,
+    connect_args={"check_same_thread": False},
+    echo=False
+)
 TestingSessionLocal = async_sessionmaker(
     bind=engine,
     class_=AsyncSession,
@@ -20,6 +27,21 @@ TestingSessionLocal = async_sessionmaker(
     autocommit=False,
     autoflush=False,
 )
+
+# Override production db session and engine with test ones for all celery tasks and imports during testing
+import app.db.session as db_session_mod
+import app.tasks.email_sender as email_sender_mod
+
+from sqlalchemy.ext.asyncio import AsyncEngine
+
+async def dummy_dispose(self):
+    pass
+AsyncEngine.dispose = dummy_dispose
+
+db_session_mod.AsyncSessionLocal = TestingSessionLocal
+db_session_mod.engine = engine
+email_sender_mod.AsyncSessionLocal = TestingSessionLocal
+email_sender_mod.engine = engine
 
 @pytest.fixture(scope="session")
 def anyio_backend():
