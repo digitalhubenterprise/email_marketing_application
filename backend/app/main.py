@@ -139,7 +139,9 @@ async def add_security_headers(request: Request, call_next) -> Response:
         "script-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; "
         "font-src 'self' https://fonts.gstatic.com; "
-        "img-src 'self' data: http: https:;"
+        "img-src 'self' data: http: https:; "
+        "frame-ancestors 'self'; "
+        "form-action 'self';"
     )
     response.headers["X-Request-ID"] = request_id
 
