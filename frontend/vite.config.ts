@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+import sri from 'vite-plugin-sri'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), sri()],
   server: {
     host: '0.0.0.0',
     port: 3000,
@@ -16,3 +17,4 @@ export default defineConfig({
     }
   }
 })
+

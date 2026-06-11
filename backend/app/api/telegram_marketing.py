@@ -1,6 +1,6 @@
 from typing import List, Optional
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func, update, delete
@@ -29,10 +29,12 @@ def utc_now_naive():
 
 @router.get("/config", response_model=TelegramMarketingConfigResponse)
 async def get_telegram_config(
+    response: Response,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Fetches or creates the user's active Telegram Marketing configuration."""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     res = await db.execute(
         select(TelegramMarketingConfig).where(TelegramMarketingConfig.user_id == current_user.id)
     )

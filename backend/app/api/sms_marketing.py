@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -30,10 +30,12 @@ router = APIRouter()
 
 @router.get("/config", response_model=SMSConfigResponse)
 async def get_sms_config(
+    response: Response,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Fetches user's current SMS API Gateway configurations."""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     result = await db.execute(
         select(SMSMarketingConfig).where(SMSMarketingConfig.user_id == current_user.id)
     )

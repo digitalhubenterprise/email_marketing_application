@@ -833,8 +833,9 @@ async def submit_payment(
 
 
 @router.get("/config")
-async def get_public_config(db: AsyncSession = Depends(get_db)):
+async def get_public_config(response: Response, db: AsyncSession = Depends(get_db)):
     """Exposes public platform configurations for standard branding and announcement broadcasts."""
+    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
     res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
     config = res.scalars().first()
     if not config:
