@@ -1,4 +1,5 @@
 import os, sys
+os.environ["TESTING"] = "True"
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import asyncio
 import pytest
@@ -111,5 +112,5 @@ async def override_get_db(db_session):
 
 @pytest.fixture
 async def client():
-    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="https://test") as ac:
         yield ac

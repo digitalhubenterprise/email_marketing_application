@@ -39,4 +39,4 @@ async def verify_csrf(request: Request) -> None:
 
 def csrf_dependency() -> typing.Callable:
     """Convenient dependency for FastAPI routers."""
-    return Depends(verify_csrf)
+    return verify_csrf

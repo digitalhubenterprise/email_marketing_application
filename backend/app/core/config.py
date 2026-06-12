@@ -42,6 +42,8 @@ class Settings(BaseSettings):
         alias="ADMIN_REGISTRATION_SECRET"
     )
 
+    TESTING: bool = False
+
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
         # Detect production environment

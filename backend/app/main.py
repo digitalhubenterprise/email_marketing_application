@@ -32,9 +32,6 @@ async def lifespan(app: FastAPI):
 # ─── Rate limiter state ──────────────────────────────────────────────
 from app.middleware.rate_limit import get_limiter
 
-# Set rate limiter state
-app.state.limiter = get_limiter()
-
 # ─── FastAPI app ──────────────────────────────────────────────────────
 
 app = FastAPI(
@@ -79,7 +76,7 @@ app.add_middleware(
 )
 
 # Attach rate limiter — handles 429 Too Many Requests automatically
-app.state.limiter = limiter
+app.state.limiter = get_limiter()
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 

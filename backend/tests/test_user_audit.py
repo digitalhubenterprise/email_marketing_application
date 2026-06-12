@@ -25,7 +25,11 @@ async def get_auth_headers(client, email="audit_user@example.com"):
         headers={"Content-Type": "application/x-www-form-urlencoded"}
     )
     token = response_login.json()["access_token"]
-    return {"Authorization": f"Bearer {token}"}
+    headers = {"Authorization": f"Bearer {token}"}
+    csrf_token = client.cookies.get("csrf_token")
+    if csrf_token:
+        headers["X-CSRF-Token"] = csrf_token
+    return headers
 
 
 async def test_payment_mock_hash_blocks_in_production(client, db_session, monkeypatch):
@@ -528,6 +532,9 @@ async def test_password_change_token_invalidation(client, db_session):
     )
     token = response_login.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
+    csrf_token = client.cookies.get("csrf_token")
+    if csrf_token:
+        headers["X-CSRF-Token"] = csrf_token
 
     # Verify token works initially
     response_me = await client.get("/api/auth/me", headers=headers)

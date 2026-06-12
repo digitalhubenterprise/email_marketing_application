@@ -46,6 +46,9 @@ async def test_auth_registration_and_login(client, db_session):
 
     # 5. Fetch Me
     auth_headers = {"Authorization": f"Bearer {token}"}
+    csrf_token = client.cookies.get("csrf_token")
+    if csrf_token:
+        auth_headers["X-CSRF-Token"] = csrf_token
     response_me = await client.get("/api/auth/me", headers=auth_headers)
     assert response_me.status_code == 200
     me_data = response_me.json()
@@ -77,6 +80,9 @@ async def test_auth_registration_and_login(client, db_session):
     assert response_login_new.status_code == 200
     new_token = response_login_new.json()["access_token"]
     new_headers = {"Authorization": f"Bearer {new_token}"}
+    new_csrf_token = client.cookies.get("csrf_token")
+    if new_csrf_token:
+        new_headers["X-CSRF-Token"] = new_csrf_token
 
     # 9. Upgrade plan to Pro (Simulated Billing)
     response_upgrade = await client.post(
@@ -112,6 +118,9 @@ async def test_subscription_expiration_and_yearly_billing(client, db_session):
     )
     token = response_login.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
+    csrf_token = client.cookies.get("csrf_token")
+    if csrf_token:
+        headers["X-CSRF-Token"] = csrf_token
 
     # Upgrade to Yearly Pro
     response_upgrade_yearly = await client.post(
