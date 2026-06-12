@@ -11,19 +11,12 @@ from sqlalchemy.future import select
 from app.db.session import get_db
 from app.db.models import User, SystemConfig, SubscriptionPlan, PaymentLog
 from app.core.security import (
-    # Existing imports
-    get_password_hash,
-    verify_password,
-    create_access_token,
-    validate_password_strength,
-    # CSRF utilities
-    )
-from app.middleware.csrf import set_csrf_cookie, csrf_dependency
     get_password_hash,
     verify_password,
     create_access_token,
     validate_password_strength,
 )
+from app.middleware.csrf import set_csrf_cookie, csrf_dependency
 from app.schemas.user import UserCreate, UserResponse, Token
 from app.api.deps import get_current_user
 from app.core.config import settings
