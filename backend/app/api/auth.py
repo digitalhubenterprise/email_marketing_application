@@ -298,7 +298,7 @@ async def login(
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
     # Set CSRF token cookie for state‑changing requests
-    await set_csrf_cookie(response)
+    set_csrf_cookie(response)
     return {"access_token": access_token, "token_type": "bearer", "role": "user", "email": user.email}  # nosec
 
 

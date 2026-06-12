@@ -9,7 +9,7 @@ def generate_csrf_token() -> str:
     """Generate a URL‑safe CSRF token."""
     return secrets.token_urlsafe(32)
 
-async def set_csrf_cookie(response: Response) -> None:
+def set_csrf_cookie(response: Response) -> None:
     """Set the CSRF cookie on the response. The cookie is readable by JavaScript.
     It is marked Secure and SameSite=Lax for safety.
     """
