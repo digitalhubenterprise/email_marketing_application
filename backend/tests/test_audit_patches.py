@@ -168,3 +168,45 @@ async def test_transaction_hash_pattern():
     assert pattern.match("0x" + "a" * 65) is None  # too long
     assert pattern.match("0x" + "A" * 64) is not None  # uppercase works too
     assert pattern.match("123" + "a" * 61) is None  # does not start with 0x
+
+
+# 5. Database URL robust parsing test
+@pytest.mark.anyio
+async def test_database_url_parsing():
+    from app.tasks.backup_tasks import parse_database_url
+    from app.core.config import settings
+
+    # Test 1: Standard URL
+    with patch.object(settings, "DATABASE_URL", "postgresql+asyncpg://user:pass@localhost:5432/db"):
+        res = parse_database_url()
+        assert res["host"] == "localhost"
+        assert res["port"] == 5432
+        assert res["user"] == "user"
+        assert res["password"] == "pass"
+        assert res["database"] == "db"
+
+    # Test 2: Password with '@' and ':' characters
+    with patch.object(settings, "DATABASE_URL", "postgresql+asyncpg://user:my@pass:word@dbhost:5432/db"):
+        res = parse_database_url()
+        assert res["host"] == "dbhost"
+        assert res["port"] == 5432
+        assert res["user"] == "user"
+        assert res["password"] == "my@pass:word"
+        assert res["database"] == "db"
+
+    # Test 3: Missing port
+    with patch.object(settings, "DATABASE_URL", "postgresql://user:pass@host/db"):
+        res = parse_database_url()
+        assert res["host"] == "host"
+        assert res["port"] == 5432
+        assert res["user"] == "user"
+        assert res["password"] == "pass"
+        assert res["database"] == "db"
+
+    # Test 4: Missing @host part (like the ValueError trigger case)
+    with patch.object(settings, "DATABASE_URL", "postgresql+asyncpg://postgres:DbPass_"):
+        res = parse_database_url()
+        assert res["user"] == "postgres"
+        assert res["password"] == "DbPass_"
+        assert res["port"] == 5432
+

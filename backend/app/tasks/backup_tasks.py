@@ -17,17 +17,76 @@ from app.core.security import decrypt_smtp_password
 from app.core.celery_app import celery, run_async
 
 def parse_database_url():
-    """Parses DATABASE_URL into dictionary of connection details suitable for pg_dump/psql."""
+    """Parses DATABASE_URL into dictionary of connection details suitable for pg_dump/psql.
+    Uses a robust custom parser to handle passwords with special characters (@, :) and prevent ValueErrors.
+    """
     db_url = settings.DATABASE_URL
-    if "postgresql+asyncpg://" in db_url:
-        db_url = db_url.replace("postgresql+asyncpg://", "postgresql://")
-    parsed = urlparse(db_url)
+    
+    # Strip scheme prefix
+    for prefix in ["postgresql+asyncpg://", "postgresql://", "postgres://"]:
+        if db_url.startswith(prefix):
+            db_url = db_url[len(prefix):]
+            break
+            
+    # Default values
+    user = "postgres"
+    password = ""
+    host = "localhost"
+    port = 5432
+    database = "smartcampaign"
+    
+    # Split userinfo and hostinfo using the right-most '@'
+    if "@" in db_url:
+        userinfo, hostinfo = db_url.rsplit("@", 1)
+        
+        # Parse userinfo (split by first ':')
+        if ":" in userinfo:
+            user, password = userinfo.split(":", 1)
+        else:
+            user = userinfo
+            
+        # Parse hostinfo (format: host:port/database or host/database)
+        if "/" in hostinfo:
+            host_port, database = hostinfo.split("/", 1)
+            database = database.lstrip("/")
+        else:
+            host_port = hostinfo
+            database = ""
+            
+        # Parse host and port (split by right-most ':')
+        if ":" in host_port:
+            host, port_str = host_port.rsplit(":", 1)
+            try:
+                port = int(port_str)
+            except ValueError:
+                port = 5432
+        else:
+            host = host_port
+    else:
+        # No '@' present, parse as userinfo or hostinfo
+        if "/" in db_url:
+            host_port, database = db_url.split("/", 1)
+            database = database.lstrip("/")
+            if ":" in host_port:
+                host, port_str = host_port.rsplit(":", 1)
+                try:
+                    port = int(port_str)
+                except ValueError:
+                    port = 5432
+            else:
+                host = host_port
+        else:
+            if ":" in db_url:
+                user, password = db_url.split(":", 1)
+            else:
+                user = db_url
+
     return {
-        "host": parsed.hostname,
-        "port": parsed.port or 5432,
-        "user": parsed.username,
-        "password": parsed.password,
-        "database": parsed.path.lstrip('/')
+        "host": host,
+        "port": port,
+        "user": user,
+        "password": password,
+        "database": database
     }
 
 async def execute_remote_backup(config_id: int = 1, full_site: bool = False) -> str:
