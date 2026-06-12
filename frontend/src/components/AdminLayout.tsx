@@ -1,5 +1,6 @@
 import React, { useEffect, useState, Suspense } from 'react'
-import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { Outlet, Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { httpRequest } from '../utils/HttpClient';
 import {
   LayoutDashboard,
   Users,
@@ -35,11 +36,8 @@ export default function AdminLayout() {
 
   const fetchMaintenanceMode = async () => {
     try {
-      const res = await fetch("/api/admin/settings");
-      if (res.ok) {
-        const data = await res.json();
-        setMaintenanceMode(data.maintenance_mode);
-      }
+      const data = await httpRequest<{maintenance_mode: boolean}>("/api/admin/settings");
+      setMaintenanceMode(data.maintenance_mode);
     } catch (err) {
       console.error("Failed to fetch maintenance mode:", err);
     }
@@ -64,21 +62,16 @@ export default function AdminLayout() {
   useEffect(() => {
     const checkAdminSession = async () => {
       try {
-        const res = await fetch("/api/admin/verify");
-        if (res.ok) {
-          const data = await res.json();
-          setAdminEmail(data.email);
-          setAdminRole(data.role);
-          setVerifying(false);
-          fetchMaintenanceMode();
-        } else {
-          localStorage.removeItem("admin_logged_in");
-          localStorage.removeItem("admin_email");
-          localStorage.removeItem("admin_role");
-          navigate("/admin/login");
-        }
+        const data = await httpRequest<{email: string; role: string}>("/api/admin/verify");
+        setAdminEmail(data.email);
+        setAdminRole(data.role);
+        setVerifying(false);
+        fetchMaintenanceMode();
       } catch (err) {
         console.error("Session verification failed:", err);
+        localStorage.removeItem("admin_logged_in");
+        localStorage.removeItem("admin_email");
+        localStorage.removeItem("admin_role");
         navigate("/admin/login");
       }
     };
@@ -101,15 +94,9 @@ export default function AdminLayout() {
 
     setTogglingMaintenance(true);
     try {
-      const res = await fetch(`/api/admin/settings/maintenance?enabled=${nextState}`, {
-        method: 'POST'
-      });
-      if (res.ok) {
-        setMaintenanceMode(nextState);
-        alert(`System is now ${nextState ? "OFFLINE (Maintenance)" : "ONLINE"}.`);
-      } else {
-        alert("Failed to toggle maintenance mode.");
-      }
+      await httpRequest(`/api/admin/settings/maintenance?enabled=${nextState}`, { method: 'POST' });
+      setMaintenanceMode(nextState);
+      alert(`System is now ${nextState ? "OFFLINE (Maintenance)" : "ONLINE"}.`);
     } catch (err) {
       console.error(err);
       alert("Network communication error.");
@@ -123,7 +110,7 @@ export default function AdminLayout() {
     localStorage.removeItem("admin_email");
     localStorage.removeItem("admin_role");
     try {
-      await fetch("/api/admin/logout", { method: "POST" });
+      await httpRequest("/api/admin/logout", { method: "POST" });
     } catch (e) {
       console.error("Admin logout failed:", e);
     }

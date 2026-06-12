@@ -11,6 +11,14 @@ from sqlalchemy.future import select
 from app.db.session import get_db
 from app.db.models import User, SystemConfig, SubscriptionPlan, PaymentLog
 from app.core.security import (
+    # Existing imports
+    get_password_hash,
+    verify_password,
+    create_access_token,
+    validate_password_strength,
+    # CSRF utilities
+    )
+from app.middleware.csrf import set_csrf_cookie, csrf_dependency
     get_password_hash,
     verify_password,
     create_access_token,
@@ -33,9 +41,7 @@ def get_real_client_ip(request: Request) -> str:
     return get_remote_address(request)
 
 # Rate limiter — uses real client IP address as the key
-import sys
-is_testing = "pytest" in sys.modules or "unittest" in sys.modules
-limiter = Limiter(key_func=get_real_client_ip, enabled=not is_testing)
+from app.middleware.rate_limit import limiter
 
 
 # ─── Schemas ──────────────────────────────────────────────────────────
@@ -298,6 +304,8 @@ async def login(
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
+    # Set CSRF token cookie for state‑changing requests
+    await set_csrf_cookie(response)
     return {"access_token": access_token, "token_type": "bearer", "role": "user", "email": user.email}  # nosec
 
 
@@ -310,7 +318,7 @@ async def get_me(current_user: User = Depends(get_current_user)):
 
 # ─── Change Password ──────────────────────────────────────────────────
 
-@router.post("/change-password", status_code=status.HTTP_200_OK)
+@router.post("/change-password", status_code=status.HTTP_200_OK, dependencies=[Depends(csrf_dependency())])
 @limiter.limit("5/minute")           # Max 5 password change attempts per minute
 async def change_password(
     request: Request,
@@ -335,7 +343,7 @@ async def change_password(
     return {"message": "Password updated successfully."}
 
 
-@router.post("/upgrade", response_model=UserResponse)
+@router.post("/upgrade", response_model=UserResponse, dependencies=[Depends(csrf_dependency())])
 async def upgrade_tier(
     payload: UpgradeRequest,
     current_user: User = Depends(get_current_user),
@@ -765,7 +773,7 @@ async def verify_bep20_transaction(db: AsyncSession, tx_hash: str, expected_amou
     return False, 0.0, "Transaction could not be verified on the BSC network."
 
 
-@router.post("/my-payments")
+@router.post("/my-payments", dependencies=[Depends(csrf_dependency())])
 @limiter.limit("5/minute")
 async def submit_payment(
     request: Request,

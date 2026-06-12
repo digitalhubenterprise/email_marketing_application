@@ -3,8 +3,9 @@ from typing import Any, Optional, Union
 import re
 import jwt
 import bcrypt
-from html.parser import HTMLParser
+# Removed HTMLParser import; bleach provides HTML sanitization
 from cryptography.fernet import Fernet
+import bleach  # Added bleach for HTML sanitization
 from app.core.config import settings
 
 # SMTP Credentials Cryptography Setup (AES-256 Fernet)
@@ -110,72 +111,19 @@ def create_access_token(
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm="HS256")
 
 
-class SafeHTMLParser(HTMLParser):
-    def __init__(self):
-        super().__init__()
-        self.result = []
-        self.dangerous_tags = {"script", "iframe", "object", "embed", "applet", "meta"}
-        self.nesting_level = 0
-
-    def handle_starttag(self, tag, attrs):
-        tag_lower = tag.lower()
-        if tag_lower in self.dangerous_tags:
-            self.nesting_level += 1
-            return
-        if self.nesting_level > 0:
-            return
-            
-        cleaned_attrs = []
-        for name, value in attrs:
-            name_lower = name.lower()
-            if name_lower.startswith("on"):
-                continue
-            if value:
-                val_lower = value.strip().lower()
-                if val_lower.startswith(("javascript:", "data:")):
-                    continue
-            cleaned_attrs.append((name, value))
-            
-        import html
-        attr_str = ""
-        if cleaned_attrs:
-            attr_str = " " + " ".join(f'{k}="{html.escape(v)}"' if v is not None else k for k, v in cleaned_attrs)
-        self.result.append(f"<{tag}{attr_str}>")
-
-    def handle_endtag(self, tag):
-        tag_lower = tag.lower()
-        if tag_lower in self.dangerous_tags:
-            self.nesting_level = max(0, self.nesting_level - 1)
-            return
-        if self.nesting_level > 0:
-            return
-        self.result.append(f"</{tag}>")
-
-    def handle_data(self, data):
-        if self.nesting_level > 0:
-            return
-        self.result.append(data)
-
-    def handle_entityref(self, name):
-        if self.nesting_level > 0:
-            return
-        self.result.append(f"&{name};")
-
-    def handle_charref(self, name):
-        if self.nesting_level > 0:
-            return
-        self.result.append(f"&#{name};")
+# Deprecated SafeHTMLParser - removed in favor of bleach for HTML sanitization.
 
 
 def sanitize_html(html_content: str) -> str:
     """
-    Sanitizes raw HTML to block XSS execution vectors.
-    Strips out script/iframe/object/embed/applet/meta tags, inline on* events, and javascript:/data: links.
+    Sanitizes raw HTML using bleach to allow only safe tags and attributes,
+    preventing XSS attacks.
     """
     if not html_content:
         return ""
-    from html.parser import HTMLParser
-    parser = SafeHTMLParser()
-    parser.feed(html_content)
-    return "".join(parser.result)
+    import bleach
+    # Use bleach defaults for allowed tags/attributes; strip disallowed content.
+    return bleach.clean(html_content, tags=bleach.sanitizer.ALLOWED_TAGS,
+                         attributes=bleach.sanitizer.ALLOWED_ATTRIBUTES,
+                         strip=True)
 

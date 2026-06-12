@@ -19,3 +19,4 @@ email-validator>=2.1.1
 slowapi>=0.1.9
 pyotp>=2.9.0
 boto3>=1.34.0
+bleach>=6.0.0
