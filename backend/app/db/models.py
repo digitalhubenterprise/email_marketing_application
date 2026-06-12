@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, Float, String, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Column, Integer, Float, String, Boolean, DateTime, ForeignKey, Text, JSON
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
@@ -247,6 +247,7 @@ class SystemConfig(Base):
     payment_gateway_bep20_enabled = Column(Boolean, default=True)
     payment_gateway_usdc_bep20_enabled = Column(Boolean, default=True)
     payment_gateway_merchant_enabled = Column(Boolean, default=True)
+    extra_settings = Column(JSON, nullable=True, default=dict)
     created_at = Column(DateTime, default=utc_now_naive)
 
 
@@ -431,3 +432,47 @@ class SMSTemplate(Base):
     created_at = Column(DateTime, default=utc_now_naive)
 
     user = relationship("User", back_populates="sms_templates")
+
+
+class RemoteBackupConfig(Base):
+    __tablename__ = "remote_backup_configs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    provider = Column(String, default="ftp")  # s3, ftp
+    
+    # S3 Credentials
+    s3_endpoint = Column(String, nullable=True)
+    s3_bucket = Column(String, nullable=True)
+    s3_access_key = Column(String, nullable=True)
+    s3_secret_key = Column(String, nullable=True)  # encrypted in DB
+    s3_region = Column(String, nullable=True)
+    s3_folder = Column(String, nullable=True, default="backups")
+    
+    # FTP Credentials
+    ftp_host = Column(String, nullable=True)
+    ftp_port = Column(Integer, default=21)
+    ftp_username = Column(String, nullable=True)
+    ftp_password = Column(String, nullable=True)  # encrypted in DB
+    ftp_path = Column(String, nullable=True, default="/")
+    ftp_secure = Column(Boolean, default=True)  # FTPS (FTP over TLS)
+
+    # Scheduler settings
+    schedule_days = Column(Integer, default=1)  # 1 to 7 days
+    retention_count = Column(Integer, default=5)  # Max backups to keep (e.g. 1 to 30)
+    is_active = Column(Boolean, default=False)
+    last_run = Column(DateTime, nullable=True)
+    next_run = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+    updated_at = Column(DateTime, default=utc_now_naive, onupdate=utc_now_naive)
+
+
+class RemoteBackupLog(Base):
+    __tablename__ = "remote_backup_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    filename = Column(String, nullable=False)
+    status = Column(String, nullable=False)  # success, failed
+    size_bytes = Column(Integer, default=0)
+    message = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=utc_now_naive)
+

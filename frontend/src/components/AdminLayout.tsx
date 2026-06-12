@@ -14,7 +14,8 @@ import {
   Menu,
   Sun,
   Moon,
-  Key
+  Key,
+  Database
 } from 'lucide-react'
 import { useAuth } from '../App'
 
@@ -136,6 +137,7 @@ export default function AdminLayout() {
     { to: "/admin/billing", icon: <CreditCard size={18} />, label: "Financial Review" },
     { to: "/admin/settings", icon: <Settings size={18} />, label: "Settings" },
     { to: "/admin/api-settings", icon: <Key size={18} />, label: "API Settings" },
+    { to: "/admin/backups", icon: <Database size={18} />, label: "Remote Backups" },
     { to: "/admin/audits", icon: <ShieldAlert size={18} />, label: "Audit Ledger" },
     { to: "/admin/register", icon: <UserPlus size={18} />, label: "Invite Admin" },
   ];

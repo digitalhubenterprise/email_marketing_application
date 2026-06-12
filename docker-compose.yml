@@ -31,6 +31,7 @@ services:
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
     volumes:
       - ./backend:/app
+      - .:/project_root:ro
     ports:
       - "8000:8000"
     environment:
@@ -54,6 +55,7 @@ services:
     command: celery -A app.tasks.email_sender.celery worker --loglevel=info
     volumes:
       - ./backend:/app
+      - .:/project_root:ro
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
       - REDIS_URL=redis://redis:6379/0
@@ -73,6 +75,7 @@ services:
     command: celery -A app.tasks.email_sender.celery beat --loglevel=info
     volumes:
       - ./backend:/app
+      - .:/project_root:ro
     environment:
       - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
       - REDIS_URL=redis://redis:6379/0

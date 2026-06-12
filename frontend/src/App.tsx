@@ -29,6 +29,7 @@ const AdminAudits = lazy(() => import('./pages/AdminAudits'))
 const AdminRegister = lazy(() => import('./pages/AdminRegister'))
 const AdminCampaigns = lazy(() => import('./pages/AdminCampaigns'))
 const AdminApiSettings = lazy(() => import('./pages/AdminApiSettings'))
+const AdminBackups = lazy(() => import('./pages/AdminBackups'))
 
 
 // Define AuthContext shape
@@ -352,13 +353,14 @@ export default function App() {
 
           {/* Super Admin Center Protected Routes */}
           <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin/register" element={<AdminRegister />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
+            <Route path="register" element={<AdminRegister />} />
             <Route path="users" element={<AdminUsers />} />
             <Route path="billing" element={<AdminBilling />} />
             <Route path="settings" element={<AdminSettings />} />
             <Route path="api-settings" element={<AdminApiSettings />} />
+            <Route path="backups" element={<AdminBackups />} />
             <Route path="audits" element={<AdminAudits />} />
             <Route path="campaigns" element={<AdminCampaigns />} />
           </Route>

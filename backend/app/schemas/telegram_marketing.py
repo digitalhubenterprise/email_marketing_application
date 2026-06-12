@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class TelegramMarketingConfigBase(BaseModel):
     telegram_channel: Optional[str] = None
@@ -23,8 +23,7 @@ class TelegramMarketingConfigResponse(TelegramMarketingConfigBase):
     telegram_bot_token: Optional[str] = None
     groq_api_key: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TelegramServiceBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255)
@@ -50,8 +49,7 @@ class TelegramServiceResponse(TelegramServiceBase):
     user_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TelegramLogResponse(BaseModel):
     id: int
@@ -61,8 +59,7 @@ class TelegramLogResponse(BaseModel):
     status: str
     message: str
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TelegramMarketingStats(BaseModel):
     total_posts: int

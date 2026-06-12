@@ -15,21 +15,7 @@ from app.db.session import AsyncSessionLocal, engine
 from app.db.models import Campaign, SMTPServer, Contact, CampaignLog, User, SystemConfig
 from app.core.security import decrypt_smtp_password
 
-# Initialize Celery broker
-celery = Celery(
-    "smartcampaign_tasks",
-    broker=settings.REDIS_URL,
-    backend=settings.REDIS_URL,
-)
-
-
-def run_async(coro):
-    """Runs a coroutine synchronously, handles cases where an event loop is already running."""
-    try:
-        asyncio.run(coro)
-    except RuntimeError:
-        # Loop is already running (e.g. in tests); close the coroutine to prevent "never awaited" warnings
-        coro.close()
+from app.core.celery_app import celery, run_async
 
 # Regex to find <a href="..."> links in HTML for click tracking injection
 LINK_REGEX = re.compile(r'href="([^"]+)"', re.IGNORECASE)
@@ -548,6 +534,16 @@ def setup_periodic_tasks(sender, **kwargs):
     except Exception as e:
         print(f"Error loading Telegram periodic task: {e}")
 
+    # Check for scheduled remote backups every 30 minutes (1800.0s)
+    try:
+        sender.add_periodic_task(
+            1800.0,
+            check_scheduled_backups_task.s(),
+            name="check-scheduled-backups-every-30m"
+        )
+    except Exception as e:
+        print(f"Error loading Remote Backup periodic task: {e}")
+
 
 async def async_check_scheduled_campaigns() -> None:
     """Finds scheduled campaigns whose time has passed, sets status to sending, and triggers dispatch."""
@@ -646,3 +642,8 @@ def send_system_email_task(recipient_email: str, subject: str, html_body: str) -
         run_async(run())
     except Exception as exc:
         print(f"Error executing system email task: {exc}")
+
+
+# ─── Late Imports to prevent Circular Imports ─────────────────────────
+from app.tasks.backup_tasks import run_remote_backup_task, run_remote_restore_task, check_scheduled_backups_task
+

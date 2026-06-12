@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 class SMSConfigBase(BaseModel):
     api_key: Optional[str] = None
@@ -24,8 +24,7 @@ class SMSConfigResponse(SMSConfigBase):
     user_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SMSCampaignBase(BaseModel):
     name: str
@@ -46,8 +45,7 @@ class SMSCampaignResponse(SMSCampaignBase):
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SMSLogResponse(BaseModel):
     id: int
@@ -59,8 +57,7 @@ class SMSLogResponse(BaseModel):
     response_code: Optional[str] = None
     response_message: Optional[str] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SMSLogsPaginated(BaseModel):
     logs: List[SMSLogResponse]
@@ -90,8 +87,7 @@ class SMSGroupResponse(SMSGroupBase):
     user_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SMSNumberBase(BaseModel):
     phone_number: str
@@ -105,8 +101,7 @@ class SMSNumberResponse(SMSNumberBase):
     group_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SMSGroupWithNumbersResponse(SMSGroupResponse):
     numbers: List[SMSNumberResponse] = []
@@ -124,5 +119,4 @@ class SMSTemplateResponse(SMSTemplateBase):
     user_id: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

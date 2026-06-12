@@ -1,5 +1,5 @@
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Response, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -24,8 +24,30 @@ from app.schemas.sms import (
 )
 from app.api.deps import get_current_user
 from app.services.sms_service import SMSService
+from app.core.security import encrypt_smtp_password, decrypt_smtp_password
+from app.api.auth import limiter
 
 router = APIRouter()
+
+
+def make_masked_response(config: SMSMarketingConfig) -> dict:
+    return {
+        "id": config.id,
+        "user_id": config.user_id,
+        "provider": config.provider,
+        "is_active": config.is_active,
+        "created_at": config.created_at,
+        "bulksmsbd_api_key": "••••••••" if config.bulksmsbd_api_key else None,
+        "bulksmsbd_sender_id": config.bulksmsbd_sender_id,
+        "twilio_api_key": "••••••••" if config.twilio_api_key else None,
+        "twilio_sender_id": config.twilio_sender_id,
+        "vonage_api_key": "••••••••" if config.vonage_api_key else None,
+        "vonage_sender_id": config.vonage_sender_id,
+        "custom_api_key": "••••••••" if config.custom_api_key else None,
+        "custom_sender_id": config.custom_sender_id,
+        "api_key": "••••••••" if config.api_key else None,
+        "sender_id": config.sender_id,
+    }
 
 
 @router.get("/config", response_model=SMSConfigResponse)
@@ -59,7 +81,7 @@ async def get_sms_config(
             await db.commit()
             await db.refresh(config)
             
-    return config
+    return make_masked_response(config)
 
 
 @router.post("/config", response_model=SMSConfigResponse)
@@ -77,42 +99,46 @@ async def update_sms_config(
         config = SMSMarketingConfig(user_id=current_user.id)
         db.add(config)
 
+    def encrypt_if_new(new_val: Optional[str], old_val: Optional[str]) -> Optional[str]:
+        if not new_val:
+            return None
+        if new_val == "••••••••":
+            return old_val
+        return encrypt_smtp_password(new_val)
+
     # Copy new provider-specific fields
     config.provider = payload.provider
     config.is_active = payload.is_active
-    config.bulksmsbd_api_key = payload.bulksmsbd_api_key
+    config.bulksmsbd_api_key = encrypt_if_new(payload.bulksmsbd_api_key, config.bulksmsbd_api_key)
     config.bulksmsbd_sender_id = payload.bulksmsbd_sender_id
-    config.twilio_api_key = payload.twilio_api_key
+    config.twilio_api_key = encrypt_if_new(payload.twilio_api_key, config.twilio_api_key)
     config.twilio_sender_id = payload.twilio_sender_id
-    config.vonage_api_key = payload.vonage_api_key
+    config.vonage_api_key = encrypt_if_new(payload.vonage_api_key, config.vonage_api_key)
     config.vonage_sender_id = payload.vonage_sender_id
-    config.custom_api_key = payload.custom_api_key
+    config.custom_api_key = encrypt_if_new(payload.custom_api_key, config.custom_api_key)
     config.custom_sender_id = payload.custom_sender_id
 
     # Fallback to legacy fields if provider-specific fields are missing
     if payload.provider == 'bulksmsbd':
         if not config.bulksmsbd_api_key:
-            config.bulksmsbd_api_key = payload.api_key
+            config.bulksmsbd_api_key = encrypt_if_new(payload.api_key, config.bulksmsbd_api_key)
         if not config.bulksmsbd_sender_id:
             config.bulksmsbd_sender_id = payload.sender_id
     elif payload.provider == 'twilio':
         if not config.twilio_api_key:
-            config.twilio_api_key = payload.api_key
+            config.twilio_api_key = encrypt_if_new(payload.api_key, config.twilio_api_key)
         if not config.twilio_sender_id:
             config.twilio_sender_id = payload.sender_id
     elif payload.provider == 'vonage':
         if not config.vonage_api_key:
-            config.vonage_api_key = payload.api_key
+            config.vonage_api_key = encrypt_if_new(payload.api_key, config.vonage_api_key)
         if not config.vonage_sender_id:
             config.vonage_sender_id = payload.sender_id
     elif payload.provider == 'custom':
         if not config.custom_api_key:
-            config.custom_api_key = payload.api_key
+            config.custom_api_key = encrypt_if_new(payload.api_key, config.custom_api_key)
         if not config.custom_sender_id:
             config.custom_sender_id = payload.sender_id
-    else:
-        # Fallback for mock or other providers
-        pass
 
     # Update legacy api_key/sender_id to match the active provider
     if payload.provider == 'bulksmsbd':
@@ -129,12 +155,12 @@ async def update_sms_config(
         config.sender_id = config.custom_sender_id
     else:
         # Fallback for mock or other providers
-        config.api_key = payload.api_key
+        config.api_key = encrypt_if_new(payload.api_key, config.api_key)
         config.sender_id = payload.sender_id
 
     await db.commit()
     await db.refresh(config)
-    return config
+    return make_masked_response(config)
 
 
 @router.get("/balance", response_model=SMSBalanceResponse)
@@ -154,7 +180,8 @@ async def get_sms_balance(
         )
 
     try:
-        res = await SMSService.get_balance(config.provider, config.api_key)
+        decrypted_key = decrypt_smtp_password(config.api_key)
+        res = await SMSService.get_balance(config.provider, decrypted_key)
         return res
     except Exception as e:
         raise HTTPException(
@@ -164,8 +191,11 @@ async def get_sms_balance(
 
 
 @router.post("/test-connection")
+@limiter.limit("5/minute")
 async def test_sms_connection(
+    request: Request,
     req: SMSTestRequest,
+    db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Dispatches a single test SMS and checks for successful submission (202)."""
@@ -175,9 +205,24 @@ async def test_sms_connection(
             detail="API Key, Sender ID, and Recipient number are required."
         )
 
+    api_key_to_use = req.api_key
+    if req.api_key == "••••••••":
+        # Load from DB config
+        result = await db.execute(
+            select(SMSMarketingConfig).where(SMSMarketingConfig.user_id == current_user.id)
+        )
+        config = result.scalars().first()
+        if config and config.api_key:
+            api_key_to_use = decrypt_smtp_password(config.api_key)
+        else:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Saved SMS configuration not found."
+            )
+
     res = await SMSService.send_sms(
         provider=req.provider,
-        api_key=req.api_key,
+        api_key=api_key_to_use,
         sender_id=req.sender_id,
         recipient=req.recipient,
         message=req.message
@@ -227,9 +272,10 @@ async def create_sms_campaign(
 
     # Call the service layer to send SMS (supports single/bulk comma-separated string)
     recipients_str = ",".join(raw_recipients)
+    decrypted_key = decrypt_smtp_password(config.api_key)
     res = await SMSService.send_sms(
         provider=config.provider,
-        api_key=config.api_key,
+        api_key=decrypted_key,
         sender_id=campaign.sender_id,
         recipient=recipients_str,
         message=campaign.message

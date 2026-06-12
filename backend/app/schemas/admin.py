@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, ConfigDict
 
 class AdminUserBase(BaseModel):
     email: EmailStr
@@ -15,8 +15,7 @@ class AdminUserResponse(AdminUserBase):
     is_active: bool
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AdminUserUpdate(BaseModel):
     role: Optional[str] = None
@@ -72,10 +71,9 @@ class SystemConfigResponse(BaseModel):
     payment_gateway_bep20_enabled: Optional[bool] = None
     payment_gateway_usdc_bep20_enabled: Optional[bool] = None
     payment_gateway_merchant_enabled: Optional[bool] = None
+    extra_settings: Optional[dict] = None
 
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class SystemConfigUpdate(BaseModel):
     site_name: Optional[str] = None
@@ -123,6 +121,7 @@ class SystemConfigUpdate(BaseModel):
     payment_gateway_bep20_enabled: Optional[bool] = None
     payment_gateway_usdc_bep20_enabled: Optional[bool] = None
     payment_gateway_merchant_enabled: Optional[bool] = None
+    extra_settings: Optional[dict] = None
 
 
 class PaymentLogBase(BaseModel):
@@ -144,8 +143,7 @@ class PaymentLogResponse(PaymentLogBase):
     status: str
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AdminAuditLogResponse(BaseModel):
     id: int
@@ -155,8 +153,7 @@ class AdminAuditLogResponse(BaseModel):
     details: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class AdminDashboardStats(BaseModel):
     total_users: int
@@ -203,8 +200,7 @@ class SubscriptionPlanResponse(SubscriptionPlanBase):
     id: int
     created_at: Optional[datetime] = None
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 
 class UserProfileUpdate(BaseModel):
@@ -230,8 +226,62 @@ class DhruApiLogResponse(BaseModel):
     message: Optional[str] = None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RemoteBackupConfigResponse(BaseModel):
+    id: int
+    provider: str
+    s3_endpoint: Optional[str] = None
+    s3_bucket: Optional[str] = None
+    s3_access_key: Optional[str] = None
+    s3_region: Optional[str] = None
+    s3_folder: Optional[str] = None
+    ftp_host: Optional[str] = None
+    ftp_port: Optional[int] = 21
+    ftp_username: Optional[str] = None
+    ftp_path: Optional[str] = None
+    ftp_secure: Optional[bool] = True
+    schedule_days: int
+    retention_count: Optional[int] = 5
+    is_active: bool
+    last_run: Optional[datetime] = None
+    next_run: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    updated_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RemoteBackupConfigUpdate(BaseModel):
+    provider: Optional[str] = None
+    s3_endpoint: Optional[str] = None
+    s3_bucket: Optional[str] = None
+    s3_access_key: Optional[str] = None
+    s3_secret_key: Optional[str] = None
+    s3_region: Optional[str] = None
+    s3_folder: Optional[str] = None
+    ftp_host: Optional[str] = None
+    ftp_port: Optional[int] = None
+    ftp_username: Optional[str] = None
+    ftp_password: Optional[str] = None
+    ftp_path: Optional[str] = None
+    ftp_secure: Optional[bool] = None
+    schedule_days: Optional[int] = Field(None, ge=1, le=7)
+    retention_count: Optional[int] = Field(None, ge=1, le=30)
+    is_active: Optional[bool] = None
+
+
+class RemoteBackupLogResponse(BaseModel):
+    id: int
+    filename: str
+    status: str
+    size_bytes: int
+    message: Optional[str] = None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
 
 
 

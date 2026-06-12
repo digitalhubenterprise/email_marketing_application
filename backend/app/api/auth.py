@@ -623,6 +623,11 @@ async def verify_bep20_transaction(db: AsyncSession, tx_hash: str, expected_amou
         if tx_hash.startswith("mock_txn_") or tx_hash.startswith("txn-") or not tx_hash:
             return True, expected_amount, "Simulated blockchain receipt accepted."
         
+    # Format check for BEP20 transaction hash
+    import re
+    if not re.match(r"^0x[a-fA-F0-9]{64}$", tx_hash):
+        return False, 0.0, "Invalid BEP20 transaction hash format."
+        
     # Duplicate check for BEP20 (case-insensitive)
     from app.db.models import PaymentLog
     stmt = select(PaymentLog).where(PaymentLog.notes.ilike(f"%{tx_hash}%"))
@@ -691,8 +696,10 @@ async def verify_bep20_transaction(db: AsyncSession, tx_hash: str, expected_amou
                 ) as response:
                     if response.status == 200:
                         res_data = await response.json()
-                        if res_data and "result" in res_data and res_data["result"]:
+                        if res_data and "result" in res_data:
                             receipt = res_data["result"]
+                            if receipt is None:
+                                return False, 0.0, "Transaction not found on the blockchain."
                             if receipt.get("status") != "0x1":
                                 return False, 0.0, "Transaction was reverted on the blockchain."
                             
@@ -801,8 +808,12 @@ async def submit_payment(
                           status_code=status.HTTP_400_BAD_REQUEST,
                           detail="Requested subscription plan tier does not exist."
                       )
+                  from datetime import timedelta
+                  from app.db.models import utc_now_naive
                   current_user.subscription_tier = plan.tier
                   current_user.quota_limit = plan.quota
+                  current_user.subscription_expires_at = utc_now_naive() + timedelta(days=30)
+                  current_user.is_active = True
                   db.add(current_user)
         else:
             raise HTTPException(status_code=400, detail=log_msg)

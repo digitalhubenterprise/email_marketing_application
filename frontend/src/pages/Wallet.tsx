@@ -156,7 +156,8 @@ export default function Wallet() {
     const res = await fetch('/api/auth/my-payments', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
       },
       body: JSON.stringify({
         amount: amount,
@@ -191,221 +192,32 @@ export default function Wallet() {
       return;
     }
 
-    if (hash) {
-      const isAlreadyUsed = transactions.some(
-        txn => txn.id.toLowerCase() === hash.toLowerCase()
-      );
-      if (isAlreadyUsed) {
-        alert("This Transaction ID (TXID) has already been verified and credited. Reuse or double-spending is blocked!");
-        return;
-      }
-    }
-
     setLoading(true);
     setVerifyStatus("verifying");
-    setVerifyProgress(10);
-    setVerifyLog("Initializing secure node connection...");
+    setVerifyProgress(20);
+    setVerifyLog("Connecting to server-side transaction verifier...");
 
     let label = "Binance Pay";
     if (gateway === "usdt_trc20") label = "USDT TRC20";
     else if (gateway === "usdt_bep20") label = "USDT BEP20";
     else if (gateway === "usdc_bep20") label = "USDC BEP20";
 
-    const txnId = (gateway === "usdt_trc20" || gateway === "usdt_bep20" || gateway === "usdc_bep20") && hash
-      ? hash
-      : `TXN-${Math.floor(100000 + Math.random() * 900000)}`;
-
-    setSuccessTxnId(txnId);
-
-    const isRealEVMHash = (gateway === "usdt_bep20" || gateway === "usdc_bep20") && /^0x([A-Fa-f0-9]{64})$/.test(hash);
-    const isRealTRCHash = gateway === "usdt_trc20" && /^[a-fA-F0-9]{64}$/.test(hash) && !/^0x/.test(hash);
-
-    setTimeout(async () => {
-      if (isRealTRCHash) {
-        setVerifyProgress(35);
-        setVerifyLog("Connecting to TronScan explorer nodes...");
-        
-        setTimeout(async () => {
-          setVerifyProgress(65);
-          setVerifyLog("Verifying TRC20 confirmations, contract SUCCESS status, amount, and wallet address...");
-          
-          try {
-            await savePaymentToBackend(txnId, amt, label);
-            setVerifyProgress(100);
-            setVerifyLog("TRON TRC20 payment verified successfully! Balance credited.");
-            setSuccessAmount(amt);
-            await fetchWalletLogs();
-            setLoading(false);
-            setVerifyStatus("success");
-          } catch (err: any) {
-            setLoading(false);
-            setVerifyStatus("idle");
-            alert(err.message || "Failed to verify TRON transaction on the network.");
-          }
-        }, 800);
-        
-      } else if (isRealEVMHash) {
-        setVerifyProgress(35);
-        setVerifyLog("Searching BSC Explorer nodes for matching TXID hash...");
-
-        const rpcUrls = [
-          "https://bsc-rpc.publicnode.com",
-          "https://binance.llamarpc.com",
-          "https://bsc-dataseed.binance.org"
-        ];
-
-        let blockchainVerified = false;
-        let verifiedAmount = amt;
-        let errorMessage = "";
-
-        for (const url of rpcUrls) {
-          try {
-            const response = await fetch(url, {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                jsonrpc: "2.0",
-                method: "eth_getTransactionReceipt",
-                params: [hash],
-                id: 1
-              })
-            });
-
-            if (!response.ok) continue;
-            const resData = await response.json();
-            if (resData && resData.result) {
-              const receipt = resData.result;
-              
-              if (receipt.status !== "0x1") {
-                errorMessage = "Transaction failed on the blockchain (reverted receipt status).";
-                break;
-              }
-
-              let confirmations = 0;
-              try {
-                const blockNumRes = await fetch(url, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    jsonrpc: "2.0",
-                    method: "eth_blockNumber",
-                    params: [],
-                    id: 2
-                  })
-                });
-
-                if (blockNumRes.ok) {
-                  const blockNumData = await blockNumRes.json();
-                  if (blockNumData && blockNumData.result) {
-                    const currentBlock = parseInt(blockNumData.result, 16);
-                    const txBlock = parseInt(receipt.blockNumber, 16);
-                    confirmations = currentBlock - txBlock;
-                  }
-                }
-              } catch (e) {
-                console.error("Failed to fetch confirmations:", e);
-              }
-
-              if (confirmations < 3) {
-                errorMessage = `Transaction found but only has ${confirmations} block confirmations. SmartCampaign requires at least 3 block confirmations to secure deposits against double-spending and block reorganization.`;
-                break;
-              }
-
-              const contractAddress = gateway === "usdt_bep20"
-                ? "0x55d398326f99059ff775485246999027b3197955"
-                : "0x8ac76a51cc950d9822d68b83fe1ad97b32cd580d";
-              const transferTopic = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
-              
-              const merchantAddressRaw = gateway === "usdt_bep20"
-                ? (appConfig?.payment_gateway_bep20 || "0x9399f9bc69f92e025a99d2a794e4db0c42b56751")
-                : (appConfig?.payment_gateway_usdc_bep20 || "0x9399f9bc69f92e025a99d2a794e4db0c42b56751");
-              const cleanAddr = merchantAddressRaw.toLowerCase().replace("0x", "");
-              const merchantTopic = `0x${cleanAddr.padStart(64, "0")}`;
-
-              let transferLog = null;
-              if (receipt.logs && receipt.logs.length > 0) {
-                for (const log of receipt.logs) {
-                  if (
-                    log.address.toLowerCase() === contractAddress.toLowerCase() &&
-                    log.topics &&
-                    log.topics[0] === transferTopic &&
-                    log.topics[2] &&
-                    log.topics[2].toLowerCase() === merchantTopic.toLowerCase()
-                  ) {
-                    transferLog = log;
-                    break;
-                  }
-                }
-              }
-
-              if (transferLog) {
-                const rawVal = BigInt(transferLog.data);
-                verifiedAmount = Number(rawVal) / 1e18; // Both have 18 decimals on BSC mainnet
-                blockchainVerified = true;
-                break;
-              } else {
-                errorMessage = `Transaction verified, but it is not a ${gateway === "usdt_bep20" ? "USDT" : "USDC"} BEP20 transfer to your wallet (${merchantAddressRaw}).`;
-                break;
-              }
-            }
-          } catch (err) {
-            console.warn(`Node ${url} unreachable:`, err);
-          }
-        }
-
-        if (!blockchainVerified) {
-          setLoading(false);
-          setVerifyStatus("idle");
-          alert(errorMessage || "Transaction not found on BSC network explorer. Check your transaction hash (TXID).");
-          return;
-        }
-
-        setSuccessAmount(verifiedAmount);
-        
-        setTimeout(() => {
-          setVerifyProgress(70);
-          setVerifyLog(`Blockchain receipt found! Verified transfer of ${verifiedAmount.toFixed(2)} ${gateway === "usdt_bep20" ? "USDT" : "USDC"}...`);
-          
-          setTimeout(async () => {
-            try {
-              await savePaymentToBackend(txnId, verifiedAmount, gateway === "usdt_bep20" ? "USDT BEP20" : "USDC BEP20");
-              setVerifyProgress(100);
-              setVerifyLog("Realtime payment verified! SaaS balance credited.");
-              await fetchWalletLogs();
-              setLoading(false);
-              setVerifyStatus("success");
-            } catch (err: any) {
-              setLoading(false);
-              setVerifyStatus("idle");
-              alert(err.message || "Failed to sync transaction with backend.");
-            }
-          }, 800);
-        }, 800);
-
-      } else {
-        setSuccessAmount(amt);
-        
-        setTimeout(() => {
-          setVerifyProgress(70);
-          setVerifyLog(gateway === "binance" ? "Validating instant API webhook confirmation..." : "Verifying block transaction payload confirmations (6/12 block depth)...");
-          
-          setTimeout(async () => {
-            try {
-              await savePaymentToBackend(txnId, amt, label);
-              setVerifyProgress(100);
-              setVerifyLog("Payment verified successfully! Balance credited.");
-              await fetchWalletLogs();
-              setLoading(false);
-              setVerifyStatus("success");
-            } catch (err: any) {
-              setLoading(false);
-              setVerifyStatus("idle");
-              alert(err.message || "Failed to verify payment on backend.");
-            }
-          }, 800);
-        }, 800);
-      }
-    }, 800);
+    try {
+      setVerifyProgress(50);
+      setVerifyLog("Verifying transaction hash on the blockchain network via backend RPC nodes...");
+      const result = await savePaymentToBackend(hash, amt, label);
+      setVerifyProgress(100);
+      setVerifyLog("Payment verified successfully! Balance credited.");
+      setSuccessTxnId(result.payment?.id || hash);
+      setSuccessAmount(amt);
+      await fetchWalletLogs();
+      setLoading(false);
+      setVerifyStatus("success");
+    } catch (err: any) {
+      setLoading(false);
+      setVerifyStatus("idle");
+      alert(err.message || "Failed to verify transaction on the network.");
+    }
   };
 
   return (

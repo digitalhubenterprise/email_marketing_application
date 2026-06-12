@@ -4,7 +4,7 @@ import logging
 import secrets
 import string
 from typing import Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 logger = logging.getLogger("app.api.dhru")
 from fastapi import APIRouter, Depends, Request, HTTPException, Response
@@ -565,7 +565,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             reference_id = str(new_payment.id)
 
             # Calculate expire date (30 days from now)
-            expire_date = (datetime.utcnow() + timedelta(days=30)).strftime("%Y-%m-%d")
+            expire_date = (datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(days=30)).strftime("%Y-%m-%d")
 
             success_msg = f"({plan.name} Plan ({plan.quota} Emails/mo)) Subscription activated successfully | Expair Date: {expire_date} | Remaing Days: 30"
 
@@ -604,7 +604,7 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 plan = plan_res.scalars().first()
 
                 expire_date = (payment.created_at + timedelta(days=30)).strftime("%Y-%m-%d")
-                elapsed_days = (datetime.utcnow() - payment.created_at).days
+                elapsed_days = (datetime.now(timezone.utc).replace(tzinfo=None) - payment.created_at).days
                 remaining_days = max(0, 30 - elapsed_days)
 
                 if plan:

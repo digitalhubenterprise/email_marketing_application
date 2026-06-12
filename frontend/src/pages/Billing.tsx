@@ -227,12 +227,6 @@ export default function Billing() {
 
       if (method === "wallet") {
         setProcessingLog("Deducting SaaS credits from wallet balance...");
-        if (walletBalance < price) {
-          alert("Insufficient balance!");
-          setCheckoutStatus("idle");
-          setLoading(false);
-          return;
-        }
       } else {
         setProcessingLog("Authorizing card payment with Stripe simulator...");
       }
@@ -244,7 +238,8 @@ export default function Billing() {
       const res = await fetch("/api/auth/upgrade", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
         },
         body: JSON.stringify({ tier, payment_method: method, billing_cycle: billingCycle })
       });
@@ -256,7 +251,11 @@ export default function Billing() {
 
       // Dynamic reload of payment log transactions to sync real-time wallet credits
       try {
-        const paymentsRes = await fetch('/api/auth/my-payments');
+        const paymentsRes = await fetch('/api/auth/my-payments', {
+          headers: {
+            "Authorization": `Bearer ${token}`
+          }
+        });
         if (paymentsRes.ok) {
           const data = await paymentsRes.json();
           const paidSum = data

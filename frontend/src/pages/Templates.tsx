@@ -230,7 +230,7 @@ export default function Templates() {
     setSubject(p.sub);
     setBlocks(p.blocks.map((b: any) => ({
       ...b,
-      id: Math.random().toString(36).substr(2, 9),
+      id: Math.random().toString(36).slice(2, 11),
       col1Content: b.col1Content || "",
       col2Content: b.col2Content || "",
       col3Content: b.col3Content || ""
@@ -333,7 +333,7 @@ export default function Templates() {
   };
 
   const addBlock = (type: ContentBlock["type"]) => {
-    const newId = Math.random().toString(36).substr(2, 9);
+    const newId = Math.random().toString(36).slice(2, 11);
     let newBlock: ContentBlock = { id: newId, type, content: "New block content", textAlign: "left" };
 
     if (type === "button") {
@@ -370,7 +370,7 @@ export default function Templates() {
   };
 
   const cloneBlock = (b: ContentBlock) => {
-    const newId = Math.random().toString(36).substr(2, 9);
+    const newId = Math.random().toString(36).slice(2, 11);
     const cloned = { ...b, id: newId };
     setBlocks([...blocks, cloned]);
     setSelectedBlockId(newId);
@@ -998,6 +998,7 @@ export default function Templates() {
                   title="Block Canvas Bezel Render"
                   srcDoc={builderMode === "visual" ? compileBlocksToHtml().replace("{{name}}", "John Doe").replace("{{email}}", "john@domain.com") : contentHtml}
                   className="w-full h-full border-0"
+                  sandbox=""
                 />
               </div>
             </div>
@@ -1035,6 +1036,7 @@ export default function Templates() {
               title="Saved Design Bezel Preview"
               srcDoc={previewTemplate?.content_html?.replace("{{name}}", "John Doe").replace("{{email}}", "john@domain.com") || ""}
               className="w-full h-full border-0"
+              sandbox=""
             />
           </div>
         </div>

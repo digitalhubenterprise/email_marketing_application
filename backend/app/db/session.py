@@ -185,6 +185,9 @@ async def create_db_tables() -> None:
             await conn.execute(
                 text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS payment_gateway_merchant_enabled BOOLEAN DEFAULT true")
             )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS extra_settings JSON")
+            )
     except Exception as e:
         print(f"DB migration warning 4 (non-fatal): {e}")
 
@@ -255,6 +258,9 @@ async def create_db_tables() -> None:
             await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS vonage_sender_id VARCHAR"))
             await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS custom_api_key VARCHAR"))
             await conn.execute(text("ALTER TABLE sms_marketing_configs ADD COLUMN IF NOT EXISTS custom_sender_id VARCHAR"))
+            
+            # remote_backup_configs upgrades
+            await conn.execute(text("ALTER TABLE remote_backup_configs ADD COLUMN IF NOT EXISTS retention_count INTEGER DEFAULT 5"))
     except Exception as e:
         print(f"DB feature upgrades migration warning (non-fatal): {e}")
 
@@ -295,6 +301,23 @@ async def create_db_tables() -> None:
                 )
     except Exception as e:
         print(f"DB config seeding warning (non-fatal): {e}")
+
+    # Auto-insert default remote backup configuration (id=1) if not exists
+    try:
+        async with engine.begin() as conn:
+            from sqlalchemy import text
+            backup_config_check = await conn.execute(
+                text("SELECT id FROM remote_backup_configs WHERE id = 1")
+            )
+            if not backup_config_check.first():
+                await conn.execute(
+                    text(
+                        "INSERT INTO remote_backup_configs (id, provider, schedule_days, is_active) "
+                        "VALUES (1, 'ftp', 1, false)"
+                    )
+                )
+    except Exception as e:
+        print(f"DB remote backup config seeding warning (non-fatal): {e}")
 
     # Auto-seed the initial Master Admin account if not exists
     try:

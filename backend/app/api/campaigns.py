@@ -162,6 +162,12 @@ async def create_campaign(
     is_auto = (campaign_in.sending_mode or "auto").lower() == "auto"
 
     if is_auto:
+        # Quota guard — prevent users from exceeding their monthly limit
+        if current_user.quota_sent + total_recipients > current_user.quota_limit:
+            raise HTTPException(
+                status_code=status.HTTP_402_PAYMENT_REQUIRED,
+                detail=f"Campaign requires {total_recipients:,} email sends, but you only have {max(0, current_user.quota_limit - current_user.quota_sent):,} remaining in your monthly quota. Upgrade your plan to send more.",
+            )
         # Check if scheduled in the future
         if scheduled_at_naive and scheduled_at_naive > datetime.utcnow():
             status_to_set = "scheduled"

@@ -19,7 +19,9 @@ from app.db.models import (
     ContactList,
     EmailTemplate,
     SubscriptionPlan,
-    DhruApiLog
+    DhruApiLog,
+    RemoteBackupConfig,
+    RemoteBackupLog
 )
 from app.schemas.user import Token
 from app.schemas.admin import (
@@ -36,7 +38,10 @@ from app.schemas.admin import (
     SubscriptionPlanUpdate,
     SubscriptionPlanResponse,
     UserProfileUpdate,
-    DhruApiLogResponse
+    DhruApiLogResponse,
+    RemoteBackupConfigResponse,
+    RemoteBackupConfigUpdate,
+    RemoteBackupLogResponse
 )
 from app.core.config import settings
 from app.core.security import get_password_hash, verify_password, create_access_token, encrypt_smtp_password
@@ -1042,10 +1047,32 @@ async def get_system_settings(
         if config.payment_gateway_merchant_enabled is None:
             config.payment_gateway_merchant_enabled = True
             needs_commit = True
+        if config.extra_settings is None:
+            config.extra_settings = {}
+            needs_commit = True
         if needs_commit:
             await db.commit()
             await db.refresh(config)
-    return config
+
+    # Mask secrets on validation
+    res_obj = SystemConfigResponse.model_validate(config)
+    if res_obj.telegram_bot_token:
+        res_obj.telegram_bot_token = "••••••••"
+    if res_obj.api_listener_access_key:
+        res_obj.api_listener_access_key = "••••••••"
+        
+    if res_obj.extra_settings:
+        extra = dict(res_obj.extra_settings)
+        if "other" in extra and isinstance(extra["other"], dict):
+            other = dict(extra["other"])
+            secret_keys = ["twitterConsumerSecret", "twitterAccessToken", "twitterTokenSecret", "googleMapApiKey", "googleGcmKey"]
+            for key in secret_keys:
+                if other.get(key):
+                    other[key] = "••••••••"
+            extra["other"] = other
+        res_obj.extra_settings = extra
+
+    return res_obj
 
 
 @router.put("/settings", response_model=SystemConfigResponse)
@@ -1059,6 +1086,36 @@ async def update_system_settings(
     config = res.scalars().first()
 
     update_data = config_in.model_dump(exclude_unset=True)
+
+    if "telegram_bot_token" in update_data:
+        if update_data["telegram_bot_token"] == "••••••••":
+            update_data.pop("telegram_bot_token")
+
+    if "api_listener_access_key" in update_data:
+        if update_data["api_listener_access_key"] == "••••••••":
+            update_data.pop("api_listener_access_key")
+
+    if "extra_settings" in update_data and update_data["extra_settings"]:
+        new_extra = dict(update_data["extra_settings"])
+        old_extra = config.extra_settings or {}
+        # Merge other secrets if they are masked
+        if "other" in new_extra and isinstance(new_extra["other"], dict):
+            new_other = dict(new_extra["other"])
+            old_other = old_extra.get("other") or {}
+            secret_keys = ["twitterConsumerSecret", "twitterAccessToken", "twitterTokenSecret", "googleMapApiKey", "googleGcmKey"]
+            for key in secret_keys:
+                if new_other.get(key) == "••••••••":
+                    if old_other.get(key):
+                        new_other[key] = old_other[key]
+                    else:
+                        new_other[key] = ""
+            new_extra["other"] = new_other
+        
+        # Merge other tabs in extra_settings so we don't overwrite the whole dict
+        merged_extra = dict(old_extra)
+        for k, v in new_extra.items():
+            merged_extra[k] = v
+        update_data["extra_settings"] = merged_extra
 
     # Intercept plaintext SMTP password — encrypt before storing
     if "system_smtp_password" in update_data:
@@ -1078,7 +1135,26 @@ async def update_system_settings(
     )
     await db.commit()  # commit transaction
     await db.refresh(config)
-    return config
+
+    # Return masked
+    res_obj = SystemConfigResponse.model_validate(config)
+    if res_obj.telegram_bot_token:
+        res_obj.telegram_bot_token = "••••••••"
+    if res_obj.api_listener_access_key:
+        res_obj.api_listener_access_key = "••••••••"
+        
+    if res_obj.extra_settings:
+        extra = dict(res_obj.extra_settings)
+        if "other" in extra and isinstance(extra["other"], dict):
+            other = dict(extra["other"])
+            secret_keys = ["twitterConsumerSecret", "twitterAccessToken", "twitterTokenSecret", "googleMapApiKey", "googleGcmKey"]
+            for key in secret_keys:
+                if other.get(key):
+                    other[key] = "••••••••"
+            extra["other"] = other
+        res_obj.extra_settings = extra
+
+    return res_obj
 
 
 @router.get("/settings/dhru-logs", response_model=List[DhruApiLogResponse])
@@ -1116,6 +1192,360 @@ async def toggle_maintenance_mode(
     await db.commit()  # commit transaction
 
     return {"message": f"Global maintenance mode has been {state}."}
+
+
+# ─── Remote Backup & Restore Endpoints ──────────────────────────────
+
+@router.get("/backups/config", response_model=RemoteBackupConfigResponse)
+async def get_backup_config(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Retrieves remote backup configs (S3/FTP details). Masks credentials for security."""
+    res = await db.execute(select(RemoteBackupConfig).where(RemoteBackupConfig.id == 1))
+    config = res.scalars().first()
+    if not config:
+        raise HTTPException(status_code=404, detail="Backup configuration not found.")
+    return config
+
+@router.put("/backups/config", response_model=RemoteBackupConfigResponse)
+async def update_backup_config(
+    payload: RemoteBackupConfigUpdate,
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Updates S3 or FTP backup configurations. Encrypts sensitive credentials."""
+    from datetime import timedelta
+    res = await db.execute(select(RemoteBackupConfig).where(RemoteBackupConfig.id == 1))
+    config = res.scalars().first()
+    if not config:
+        raise HTTPException(status_code=404, detail="Backup configuration not found.")
+
+    update_data = payload.model_dump(exclude_unset=True)
+
+    # Encrypt S3 secret key if updated
+    if "s3_secret_key" in update_data:
+        raw_key = update_data.pop("s3_secret_key")
+        if raw_key:
+            config.s3_secret_key = encrypt_smtp_password(raw_key)
+
+    # Encrypt FTP password if updated
+    if "ftp_password" in update_data:
+        raw_pw = update_data.pop("ftp_password")
+        if raw_pw:
+            config.ftp_password = encrypt_smtp_password(raw_pw)
+
+    for field, val in update_data.items():
+        setattr(config, field, val)
+
+    # Update scheduler next run if settings changed and active
+    if config.is_active:
+        now = datetime.now(timezone.utc).replace(tzinfo=None)
+        if config.next_run is None or config.next_run <= now:
+            config.next_run = now + timedelta(days=config.schedule_days)
+    else:
+        config.next_run = None
+
+    await log_audit(
+        db,
+        admin_email=admin.email,
+        action_type="update_backup_settings",
+        target_entity="remote_backup_configs",
+        details=f"Remote backup configuration updated. Provider set to: {config.provider.upper()}."
+    )
+    await db.commit()
+    await db.refresh(config)
+    return config
+
+@router.get("/backups/logs", response_model=List[RemoteBackupLogResponse])
+async def get_backup_logs(
+    page: int = Query(1, ge=1),
+    limit: int = Query(20, ge=1, le=100),
+    log_type: str = Query("backup"),
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Retrieves paginated backup runs logs filtered by type."""
+    offset = (page - 1) * limit
+    q = select(RemoteBackupLog).order_by(RemoteBackupLog.created_at.desc())
+    if log_type == "backup":
+        q = q.where(~RemoteBackupLog.filename.like("[RESTORE]%"))
+    elif log_type == "restore":
+        q = q.where(RemoteBackupLog.filename.like("[RESTORE]%"))
+        
+    res = await db.execute(q.offset(offset).limit(limit))
+    return res.scalars().all()
+
+@router.get("/backups/files")
+async def get_backup_files(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Queries S3 bucket or FTP directory, listing backups matching our prefix."""
+    import ftplib
+    import boto3
+    import re
+    import os
+    from botocore.client import Config as BotoConfig
+    from app.core.security import decrypt_smtp_password
+    
+    res = await db.execute(select(RemoteBackupConfig).where(RemoteBackupConfig.id == 1))
+    config = res.scalars().first()
+    if not config:
+        raise HTTPException(status_code=404, detail="Backup configuration not found.")
+
+    files = []
+    
+    try:
+        if config.provider == "ftp":
+            if not config.ftp_host:
+                return []
+            
+            ftp_pass = decrypt_smtp_password(config.ftp_password) if config.ftp_password else ""
+            ftp_class = ftplib.FTP_TLS if config.ftp_secure else ftplib.FTP
+            
+            ftp = ftp_class()
+            ftp.connect(config.ftp_host, config.ftp_port or 21, timeout=15)
+            if config.ftp_secure:
+                ftp.auth()
+            ftp.login(config.ftp_username, ftp_pass)
+            if config.ftp_secure:
+                ftp.prot_p()
+                
+            target_path = (config.ftp_path or "/").strip()
+            if target_path and target_path != "/":
+                try:
+                    ftp.cwd(target_path)
+                except Exception:
+                    ftp.quit()
+                    return []
+            
+            try:
+                # mlsd is a structured way to list files with sizes and modification times
+                for name, info in ftp.mlsd():
+                    basename = os.path.basename(name)
+                    if basename.startswith("smartcampaign_backup_") and basename.endswith(".zip"):
+                        size = int(info.get("size", 0))
+                        modify_str = info.get("modify", "")
+                        modify_dt = None
+                        if modify_str:
+                            try:
+                                modify_dt = datetime.strptime(modify_str[:14], "%Y%m%d%H%M%S")
+                            except Exception:
+                                pass
+                        
+                        files.append({
+                            "filename": basename,
+                            "size_bytes": size,
+                            "created_at": modify_dt.isoformat() if modify_dt else None
+                        })
+            except Exception:
+                # Fallback to simple file names listing if mlsd fails
+                nlst_files = ftp.nlst()
+                for name in nlst_files:
+                    basename = os.path.basename(name)
+                    if basename.startswith("smartcampaign_backup_") and basename.endswith(".zip"):
+                        files.append({
+                            "filename": basename,
+                            "size_bytes": 0,
+                            "created_at": None
+                        })
+            ftp.quit()
+        else:
+            if not config.s3_endpoint or not config.s3_bucket:
+                return []
+                
+            s3_secret = decrypt_smtp_password(config.s3_secret_key) if config.s3_secret_key else ""
+            s3 = boto3.client(
+                "s3",
+                endpoint_url=config.s3_endpoint,
+                aws_access_key_id=config.s3_access_key,
+                aws_secret_access_key=s3_secret,
+                region_name=config.s3_region or None,
+                config=BotoConfig(signature_version="s3v4")
+            )
+            folder = (config.s3_folder or "backups").strip().strip("/")
+            prefix = f"{folder}/smartcampaign_backup_" if folder else "smartcampaign_backup_"
+            
+            objects = s3.list_objects_v2(Bucket=config.s3_bucket, Prefix=prefix)
+            if "Contents" in objects:
+                for obj in objects["Contents"]:
+                    name = obj["Key"]
+                    clean_name = name.split("/")[-1] if "/" in name else name
+                    files.append({
+                        "filename": clean_name,
+                        "size_bytes": obj["Size"],
+                        "created_at": obj["LastModified"].isoformat()
+                    })
+    except Exception as e:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Failed to fetch files from remote backup host: {str(e)}"
+        )
+
+    # Sort reverse-chronologically by timestamp in filename (newest first)
+    def get_timestamp(x):
+        match = re.search(r"(\d{8}_\d{6})", x["filename"])
+        return match.group(1) if match else ""
+    files.sort(key=get_timestamp, reverse=True)
+    return files
+
+@router.post("/backups/trigger")
+async def trigger_backup(
+    full_site: bool = Query(False),
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Queues a manual Celery background backup task immediately."""
+    from app.tasks.backup_tasks import run_remote_backup_task
+    run_remote_backup_task.delay(full_site=full_site)
+    
+    backup_label = "Full Website" if full_site else "Database"
+    await log_audit(
+        db,
+        admin_email=admin.email,
+        action_type="trigger_backup",
+        target_entity="system_configs",
+        details=f"Manual remote {backup_label} backup task triggered by administrator."
+    )
+    await db.commit()
+    return {"message": f"{backup_label} backup task successfully queued. Running in background."}
+
+@router.post("/backups/restore")
+async def trigger_restore(
+    filename: str = Query(..., min_length=10),
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Queues a database snapshot restore task. WARNING: Restoring drops current data."""
+    import redis
+    from app.core.config import settings
+    from app.tasks.backup_tasks import run_remote_restore_task
+    
+    import re
+    if not re.match(r"^smartcampaign_backup_(?:full_)?\d{8}_\d{6}\.zip$", filename):
+        raise HTTPException(status_code=400, detail="Invalid backup file format or path traversal detected.")
+
+
+    # Mark active restore immediately in Redis to prevent web/worker race condition
+    try:
+        r = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        r.set("active_restore_filename", filename)
+    except Exception:
+        pass
+
+    run_remote_restore_task.delay(filename)
+    
+    await log_audit(
+        db,
+        admin_email=admin.email,
+        action_type="trigger_restore",
+        target_entity=filename,
+        details=f"Manual database restore task triggered from backup: {filename}."
+    )
+    await db.commit()
+    return {"message": "System restoration task successfully queued. Dashboard is locked in maintenance mode during execution."}
+
+def verify_admin_token_only(request: Request) -> int:
+    """Verifies JWT signature and claims only, avoiding database lookups for DB schema migration safety."""
+    import jwt
+    from fastapi import HTTPException, status
+    from app.core.config import settings
+    
+    # Try Cookie first (server-managed secure cookie takes priority)
+    token = request.cookies.get("admin_token")
+    
+    # Try Header fallback
+    auth_header = request.headers.get("Authorization")
+    if not token and auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.replace("Bearer ", "", 1)
+        if token in ("null", "undefined", ""):
+            token = None
+        
+    print(f"[DEBUG AUTH] auth_header={auth_header}, parsed_token={token[:15] if token else None}, cookies={list(request.cookies.keys())}")
+        
+    if not token:
+        print("[DEBUG AUTH] Token not found in header or cookies.")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin credentials not provided."
+        )
+        
+    try:
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET,
+            algorithms=["HS256"],
+            options={"require": ["exp", "sub", "iat"]}
+        )
+        admin_id_str: str = payload.get("sub")
+        role: str = payload.get("role")
+        print(f"[DEBUG AUTH] Decoded payload: {payload}")
+        if admin_id_str is None or role != "admin":
+            print(f"[DEBUG AUTH] Invalid role/sub in payload: sub={admin_id_str}, role={role}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid admin credentials payload."
+            )
+        return int(admin_id_str)
+    except jwt.ExpiredSignatureError as e:
+        print(f"[DEBUG AUTH] Expired token signature: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Admin session has expired."
+        )
+    except Exception as e:
+        print(f"[DEBUG AUTH] Token decode exception: {type(e).__name__} - {e}")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials."
+        )
+
+@router.get("/backups/restore/status")
+async def get_restore_status(
+    filename: str = Query(...),
+    admin_id: int = Depends(verify_admin_token_only)
+):
+    """Retrieves the live progress logs of a running restore task from Redis."""
+    import re
+    import redis
+    import json
+    from app.core.config import settings
+    
+    if not re.match(r"^smartcampaign_backup_(?:full_)?\d{8}_\d{6}\.zip$", filename):
+        raise HTTPException(status_code=400, detail="Invalid backup filename.")
+
+    
+    try:
+        r = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        key = f"restore_status:{filename}"
+        data = r.get(key)
+        if not data:
+            return {"status": "idle", "logs": []}
+        return json.loads(data)
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to query Redis restore status: {str(e)}"
+        )
+
+@router.get("/backups/restore/active")
+async def get_active_restore(
+    admin_id: int = Depends(verify_admin_token_only)
+):
+    """Checks if there is a running restore task in the background and returns the filename."""
+    import redis
+    from app.core.config import settings
+    
+    try:
+        r = redis.from_url(settings.REDIS_URL, decode_responses=True)
+        filename = r.get("active_restore_filename")
+        return {"active": bool(filename), "filename": filename}
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Failed to query active restore: {str(e)}"
+        )
 
 
 # ─── Queue Monitor & Emergency Campaign Killer ─────────────────────────
@@ -1364,8 +1794,9 @@ async def test_system_smtp(
     else:
         logs.append("No saved SMTP password detected.")
 
-    use_tls = config.system_smtp_security.upper() == "SSL"
-    start_tls = config.system_smtp_security.upper() == "TLS"
+    smtp_sec = (config.system_smtp_security or "NONE").upper()
+    use_tls = smtp_sec == "SSL"
+    start_tls = smtp_sec == "TLS"
 
     smtp_client = aiosmtplib.SMTP(
         hostname=config.system_smtp_host,

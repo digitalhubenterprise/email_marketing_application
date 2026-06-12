@@ -65,6 +65,7 @@ interface SystemConfig {
   payment_gateway_bep20_enabled?: boolean | null;
   payment_gateway_usdc_bep20_enabled?: boolean | null;
   payment_gateway_merchant_enabled?: boolean | null;
+  extra_settings?: any;
 }
 
 type TabType =
@@ -440,6 +441,121 @@ export default function AdminSettings() {
         setPaymentGatewayBep20Enabled(data.payment_gateway_bep20_enabled ?? true);
         setPaymentGatewayUsdcBep20Enabled(data.payment_gateway_usdc_bep20_enabled ?? true);
         setPaymentGatewayMerchantEnabled(data.payment_gateway_merchant_enabled ?? true);
+
+        // Load extra settings from database
+        if (data.extra_settings && Object.keys(data.extra_settings).length > 0) {
+          const extra = data.extra_settings;
+          
+          const cartData = extra.shopping_cart;
+          if (cartData) {
+            if (cartData.cartExpiry !== undefined) setCartExpiry(cartData.cartExpiry);
+            if (cartData.guestCheckout !== undefined) setGuestCheckout(cartData.guestCheckout);
+            if (cartData.enableCoupons !== undefined) setEnableCoupons(cartData.enableCoupons);
+            if (cartData.currency !== undefined) setCurrency(cartData.currency);
+            if (cartData.minFreeShipping !== undefined) setMinFreeShipping(cartData.minFreeShipping);
+          }
+          const locData = extra.localizations;
+          if (locData) {
+            if (locData.timezone !== undefined) setTimezone(locData.timezone);
+            if (locData.dateFormat !== undefined) setDateFormat(locData.dateFormat);
+            if (locData.timeFormat !== undefined) setTimeFormat(locData.timeFormat);
+            if (locData.language !== undefined) setLanguage(locData.language);
+            if (locData.decimalSeparator !== undefined) setDecimalSeparator(locData.decimalSeparator);
+          }
+          const taxData = extra.tax;
+          if (taxData) {
+            if (taxData.taxEnabled !== undefined) setTaxEnabled(taxData.taxEnabled);
+            if (taxData.taxRate !== undefined) setTaxRate(taxData.taxRate);
+            if (taxData.taxName !== undefined) setTaxName(taxData.taxName);
+            if (taxData.taxId !== undefined) setTaxId(taxData.taxId);
+            if (taxData.taxInclusive !== undefined) setTaxInclusive(taxData.taxInclusive);
+          }
+          const invData = extra.invoice;
+          if (invData) {
+            if (invData.invoicePrefix !== undefined) setInvoicePrefix(invData.invoicePrefix);
+            if (invData.invoiceSerial !== undefined) setInvoiceSerial(invData.invoiceSerial);
+            if (invData.billingTerms !== undefined) setBillingTerms(invData.billingTerms);
+            if (invData.invoiceLayout !== undefined) setInvoiceLayout(invData.invoiceLayout);
+            if (invData.billingAddress !== undefined) setBillingAddress(invData.billingAddress);
+          }
+          const contactData = extra.contact;
+          if (contactData) {
+            if (contactData.contactEmail !== undefined) setContactEmail(contactData.contactEmail);
+            if (contactData.contactPhone !== undefined) setContactPhone(contactData.contactPhone);
+            if (contactData.contactAddress !== undefined) setContactAddress(contactData.contactAddress);
+            if (contactData.contactMap !== undefined) setContactMap(contactData.contactMap);
+            if (contactData.enableContactForm !== undefined) setEnableContactForm(contactData.enableContactForm);
+          }
+          const ordersData = extra.orders;
+          if (ordersData) {
+            if (ordersData.defaultOrderStatus !== undefined) setDefaultOrderStatus(ordersData.defaultOrderStatus);
+            if (ordersData.sendOrderConfirmEmail !== undefined) setSendOrderConfirmEmail(ordersData.sendOrderConfirmEmail);
+            if (ordersData.autoFulfillDigital !== undefined) setAutoFulfillDigital(ordersData.autoFulfillDigital);
+            if (ordersData.returnWindowDays !== undefined) setReturnWindowDays(ordersData.returnWindowDays);
+          }
+          const fraudData = extra.fraud;
+          if (fraudData) {
+            if (fraudData.maxTxPerIpDay !== undefined) setMaxTxPerIpDay(fraudData.maxTxPerIpDay);
+            if (fraudData.blockBlacklistedIps !== undefined) setBlockBlacklistedIps(fraudData.blockBlacklistedIps);
+            if (fraudData.ipBlacklist !== undefined) setIpBlacklist(fraudData.ipBlacklist);
+            if (fraudData.blockVpnProxy !== undefined) setBlockVpnProxy(fraudData.blockVpnProxy);
+            if (fraudData.enforce3dSecure !== undefined) setEnforce3dSecure(fraudData.enforce3dSecure);
+          }
+          const appData = extra.appearance;
+          if (appData) {
+            if (appData.primaryColor !== undefined) setPrimaryColor(appData.primaryColor);
+            if (appData.fontFamily !== undefined) setFontFamily(appData.fontFamily);
+            if (appData.customCss !== undefined) setCustomCss(appData.customCss);
+            if (appData.appearanceDarkMode !== undefined) setAppearanceDarkMode(appData.appearanceDarkMode);
+          }
+          const otherData = extra.other;
+          if (otherData) {
+            if (otherData.cacheExpirySec !== undefined) setCacheExpirySec(otherData.cacheExpirySec);
+            if (otherData.dataRetentionDays !== undefined) setDataRetentionDays(otherData.dataRetentionDays);
+            if (otherData.logLevel !== undefined) setLogLevel(otherData.logLevel);
+            if (otherData.debugFlag !== undefined) setDebugFlag(otherData.debugFlag);
+            if (otherData.googleAnalyticsCode !== undefined) setGoogleAnalyticsCode(otherData.googleAnalyticsCode);
+            if (otherData.analyticsEcommerce !== undefined) setAnalyticsEcommerce(otherData.analyticsEcommerce);
+            if (otherData.googleGcmKey !== undefined) setGoogleGcmKey(otherData.googleGcmKey);
+            if (otherData.androidAppId !== undefined) setAndroidAppId(otherData.androidAppId);
+            if (otherData.ipLocationUrl !== undefined) setIpLocationUrl(otherData.ipLocationUrl);
+            if (otherData.twitterUsername !== undefined) setTwitterUsername(otherData.twitterUsername);
+            if (otherData.facebookUrl !== undefined) setFacebookUrl(otherData.facebookUrl);
+            if (otherData.linkedinUrl !== undefined) setLinkedinUrl(otherData.linkedinUrl);
+            if (otherData.instagramUrl !== undefined) setInstagramUrl(otherData.instagramUrl);
+            if (otherData.twitterConsumerKey !== undefined) setTwitterConsumerKey(otherData.twitterConsumerKey);
+            if (otherData.twitterConsumerSecret !== undefined) setTwitterConsumerSecret(otherData.twitterConsumerSecret);
+            if (otherData.twitterAccessToken !== undefined) setTwitterAccessToken(otherData.twitterAccessToken);
+            if (otherData.twitterTokenSecret !== undefined) setTwitterTokenSecret(otherData.twitterTokenSecret);
+            if (otherData.googleMapApiKey !== undefined) setGoogleMapApiKey(otherData.googleMapApiKey);
+            if (otherData.otherHtmlCode !== undefined) setOtherHtmlCode(otherData.otherHtmlCode);
+            if (otherData.mobileAppAndroidUrl !== undefined) setMobileAppAndroidUrl(otherData.mobileAppAndroidUrl);
+          }
+          const generalExtra = extra.general_extra;
+          if (generalExtra) {
+            if (generalExtra.companyName !== undefined) setCompanyName(generalExtra.companyName);
+            if (generalExtra.faviconUrl !== undefined) setFaviconUrl(generalExtra.faviconUrl);
+            if (generalExtra.siteLink !== undefined) setSiteLink(generalExtra.siteLink);
+            if (generalExtra.siteSslLink !== undefined) setSiteSslLink(generalExtra.siteSslLink);
+            if (generalExtra.seoFriendlyUrl !== undefined) setSeoFriendlyUrl(generalExtra.seoFriendlyUrl);
+            if (generalExtra.fasterBrowsing !== undefined) setFasterBrowsing(generalExtra.fasterBrowsing);
+            if (generalExtra.rechargeVoucher !== undefined) setRechargeVoucher(generalExtra.rechargeVoucher);
+            if (generalExtra.testimonial !== undefined) setTestimonial(generalExtra.testimonial);
+            if (generalExtra.blog !== undefined) setBlog(generalExtra.blog);
+            if (generalExtra.knowledgeBase !== undefined) setKnowledgeBase(generalExtra.knowledgeBase);
+            if (generalExtra.supportTicket !== undefined) setSupportTicket(generalExtra.supportTicket);
+            if (generalExtra.showServicePrice !== undefined) setShowServicePrice(generalExtra.showServicePrice);
+            if (generalExtra.indexRedirect !== undefined) setIndexRedirect(generalExtra.indexRedirect);
+            if (generalExtra.logoutRedirect !== undefined) setLogoutRedirect(generalExtra.logoutRedirect);
+            if (generalExtra.addFund !== undefined) setAddFund(generalExtra.addFund);
+            if (generalExtra.taxForAddFund !== undefined) setTaxForAddFund(generalExtra.taxForAddFund);
+            if (generalExtra.minAddFund !== undefined) setMinAddFund(generalExtra.minAddFund);
+            if (generalExtra.maxAddFund !== undefined) setMaxAddFund(generalExtra.maxAddFund);
+            if (generalExtra.maxBalance !== undefined) setMaxBalance(generalExtra.maxBalance);
+          }
+        } else {
+          loadLocalSettings();
+        }
       } else {
         setError("Failed to fetch platform configuration settings.");
       }
@@ -453,7 +569,6 @@ export default function AdminSettings() {
 
   useEffect(() => {
     fetchConfig();
-    loadLocalSettings();
   }, []);
 
   const handleTestSmtp = async (e: React.FormEvent) => {
@@ -554,11 +669,35 @@ export default function AdminSettings() {
             system_smtp_security: systemSmtpSecurity,
             system_smtp_from_name: systemSmtpFromName || null,
             system_smtp_from_email: systemSmtpFromEmail || null,
-            system_smtp_enabled: systemSmtpEnabled
+            system_smtp_enabled: systemSmtpEnabled,
+            extra_settings: {
+              ...(config?.extra_settings || {}),
+              general_extra: {
+                companyName,
+                faviconUrl,
+                siteLink,
+                siteSslLink,
+                seoFriendlyUrl,
+                fasterBrowsing,
+                rechargeVoucher,
+                testimonial,
+                blog,
+                knowledgeBase,
+                supportTicket,
+                showServicePrice,
+                indexRedirect,
+                logoutRedirect,
+                addFund,
+                taxForAddFund,
+                minAddFund,
+                maxAddFund,
+                maxBalance
+              }
+            }
           })
         });
         if (res.ok) {
-          // Save general extra to local storage
+          // Save general extra to local storage as fallback
           const extraPayload = {
             companyName,
             faviconUrl,
@@ -656,45 +795,55 @@ export default function AdminSettings() {
           alert("Failed to update payment gateway configurations.");
         }
       } else {
-        // Save to localStorage
+        // Save to localStorage and Database via API
         let key = '';
+        let dbKey = '';
         let payload = {};
 
         switch (activeTab) {
           case 'cart':
             key = 'settings_shopping_cart';
+            dbKey = 'shopping_cart';
             payload = { cartExpiry, guestCheckout, enableCoupons, currency, minFreeShipping };
             break;
           case 'localizations':
             key = 'settings_localizations';
+            dbKey = 'localizations';
             payload = { timezone, dateFormat, timeFormat, language, decimalSeparator };
             break;
           case 'tax':
             key = 'settings_tax';
+            dbKey = 'tax';
             payload = { taxEnabled, taxRate, taxName, taxId, taxInclusive };
             break;
           case 'invoice':
             key = 'settings_invoice';
+            dbKey = 'invoice';
             payload = { invoicePrefix, invoiceSerial, billingTerms, invoiceLayout, billingAddress };
             break;
           case 'contact':
             key = 'settings_contact';
+            dbKey = 'contact';
             payload = { contactEmail, contactPhone, contactAddress, contactMap, enableContactForm };
             break;
           case 'orders':
             key = 'settings_orders';
+            dbKey = 'orders';
             payload = { defaultOrderStatus, sendOrderConfirmEmail, autoFulfillDigital, returnWindowDays };
             break;
           case 'fraud':
             key = 'settings_fraud';
+            dbKey = 'fraud';
             payload = { maxTxPerIpDay, blockBlacklistedIps, ipBlacklist, blockVpnProxy, enforce3dSecure };
             break;
           case 'appearance':
             key = 'settings_appearance';
+            dbKey = 'appearance';
             payload = { primaryColor, fontFamily, customCss, appearanceDarkMode };
             break;
           case 'other':
             key = 'settings_other';
+            dbKey = 'other';
             payload = {
               cacheExpirySec,
               dataRetentionDays,
@@ -720,9 +869,33 @@ export default function AdminSettings() {
             break;
         }
 
-        if (key) {
+        if (key && dbKey) {
+          // Save to LocalStorage first (fallback)
           localStorage.setItem(key, JSON.stringify(payload));
-          setSaveSuccess(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} settings updated in LocalStorage!`);
+          
+          // Sync globally to backend Database via API
+          const updatedExtra = {
+            ...(config?.extra_settings || {}),
+            [dbKey]: payload
+          };
+
+          const res = await fetch('/api/admin/settings', {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              extra_settings: updatedExtra
+            })
+          });
+
+          if (res.ok) {
+            setSaveSuccess(`${activeTab.charAt(0).toUpperCase() + activeTab.slice(1)} settings updated in database via API!`);
+            fetchConfig();
+          } else {
+            alert(`Failed to sync ${activeTab} settings with backend.`);
+          }
         }
       }
       setTimeout(() => setSaveSuccess(null), 3000);

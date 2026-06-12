@@ -18,6 +18,7 @@ from app.schemas.telegram_marketing import (
 )
 from app.api.deps import get_current_user
 from app.tasks.telegram_tasks import execute_telegram_post_job
+from app.core.security import encrypt_smtp_password, decrypt_smtp_password
 
 router = APIRouter()
 
@@ -64,8 +65,8 @@ async def get_telegram_config(
         created_at=config.created_at,
         has_bot_token=bool(config.telegram_bot_token),
         has_groq_key=bool(config.groq_api_key),
-        telegram_bot_token=config.telegram_bot_token,
-        groq_api_key=config.groq_api_key
+        telegram_bot_token="••••••••" if config.telegram_bot_token else None,
+        groq_api_key="••••••••" if config.groq_api_key else None
     )
 
 @router.post("/config", response_model=TelegramMarketingConfigResponse)
@@ -95,9 +96,18 @@ async def update_telegram_config(
         config.next_run = utc_now_naive()
         
     if payload.telegram_bot_token:
-        config.telegram_bot_token = payload.telegram_bot_token.strip()
+        token_val = payload.telegram_bot_token.strip()
+        if token_val != "••••••••":
+            config.telegram_bot_token = encrypt_smtp_password(token_val)
+    else:
+        config.telegram_bot_token = None
+
     if payload.groq_api_key:
-        config.groq_api_key = payload.groq_api_key.strip()
+        key_val = payload.groq_api_key.strip()
+        if key_val != "••••••••":
+            config.groq_api_key = encrypt_smtp_password(key_val)
+    else:
+        config.groq_api_key = None
         
     db.add(config)
     await db.commit()
@@ -115,8 +125,8 @@ async def update_telegram_config(
         created_at=config.created_at,
         has_bot_token=bool(config.telegram_bot_token),
         has_groq_key=bool(config.groq_api_key),
-        telegram_bot_token=config.telegram_bot_token,
-        groq_api_key=config.groq_api_key
+        telegram_bot_token="••••••••" if config.telegram_bot_token else None,
+        groq_api_key="••••••••" if config.groq_api_key else None
     )
 
 # ─── Services API ──────────────────────────────────────────────────────

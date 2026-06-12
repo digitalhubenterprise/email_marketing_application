@@ -3,6 +3,7 @@ from typing import Any, Optional, Union
 import re
 import jwt
 import bcrypt
+from html.parser import HTMLParser
 from cryptography.fernet import Fernet
 from app.core.config import settings
 
@@ -109,6 +110,63 @@ def create_access_token(
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm="HS256")
 
 
+class SafeHTMLParser(HTMLParser):
+    def __init__(self):
+        super().__init__()
+        self.result = []
+        self.dangerous_tags = {"script", "iframe", "object", "embed", "applet", "meta"}
+        self.nesting_level = 0
+
+    def handle_starttag(self, tag, attrs):
+        tag_lower = tag.lower()
+        if tag_lower in self.dangerous_tags:
+            self.nesting_level += 1
+            return
+        if self.nesting_level > 0:
+            return
+            
+        cleaned_attrs = []
+        for name, value in attrs:
+            name_lower = name.lower()
+            if name_lower.startswith("on"):
+                continue
+            if value:
+                val_lower = value.strip().lower()
+                if val_lower.startswith(("javascript:", "data:")):
+                    continue
+            cleaned_attrs.append((name, value))
+            
+        import html
+        attr_str = ""
+        if cleaned_attrs:
+            attr_str = " " + " ".join(f'{k}="{html.escape(v)}"' if v is not None else k for k, v in cleaned_attrs)
+        self.result.append(f"<{tag}{attr_str}>")
+
+    def handle_endtag(self, tag):
+        tag_lower = tag.lower()
+        if tag_lower in self.dangerous_tags:
+            self.nesting_level = max(0, self.nesting_level - 1)
+            return
+        if self.nesting_level > 0:
+            return
+        self.result.append(f"</{tag}>")
+
+    def handle_data(self, data):
+        if self.nesting_level > 0:
+            return
+        self.result.append(data)
+
+    def handle_entityref(self, name):
+        if self.nesting_level > 0:
+            return
+        self.result.append(f"&{name};")
+
+    def handle_charref(self, name):
+        if self.nesting_level > 0:
+            return
+        self.result.append(f"&#{name};")
+
+
 def sanitize_html(html_content: str) -> str:
     """
     Sanitizes raw HTML to block XSS execution vectors.
@@ -116,27 +174,8 @@ def sanitize_html(html_content: str) -> str:
     """
     if not html_content:
         return ""
-    
-    # First, unescape HTML entities to prevent obfuscation bypasses (e.g., &#x6A;...)
-    import html
-    clean_html = html.unescape(html_content)
-
-    # 1. Remove script tags and their content
-    clean_html = re.sub(r'(?is)<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '', clean_html)
-    # 2. Remove iframe tags and their content
-    clean_html = re.sub(r'(?is)<iframe\b[^<]*(?:(?!<\/iframe>)<[^<]*)*<\/iframe>', '', clean_html)
-    # 3. Remove object, embed, applet, meta tags and content
-    clean_html = re.sub(r'(?is)<object\b[^<]*(?:(?!<\/object>)<[^<]*)*<\/object>', '', clean_html)
-    clean_html = re.sub(r'(?is)<embed\b[^>]*>(?:.*?</embed>)?', '', clean_html)
-    clean_html = re.sub(r'(?is)<applet\b[^<]*(?:(?!<\/applet>)<[^<]*)*<\/applet>', '', clean_html)
-    clean_html = re.sub(r'(?is)<meta\b[^>]*>(?:.*?</meta>)?', '', clean_html)
-    
-    # 4. Remove inline event handlers like onload, onerror, onclick, etc.
-    clean_html = re.sub(r'(?is)\bon[a-z]+\s*=\s*(?:"[^"]*"|\'[^\']*\'|[^\s>]+)', '', clean_html)
-    
-    # 5. Remove javascript: and data: links in href/src
-    clean_html = re.sub(r'(?is)\bhref\s*=\s*(?:"\s*(javascript|data)\s*:[^"]*"|\'\s*(javascript|data)\s*:[^\']*\'|(javascript|data)\s*:[^\s>]+)', '', clean_html)
-    clean_html = re.sub(r'(?is)\bsrc\s*=\s*(?:"\s*(javascript|data)\s*:[^"]*"|\'\s*(javascript|data)\s*:[^\']*\'|(javascript|data)\s*:[^\s>]+)', '', clean_html)
-    
-    return clean_html
+    from html.parser import HTMLParser
+    parser = SafeHTMLParser()
+    parser.feed(html_content)
+    return "".join(parser.result)
 

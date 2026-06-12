@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 class CampaignBase(BaseModel):
     name: str
@@ -32,8 +32,7 @@ class CampaignResponse(CampaignBase):
     click_count: int
     created_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class CampaignLogResponse(BaseModel):
     id: int
@@ -46,8 +45,7 @@ class CampaignLogResponse(BaseModel):
     error_message: Optional[str] = None
     updated_at: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 # Dashboard overall stats
 class DashboardStats(BaseModel):

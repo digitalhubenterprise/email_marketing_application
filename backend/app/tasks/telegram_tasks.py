@@ -7,6 +7,7 @@ from app.core.config import settings
 from app.db.session import AsyncSessionLocal, engine
 from app.db.models import User, TelegramMarketingConfig, TelegramService, TelegramLog
 from app.tasks.email_sender import celery
+from app.core.security import decrypt_smtp_password
 
 
 def run_async(coro):
@@ -128,9 +129,11 @@ def contains_leakage(text: str, config: TelegramMarketingConfig) -> tuple[bool, 
             return True, name
             
     # Check specific configuration values
-    if config.telegram_bot_token and config.telegram_bot_token in text:
+    bot_token = decrypt_smtp_password(config.telegram_bot_token)
+    groq_key = decrypt_smtp_password(config.groq_api_key)
+    if bot_token and bot_token in text:
         return True, "Active Telegram Bot Token"
-    if config.groq_api_key and config.groq_api_key in text:
+    if groq_key and groq_key in text:
         return True, "Active Groq API Key"
         
     return False, ""
@@ -179,7 +182,7 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
     )
     
     headers = {
-        "Authorization": f"Bearer {config.groq_api_key}",
+        "Authorization": f"Bearer {decrypt_smtp_password(config.groq_api_key)}",
         "Content-Type": "application/json"
     }
     
@@ -204,7 +207,7 @@ async def generate_groq_content(config: TelegramMarketingConfig, service: Telegr
 
 # Dispatch to Telegram channel
 async def dispatch_telegram_message(config: TelegramMarketingConfig, message: str) -> None:
-    telegram_url = f"https://api.telegram.org/bot{config.telegram_bot_token}/sendMessage"
+    telegram_url = f"https://api.telegram.org/bot{decrypt_smtp_password(config.telegram_bot_token)}/sendMessage"
     
     payload = {
         "chat_id": config.telegram_channel,
@@ -250,7 +253,9 @@ async def execute_telegram_post_job(db, config_id: int) -> tuple[bool, str]:
         
     service = await get_next_service(db, config.user_id, active_services)
     
-    if not config.telegram_bot_token or not config.telegram_channel or not config.groq_api_key:
+    decrypted_bot_token = decrypt_smtp_password(config.telegram_bot_token)
+    decrypted_groq_key = decrypt_smtp_password(config.groq_api_key)
+    if not decrypted_bot_token or not config.telegram_channel or not decrypted_groq_key:
         new_log = TelegramLog(
             user_id=config.user_id,
             timestamp=utc_now_naive(),

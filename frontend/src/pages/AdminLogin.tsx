@@ -38,6 +38,7 @@ export default function AdminLogin() {
           return;
         }
         localStorage.setItem('admin_logged_in', 'true');
+        localStorage.setItem('admin_token', data.access_token);
         localStorage.setItem('admin_email', data.email || email);
         localStorage.setItem('admin_role', data.role || (email === 'admin@gmail.com' ? 'master_admin' : 'support'));
         navigate('/admin');

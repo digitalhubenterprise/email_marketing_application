@@ -45,7 +45,7 @@ async def test_sms_config_flow(client, db_session):
     }
     res_post = await client.post("/api/sms-marketing/config", json=payload, headers=headers)
     assert res_post.status_code == 200
-    assert res_post.json()["api_key"] == "IQz2Gpd7Du1LNgfF0AVJ"
+    assert res_post.json()["api_key"] == "••••••••"
     assert res_post.json()["sender_id"] == "8809617623864"
 
 
