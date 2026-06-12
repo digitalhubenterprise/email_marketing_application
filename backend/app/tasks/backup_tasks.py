@@ -488,15 +488,15 @@ async def execute_remote_restore(filename: str, config_id: int = 1) -> str:
         # 4. DB Clean Drop and Load Restore
         log_restore_progress("running", "Clearing database schema and applying backup SQL dump...")
         try:
+            db_details = parse_database_url()
             # Clean public schema first (Cascades all tables, views, triggers)
             async with engine.begin() as conn:
                 await conn.execute(text("DROP SCHEMA public CASCADE;"))
                 await conn.execute(text("CREATE SCHEMA public;"))
-                await conn.execute(text("GRANT ALL ON SCHEMA public TO postgres;"))
+                await conn.execute(text(f'GRANT ALL ON SCHEMA public TO "{db_details["user"]}";'))
                 await conn.execute(text("GRANT ALL ON SCHEMA public TO public;"))
             
             # Load SQL dump using psql client
-            db_details = parse_database_url()
             psql_cmd = [
                 "psql",
                 "-h", db_details["host"],
