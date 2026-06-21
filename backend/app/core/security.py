@@ -116,14 +116,55 @@ def create_access_token(
 
 def sanitize_html(html_content: str) -> str:
     """
-    Sanitizes raw HTML using bleach to allow only safe tags and attributes,
-    preventing XSS attacks.
+    Sanitizes raw HTML using bleach to allow safe tags, attributes, and styles
+    needed for email templates, preventing script execution while preserving presentation/layout.
     """
     if not html_content:
         return ""
     import bleach
-    # Use bleach defaults for allowed tags/attributes; strip disallowed content.
-    return bleach.clean(html_content, tags=bleach.sanitizer.ALLOWED_TAGS,
-                         attributes=bleach.sanitizer.ALLOWED_ATTRIBUTES,
-                         strip=True)
+    
+    allowed_tags = [
+        "html", "body", "head", "meta", "title", "style", "link",
+        "table", "tbody", "thead", "tr", "td", "th",
+        "div", "span", "p", "br", "hr",
+        "h1", "h2", "h3", "h4", "h5", "h6",
+        "a", "img", "b", "strong", "i", "em", "u",
+        "ol", "ul", "li", "code", "pre", "blockquote"
+    ]
+    
+    allowed_attributes = {
+        "*": ["style", "class", "id", "align", "valign"],
+        "a": ["href", "title", "target", "rel"],
+        "img": ["src", "alt", "title", "width", "height", "border"],
+        "table": ["width", "height", "border", "cellpadding", "cellspacing", "bgcolor", "align"],
+        "td": ["width", "height", "colspan", "rowspan", "bgcolor", "align", "valign"],
+        "tr": ["bgcolor", "align", "valign"],
+        "meta": ["charset", "name", "content", "http-equiv"],
+        "link": ["href", "rel", "type"]
+    }
+    
+    allowed_styles = [
+        # Layout & Spacing
+        "width", "height", "max-width", "min-width", "padding", "padding-top", "padding-bottom", "padding-left", "padding-right",
+        "margin", "margin-top", "margin-bottom", "margin-left", "margin-right",
+        "border", "border-top", "border-bottom", "border-left", "border-right", "border-width", "border-style", "border-color",
+        "border-radius", "border-collapse", "border-spacing",
+        # Typography
+        "font-family", "font-size", "font-weight", "line-height", "text-align", "text-decoration", "color",
+        # Backgrounds
+        "background", "background-color", "background-image", "background-repeat", "background-position",
+        # Miscellaneous presentation
+        "display", "vertical-align", "overflow", "box-shadow"
+    ]
+    
+    from bleach.css_sanitizer import CSSSanitizer
+    css_sanitizer = CSSSanitizer(allowed_css_properties=allowed_styles)
+    
+    return bleach.clean(
+        html_content,
+        tags=allowed_tags,
+        attributes=allowed_attributes,
+        css_sanitizer=css_sanitizer,
+        strip=True
+    )
 
