@@ -210,3 +210,46 @@ async def test_database_url_parsing():
         assert res["password"] == "DbPass_"
         assert res["port"] == 5432
 
+
+# 6. XML DTD and Entity Injection prevention test for Dhru Fusion API
+@pytest.mark.anyio
+async def test_dhru_xml_entity_injection_protection():
+    from app.api.dhru import handle_dhru_api_impl
+    
+    # Mock system config database response
+    mock_config = MagicMock()
+    mock_config.api_listener_enabled = True
+    mock_config.api_listener_username = "test_user"
+    mock_config.api_listener_access_key = "test_key"
+    mock_config.api_listener_connected_ip = ""
+    
+    class MockResult:
+        def scalars(self):
+            m = MagicMock()
+            m.first.return_value = mock_config
+            return m
+            
+    mock_db = MagicMock()
+    mock_db.execute = AsyncMock(return_value=MockResult())
+    mock_db.commit = AsyncMock()
+    
+    # Mock Request form parameters containing entity injection attempt
+    mock_form = {
+        "username": "test_user",
+        "apiaccesskey": "test_key",
+        "action": "test_action",
+        "parameters": "<!DOCTYPE root [ <!ENTITY test 'expansion'> ]><root><test>&test;</test></root>"
+    }
+    
+    mock_request = MagicMock()
+    mock_request.form = AsyncMock(return_value=mock_form)
+    mock_request.client.host = "127.0.0.1"
+    
+    context = {"requestformat": "xml"}
+    result = await handle_dhru_api_impl(mock_request, mock_db, context)
+    
+    # Assert that the handler caught the entity injection attempt and failed safely
+    assert "ERROR" in result
+    assert "XML DTD or Entity definitions are not permitted" in result["ERROR"][0]["MESSAGE"]
+
+

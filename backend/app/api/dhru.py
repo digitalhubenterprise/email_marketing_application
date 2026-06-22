@@ -252,7 +252,43 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
         if parameters_str_stripped.startswith("<"):
             # Prevent XML Entity Expansion / DoS attacks by limiting parameter length
             if len(parameters_str_stripped) > 100_000:
-                raise ValueError("Parameters string exceeds maximum allowed length.")
+                err_msg = "Parameters string exceeds maximum allowed length."
+                log = DhruApiLog(
+                    action=action or "unknown",
+                    username=username,
+                    ip_address=client_ip,
+                    status="failed",
+                    message=f"Security alert: {err_msg}"
+                )
+                db.add(log)
+                await db.commit()
+                return {
+                    "ERROR": [
+                        {
+                            "MESSAGE": f"Operation failed: {err_msg}"
+                        }
+                    ]
+                }
+            # Block DTDs and Entities to prevent XML External Entity (XXE) and Billion Laughs expansion
+            upper_params = parameters_str_stripped.upper()
+            if "<!DOCTYPE" in upper_params or "<!ENTITY" in upper_params:
+                err_msg = "XML DTD or Entity definitions are not permitted."
+                log = DhruApiLog(
+                    action=action or "unknown",
+                    username=username,
+                    ip_address=client_ip,
+                    status="failed",
+                    message=f"Security alert: {err_msg}"
+                )
+                db.add(log)
+                await db.commit()
+                return {
+                    "ERROR": [
+                        {
+                            "MESSAGE": f"Operation failed: {err_msg}"
+                        }
+                    ]
+                }
             try:
                 import xml.etree.ElementTree as ET
                 root = ET.fromstring(parameters_str_stripped)
