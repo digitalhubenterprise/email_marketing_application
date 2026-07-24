@@ -1,6 +1,6 @@
 import os
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field, model_validator
+from pydantic import AliasChoices, Field, model_validator
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "SmartCampaign API"
@@ -10,7 +10,8 @@ class Settings(BaseSettings):
     # DB URL: can be swapped easily to Supabase or other postgres urls
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:password123@db:5432/smartcampaign",
-        alias="DATABASE_URL"
+        alias="DATABASE_URL",
+        validation_alias=AliasChoices("DATABASE_URL", "NEON_DATABASE_URL")
     )
     
     REDIS_URL: str = Field(
