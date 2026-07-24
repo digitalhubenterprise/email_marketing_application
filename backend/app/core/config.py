@@ -43,11 +43,22 @@ class Settings(BaseSettings):
     )
 
     TESTING: bool = False
+    ENVIRONMENT: str = "development"
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
         # Detect production environment
-        is_production = os.getenv("ENVIRONMENT", "development").lower() == "production"
+        is_production = self.ENVIRONMENT.lower() == "production"
+        # Never allow the development fallback secrets to be used in any
+        # non-test deployment. A missing ENVIRONMENT must not silently weaken
+        # authentication or credential encryption.
+        if not self.TESTING:
+            if self.JWT_SECRET == "supersecretjwtkeyfor_smartcampaign_sass_2026":
+                raise ValueError("JWT_SECRET must be configured with a unique random value.")
+            if self.ENCRYPTION_KEY == "gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=":
+                raise ValueError("ENCRYPTION_KEY must be configured with a unique Fernet key.")
+            if self.ADMIN_REGISTRATION_SECRET == "supersecretadmininvitekey2026":
+                raise ValueError("ADMIN_REGISTRATION_SECRET must be configured with a unique random value.")
         if is_production:
             if self.JWT_SECRET == "supersecretjwtkeyfor_smartcampaign_sass_2026":  # nosec
                 raise ValueError("JWT_SECRET must be changed from default value in production environment.")

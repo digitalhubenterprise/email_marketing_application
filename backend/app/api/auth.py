@@ -293,7 +293,7 @@ async def login(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=settings.ENVIRONMENT.lower() == "production",
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
@@ -1203,7 +1203,7 @@ async def verify_signup_email(
             key="access_token",
             value=access_token,
             httponly=True,
-            secure=True,
+            secure=settings.ENVIRONMENT.lower() == "production",
             samesite="lax",
             max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
@@ -1238,7 +1238,7 @@ async def verify_signup_email(
         key="access_token",
         value=access_token,
         httponly=True,
-        secure=True,
+        secure=settings.ENVIRONMENT.lower() == "production",
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
@@ -1291,7 +1291,5 @@ async def resend_verification_email(
 @router.post("/logout")
 async def logout_user(response: Response):
     """Logs out the user by deleting the HttpOnly access_token cookie."""
-    response.delete_cookie(key="access_token", httponly=True, secure=True, samesite="lax")
+    response.delete_cookie(key="access_token", httponly=True, secure=settings.ENVIRONMENT.lower() == "production", samesite="lax")
     return {"message": "Logged out successfully."}
-
-

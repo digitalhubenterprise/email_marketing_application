@@ -167,7 +167,7 @@ async def login_admin(
         key="admin_token",
         value=token,
         httponly=True,
-        secure=True,
+        secure=settings.ENVIRONMENT.lower() == "production",
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
     )
@@ -1462,10 +1462,7 @@ def verify_admin_token_only(request: Request) -> int:
         if token in ("null", "undefined", ""):
             token = None
         
-    print(f"[DEBUG AUTH] auth_header={auth_header}, parsed_token={token[:15] if token else None}, cookies={list(request.cookies.keys())}")
-        
     if not token:
-        print("[DEBUG AUTH] Token not found in header or cookies.")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Admin credentials not provided."
@@ -1480,22 +1477,18 @@ def verify_admin_token_only(request: Request) -> int:
         )
         admin_id_str: str = payload.get("sub")
         role: str = payload.get("role")
-        print(f"[DEBUG AUTH] Decoded payload: {payload}")
         if admin_id_str is None or role != "admin":
-            print(f"[DEBUG AUTH] Invalid role/sub in payload: sub={admin_id_str}, role={role}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid admin credentials payload."
             )
         return int(admin_id_str)
-    except jwt.ExpiredSignatureError as e:
-        print(f"[DEBUG AUTH] Expired token signature: {e}")
+    except jwt.ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Admin session has expired."
         )
-    except Exception as e:
-        print(f"[DEBUG AUTH] Token decode exception: {type(e).__name__} - {e}")
+    except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Could not validate credentials."
@@ -2142,7 +2135,7 @@ async def delete_subscription_plan(
 @router.post("/logout")
 async def logout_admin(response: Response):
     """Logs out the admin by deleting the HttpOnly admin_token cookie."""
-    response.delete_cookie(key="admin_token", httponly=True, secure=True, samesite="lax")
+    response.delete_cookie(key="admin_token", httponly=True, secure=settings.ENVIRONMENT.lower() == "production", samesite="lax")
     return {"message": "Admin logged out successfully."}
 
 

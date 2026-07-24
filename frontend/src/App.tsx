@@ -86,7 +86,7 @@ export const useAuth = () => {
 };
 
 export default function App() {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("is_logged_in"));
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<any | null>(null);
   const [appConfig, setAppConfig] = useState<AuthConfigType | null>(null);
   const [inMaintenance, setInMaintenance] = useState(false);
@@ -111,12 +111,6 @@ export default function App() {
   };
 
   const refreshUser = async () => {
-    const isLoggedIn = localStorage.getItem("is_logged_in");
-    if (!isLoggedIn) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
     try {
       const response = await fetch("/api/auth/me");
       if (response.ok) {
@@ -230,8 +224,7 @@ export default function App() {
   }, [appConfig]);
 
   const login = async (newToken?: string) => {
-    localStorage.setItem("is_logged_in", "true");
-    setToken("logged_in");
+    setToken(newToken || "authenticated");
     await refreshUser();
     navigate("/");
   };
