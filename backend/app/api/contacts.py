@@ -2,7 +2,7 @@ import csv
 import io
 import re
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, Query, status, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -126,6 +126,8 @@ async def delete_contact_list(
 @router.get("/lists/{list_id}/contacts", response_model=List[ContactResponse])
 async def list_contacts(
     list_id: int,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     tag: Optional[str] = None,
     status: Optional[str] = None,
     search: Optional[str] = None,
@@ -150,7 +152,9 @@ async def list_contacts(
             (Contact.email.ilike(f"%{search}%")) | (Contact.name.ilike(f"%{search}%"))
         )
 
-    result = await db.execute(query.order_by(Contact.id.desc()))
+    result = await db.execute(
+        query.order_by(Contact.id.desc()).offset(offset).limit(limit)
+    )
     return result.scalars().all()
 
 

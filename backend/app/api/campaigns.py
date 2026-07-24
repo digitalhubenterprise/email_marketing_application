@@ -1,5 +1,5 @@
 from typing import List
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from sqlalchemy import func
@@ -102,6 +102,8 @@ async def get_dashboard_aggregates(
 
 @router.get("", response_model=List[CampaignResponse])
 async def list_campaigns(
+    offset: int = Query(0, ge=0),
+    limit: int = Query(50, ge=1, le=200),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -109,6 +111,8 @@ async def list_campaigns(
         select(Campaign)
         .where(Campaign.user_id == current_user.id)
         .order_by(Campaign.id.desc())
+        .offset(offset)
+        .limit(limit)
     )
     return result.scalars().all()
 
@@ -315,6 +319,8 @@ async def trigger_campaign_send(
 @router.get("/{campaign_id}/logs", response_model=List[CampaignLogResponse])
 async def list_campaign_logs(
     campaign_id: int,
+    offset: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=500),
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
@@ -331,6 +337,8 @@ async def list_campaign_logs(
         select(CampaignLog)
         .where(CampaignLog.campaign_id == campaign_id)
         .order_by(CampaignLog.id.desc())
+        .offset(offset)
+        .limit(limit)
     )
     return result.scalars().all()
 
