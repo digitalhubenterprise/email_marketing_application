@@ -11,7 +11,8 @@ class Settings(BaseSettings):
     DATABASE_URL: str = Field(
         default="postgresql+asyncpg://postgres:password123@db:5432/smartcampaign",
         alias="DATABASE_URL",
-        validation_alias=AliasChoices("DATABASE_URL", "NEON_DATABASE_URL")
+        # Neon is the authoritative database when both variables exist.
+        validation_alias=AliasChoices("NEON_DATABASE_URL", "DATABASE_URL")
     )
     
     REDIS_URL: str = Field(
