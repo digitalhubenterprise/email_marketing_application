@@ -12,6 +12,8 @@ if database_url.startswith("postgresql+asyncpg://"):
     parsed_url = urlsplit(database_url)
     query = dict(parse_qsl(parsed_url.query, keep_blank_values=True))
     sslmode = query.pop("sslmode", None)
+    # channel_binding is a libpq option and is not accepted by asyncpg.
+    query.pop("channel_binding", None)
     if sslmode in {"require", "verify-ca", "verify-full"}:
         engine_connect_args["ssl"] = True
     database_url = urlunsplit((parsed_url.scheme, parsed_url.netloc, parsed_url.path, urlencode(query), parsed_url.fragment))
