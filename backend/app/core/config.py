@@ -49,6 +49,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def validate_production_secrets(self) -> "Settings":
+        # Neon commonly provides a standard PostgreSQL URL. SQLAlchemy's
+        # async engine requires the asyncpg dialect explicitly.
+        if self.DATABASE_URL.startswith("postgresql://"):
+            self.DATABASE_URL = "postgresql+asyncpg://" + self.DATABASE_URL[len("postgresql://"):]
         # Detect production environment
         is_production = self.ENVIRONMENT.lower() == "production"
         # Never allow the development fallback secrets to be used in any
