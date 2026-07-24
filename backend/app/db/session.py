@@ -1,11 +1,24 @@
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 from app.core.config import settings
 from app.db.models import Base
 
+database_url = settings.DATABASE_URL
+engine_connect_args = {}
+# asyncpg does not understand libpq's `sslmode` query parameter. Translate
+# Neon/PostgreSQL's sslmode=require into asyncpg's native SSL connect arg.
+if database_url.startswith("postgresql+asyncpg://"):
+    parsed_url = urlsplit(database_url)
+    query = dict(parse_qsl(parsed_url.query, keep_blank_values=True))
+    sslmode = query.pop("sslmode", None)
+    if sslmode in {"require", "verify-ca", "verify-full"}:
+        engine_connect_args["ssl"] = True
+    database_url = urlunsplit((parsed_url.scheme, parsed_url.netloc, parsed_url.path, urlencode(query), parsed_url.fragment))
+
 # Create Async Engine with production-safe connection pool settings
 engine = create_async_engine(
-    settings.DATABASE_URL,
+    database_url,
     echo=False,
     future=True,
     pool_pre_ping=True,      # Verify connections before use (handles dropped connections)
@@ -13,6 +26,7 @@ engine = create_async_engine(
     max_overflow=20,         # Allow up to 20 extra connections under peak load
     pool_timeout=30,         # Wait up to 30s for a connection before raising PoolTimeout
     pool_recycle=1800,       # Recycle connections every 30 minutes (prevents stale connections)
+    connect_args=engine_connect_args,
 )
 
 # Async Session Factory
