@@ -11,7 +11,9 @@ from app.core.config import settings
 # SMTP Credentials Cryptography Setup (AES-256 Fernet)
 try:
     cipher_suite = Fernet(settings.ENCRYPTION_KEY.encode())
-except Exception:
+except Exception as exc:
+    raise RuntimeError("ENCRYPTION_KEY must be a valid Fernet key; refusing to start insecurely.") from exc
+'''
     # Failback: generate a temporary key (logs warning — must be fixed in production)
     import warnings
     warnings.warn(
@@ -21,6 +23,8 @@ except Exception:
     temp_key = Fernet.generate_key()
     cipher_suite = Fernet(temp_key)
 
+
+'''
 
 def encrypt_smtp_password(password: str) -> str:
     """Encrypts a plaintext SMTP password using AES-256 Fernet symmetric encryption."""
@@ -167,4 +171,3 @@ def sanitize_html(html_content: str) -> str:
         css_sanitizer=css_sanitizer,
         strip=True
     )
-

@@ -1,5 +1,6 @@
 import aiohttp
 from typing import Dict, Any
+from app.core.config import settings
 
 class SMSService:
     """Service layer to encapsulate SMS Gateway API requests (e.g. bulksmsbd.net)."""
@@ -9,11 +10,13 @@ class SMSService:
         """
         Fetches the current credit balance from the configured provider.
         """
+        if provider == "mock" and settings.TESTING:
+            return {"balance": "100.00", "currency": "BDT"}
         if not api_key:
             return {"balance": "0.00", "currency": "BDT"}
 
         if provider == "bulksmsbd":
-            url = f"http://bulksmsbd.net/api/getBalanceApi?api_key={api_key}"
+            url = f"https://bulksmsbd.net/api/getBalanceApi?api_key={api_key}"
             try:
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, timeout=10) as resp:
@@ -56,8 +59,10 @@ class SMSService:
         Submits SMS requests to the provider API.
         Supports single and bulk list (comma-separated) recipients.
         """
+        if provider == "mock" and settings.TESTING:
+            return {"success": True, "code": "202", "message": "Test SMS accepted."}
         if provider == "bulksmsbd":
-            url = "http://bulksmsbd.net/api/smsapi"
+            url = "https://bulksmsbd.net/api/smsapi"
             params = {
                 "api_key": api_key,
                 "type": "text",
@@ -111,9 +116,9 @@ class SMSService:
                     "message": f"Connection failed: {str(e)}"
                 }
         
-        # Mocks for other gateways
+        # Never report success for an unsupported/unconfigured provider.
         return {
-            "success": True, 
+            "success": False,
             "code": "202", 
-            "message": "Mock SMS request submitted successfully"
+            "message": "SMS provider is not configured or supported."
         }

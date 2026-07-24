@@ -62,7 +62,7 @@ ALLOWED_ORIGINS = [
 if IS_PRODUCTION:
     ALLOWED_ORIGINS = [
         origin for origin in ALLOWED_ORIGINS
-        if "localhost" not in origin and "127.0.0.1" not in origin
+        if origin.startswith("https://")
     ]
 
 app.add_middleware(

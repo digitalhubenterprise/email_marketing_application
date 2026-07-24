@@ -296,7 +296,7 @@ async def create_db_tables() -> None:
                 await conn.execute(
                     text(
                         "INSERT INTO system_configs (id, site_name, support_email, maintenance_mode, global_send_rate_limit, default_from_email, seo_meta_title, seo_meta_description, seo_meta_keywords, default_from_name, smtp_max_retries, email_verification_required, min_password_length, max_login_attempts, session_expiry_hours, telegram_bot_token, telegram_chat_id, telegram_notifications_enabled, two_factor_email_enabled, two_factor_telegram_enabled, two_factor_mandatory_for_admins, api_listener_username, api_listener_access_key) "
-                        "VALUES (1, 'SmartCampaign', 'support@smartcampaign.today', false, 1000, 'noreply@smartcampaign.today', 'SmartCampaign - Modern SaaS Email Marketing Platform', 'Create, personalize, monitor, and scale email marketing campaigns dynamically.', 'email marketing, smtp, celery, dispatch, saas', 'SmartCampaign Operations', 3, false, 8, 5, 24, '', '', false, false, false, false, 'ipsabdurrazzak', 'Amin@1234')"
+                        "VALUES (1, 'SmartCampaign', 'support@smartcampaign.today', false, 1000, 'noreply@smartcampaign.today', 'SmartCampaign - Modern SaaS Email Marketing Platform', 'Create, personalize, monitor, and scale email marketing campaigns dynamically.', 'email marketing, smtp, celery, dispatch, saas', 'SmartCampaign Operations', 3, false, 8, 5, 24, '', '', false, false, false, false, '', '')"
                     )
                 )
     except Exception as e:
@@ -325,33 +325,8 @@ async def create_db_tables() -> None:
             from sqlalchemy import text
             from app.core.security import get_password_hash
             
-            # Seed default master admin
-            admin_check = await conn.execute(
-                text("SELECT id FROM admin_users WHERE email = 'admin@gmail.com'")
-            )
-            if not admin_check.first():
-                hashed_pw = get_password_hash("admin123#")
-                await conn.execute(
-                    text(
-                        "INSERT INTO admin_users (email, hashed_password, role, is_active) "
-                        "VALUES ('admin@gmail.com', :hashed_pw, 'master_admin', true)"
-                    ),
-                    {"hashed_pw": hashed_pw}
-                )
-
-            # Seed custom API admin user
-            api_admin_check = await conn.execute(
-                text("SELECT id FROM admin_users WHERE email = 'ipsabdurrazzak@gmail.com'")
-            )
-            if not api_admin_check.first():
-                hashed_pw_api = get_password_hash("Amin@1234")
-                await conn.execute(
-                    text(
-                        "INSERT INTO admin_users (email, hashed_password, role, is_active) "
-                        "VALUES ('ipsabdurrazzak@gmail.com', :hashed_pw_api, 'master_admin', true)"
-                    ),
-                    {"hashed_pw_api": hashed_pw_api}
-                )
+            # Administrator accounts are created explicitly through the
+            # protected invitation flow; never seed known credentials.
     except Exception as e:
         print(f"DB admin user seeding warning (non-fatal): {e}")
 
@@ -416,4 +391,3 @@ async def create_db_tables() -> None:
                 )
     except Exception as e:
         print(f"DB plans seeding warning (non-fatal): {e}")
-
