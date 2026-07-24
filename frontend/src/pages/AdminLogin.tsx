@@ -38,7 +38,8 @@ export default function AdminLogin() {
           return;
         }
         localStorage.setItem('admin_logged_in', 'true');
-        localStorage.setItem('admin_token', data.access_token);
+        // The API stores the token in an HttpOnly cookie. Never persist bearer
+        // tokens in localStorage, where an XSS issue could exfiltrate them.
         localStorage.setItem('admin_email', data.email || email);
         localStorage.setItem('admin_role', data.role || (email === 'admin@gmail.com' ? 'master_admin' : 'support'));
         navigate('/admin');

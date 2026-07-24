@@ -227,7 +227,7 @@ export default function AdminLayout() {
 
       {/* Main Admin Section Body Content */}
       <div className="flex-1 lg:pl-64 pl-0 flex flex-col min-h-screen relative overflow-x-hidden min-w-0">
-        <header className="h-16 bg-white border-b border-slate-200/80 px-8 flex items-center justify-between sticky top-0 z-30 shadow-[0_2px_24px_rgba(0,0,0,0.01)]">
+        <header className="min-h-16 bg-white border-b border-slate-200/80 px-3 sm:px-5 lg:px-8 py-2 flex items-center justify-between gap-3 sticky top-0 z-30 shadow-[0_2px_24px_rgba(0,0,0,0.01)]">
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setSidebarOpen(true)}
@@ -243,7 +243,7 @@ export default function AdminLayout() {
             </span>
           </div>
 
-          <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2 sm:gap-3 lg:gap-5 overflow-x-auto max-w-[70%] sm:max-w-none">
             <Link
               to="/"
               className="text-[10px] font-bold text-slate-500 hover:text-slate-800 px-2.5 py-1 bg-slate-50 border border-slate-200 rounded-lg transition-all"
@@ -277,12 +277,12 @@ export default function AdminLayout() {
 
             <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-50 border border-brand-100 text-brand-600 text-xs font-bold">
               <Activity size={12} className="animate-pulse text-brand-500" />
-              <span>Admin Center Active</span>
+              <span className="hidden sm:inline">Admin Center Active</span>
             </div>
           </div>
         </header>
 
-        <main className="flex-1 p-8 overflow-y-auto animate-fadeIn bg-[#f4f6fa] flex flex-col justify-between min-w-0 overflow-x-hidden">
+        <main className="flex-1 p-3 sm:p-5 lg:p-8 overflow-y-auto animate-fadeIn bg-[#f4f6fa] flex flex-col justify-between min-w-0 overflow-x-hidden">
           <div className="flex-1 pb-4">
             <Suspense fallback={
               <div className="flex items-center justify-center min-h-[300px]">

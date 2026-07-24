@@ -8,13 +8,14 @@ export async function httpRequest<T = any>(input: RequestInfo, init?: RequestIni
   const csrfCookie = document.cookie
     .split('; ')
     .find(row => row.startsWith('csrf_token='));
-  const csrfToken = csrfCookie ? csrfCookie.split('=')[1] : undefined;
+  const csrfToken = csrfCookie ? decodeURIComponent(csrfCookie.slice('csrf_token='.length)) : undefined;
 
-  const headers: HeadersInit = {
-    ...(init?.headers || {}),
-    ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
-    'Content-Type': 'application/json',
-  };
+  const headers = new Headers(init?.headers);
+  if (csrfToken) headers.set('X-CSRF-Token', csrfToken);
+  // Do not overwrite multipart boundaries or form-encoded requests.
+  if (init?.body && !(init.body instanceof FormData) && !headers.has('Content-Type')) {
+    headers.set('Content-Type', 'application/json');
+  }
 
   const response = await fetch(input, {
     ...init,

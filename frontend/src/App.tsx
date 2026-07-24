@@ -198,7 +198,7 @@ export default function App() {
     return () => {
       window.fetch = originalFetch;
     };
-  }, [token]);
+  }, []);
 
   // Dynamically inject dynamic SEO meta parameters inside browser HTML headers
   useEffect(() => {

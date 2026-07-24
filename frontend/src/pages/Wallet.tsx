@@ -80,7 +80,7 @@ export default function Wallet() {
         const apiTxns: Transaction[] = data.map((p: any) => {
           let desc = `Balance Recharge (${p.gateway})`;
           let rawNotes = p.notes || '';
-          let type = p.amount >= 0 ? 'credit' : 'debit';
+          const type = p.amount >= 0 ? 'credit' : 'debit';
           
           if (rawNotes.startsWith("[ADD_FUND]")) {
             desc = "Wallet Fund Recharge";

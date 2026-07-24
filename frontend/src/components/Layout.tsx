@@ -68,12 +68,12 @@ export default function Layout() {
 
         {/* Global Broadcast Announcement Banner */}
         {appConfig?.announcement_active && appConfig.announcement_message && !announcementDismissed && (
-          <div className="bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 text-white px-6 py-2.5 text-xs font-bold flex items-center justify-between border-b border-brand-500/30 animate-slideDown shadow-lg relative z-40">
-            <div className="flex items-center gap-2.5">
+          <div className="bg-gradient-to-r from-brand-600 via-indigo-600 to-brand-700 text-white px-3 sm:px-6 py-2.5 text-xs font-bold flex items-start sm:items-center justify-between gap-2 border-b border-brand-500/30 animate-slideDown shadow-lg relative z-40">
+            <div className="flex items-start sm:items-center gap-2.5 min-w-0">
               <span className="flex h-5 items-center gap-1 bg-white/20 px-2 py-0.5 rounded-full text-[9px] uppercase tracking-widest font-black animate-pulse">
                 <Megaphone size={10} /> Broadcast
               </span>
-              <span className="tracking-wide text-slate-100 font-semibold">{appConfig.announcement_message}</span>
+              <span className="tracking-wide text-slate-100 font-semibold break-words">{appConfig.announcement_message}</span>
             </div>
             <button 
               onClick={() => setAnnouncementDismissed(true)}
@@ -86,7 +86,7 @@ export default function Layout() {
         )}
 
         {/* Top navbar */}
-        <header className="h-14 bg-dark-950/80 backdrop-blur-md border-b border-dark-700 px-4 sm:px-6 flex items-center justify-between sticky top-0 z-30">
+        <header className="min-h-14 bg-dark-950/80 backdrop-blur-md border-b border-dark-700 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 sticky top-0 z-30">
           <div className="flex items-center gap-2.5">
             <button 
               onClick={() => setSidebarOpen(true)}
@@ -102,7 +102,7 @@ export default function Layout() {
           </div>
 
           {/* Quota Indicators */}
-          <div className="flex items-center gap-3 sm:gap-5">
+          <div className="flex items-center gap-2 sm:gap-5 shrink-0">
             <button
               onClick={toggleTheme}
               className="p-1.5 rounded-lg border border-dark-700/50 bg-dark-800 text-dark-400 hover:text-dark-100 hover:bg-dark-750 transition-all shadow-sm shrink-0"
