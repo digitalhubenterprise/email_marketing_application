@@ -24,7 +24,8 @@ class Settings(BaseSettings):
         default="supersecretjwtkeyfor_smartcampaign_sass_2026",
         alias="JWT_SECRET"
     )
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440  # 24 Hours
+    # Short-lived access tokens reduce the impact of token theft.
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     
     # AES-256 Fernet key for encrypting custom SMTP passwords in Database
     ENCRYPTION_KEY: str = Field(

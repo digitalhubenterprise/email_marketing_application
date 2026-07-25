@@ -4,6 +4,7 @@ from pydantic import BaseModel, EmailStr, ConfigDict
 
 # Contact List schemas
 class ContactListBase(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     name: str
     description: Optional[str] = None
 
@@ -20,6 +21,7 @@ class ContactListResponse(ContactListBase):
 
 # Contact schemas
 class ContactBase(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     email: EmailStr
     name: Optional[str] = None
     tags: Optional[str] = None  # comma-separated
@@ -39,6 +41,7 @@ class ContactResponse(ContactBase):
 
 
 class ContactUpdate(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     email: Optional[EmailStr] = None
     name: Optional[str] = None
     tags: Optional[str] = None

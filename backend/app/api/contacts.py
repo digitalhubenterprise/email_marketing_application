@@ -317,7 +317,10 @@ async def upload_csv(
         raise HTTPException(status_code=404, detail="Mailing list not found.")
 
     # File type validation
-    if file.content_type and "csv" not in file.content_type.lower() and "text" not in file.content_type.lower():
+    filename = (file.filename or "").strip().lower()
+    if not filename.endswith(".csv"):
+        raise HTTPException(status_code=400, detail="Only CSV files with a .csv extension are accepted.")
+    if file.content_type and file.content_type.lower() not in {"text/csv", "application/csv", "application/vnd.ms-excel", "text/plain"}:
         raise HTTPException(
             status_code=400,
             detail="Only CSV files are accepted (text/csv content type).",
@@ -338,6 +341,8 @@ async def upload_csv(
                     detail=f"CSV file exceeds maximum size limit of 5MB.",
                 )
 
+        # CSV has no reliable magic bytes; strict UTF-8 decoding plus parsing is
+        # the meaningful content check. Binary payloads fail closed here.
         decoded = contents.decode("utf-8-sig")  # Strip BOM characters
         csv_file = io.StringIO(decoded)
         reader = csv.reader(csv_file)
