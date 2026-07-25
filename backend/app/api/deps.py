@@ -13,6 +13,16 @@ from app.schemas.user import TokenData
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=f"{settings.API_V1_STR}/auth/login", auto_error=False)
 
 
+import time
+
+_user_cache = {}  # {user_id: (user_obj, expire_time)}
+
+
+def invalidate_user_cache(user_id: int):
+    """Call when user profile or subscription is updated to clear cached state."""
+    _user_cache.pop(user_id, None)
+
+
 async def get_current_user(
     request: Request,
     db: AsyncSession = Depends(get_db),
@@ -41,7 +51,7 @@ async def get_current_user(
         role: str = payload.get("role")
         if user_id_str is None or role != "user":
             raise credentials_exception
-        token_data = TokenData(user_id=int(user_id_str))
+        user_id = int(user_id_str)
     except (jwt.ExpiredSignatureError):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -51,8 +61,15 @@ async def get_current_user(
     except (jwt.PyJWTError, ValueError):
         raise credentials_exception
 
-    result = await db.execute(select(User).where(User.id == token_data.user_id))
-    user = result.scalars().first()
+    now = time.time()
+    cached = _user_cache.get(user_id)
+    if cached and now < cached[1]:
+        user = cached[0]
+    else:
+        result = await db.execute(select(User).where(User.id == user_id))
+        user = result.scalars().first()
+        if user is not None:
+            _user_cache[user_id] = (user, now + 15.0)  # 15s in-memory TTL
 
     if user is None:
         raise credentials_exception
@@ -77,6 +94,7 @@ async def get_current_user(
         from app.db.models import utc_now_naive
         if user.subscription_expires_at < utc_now_naive():
             user.subscription_tier = "expired"
+            _user_cache.pop(user_id, None)
             db.add(user)
             await db.commit()
             await db.refresh(user)
