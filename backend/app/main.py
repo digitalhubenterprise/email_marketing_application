@@ -25,6 +25,12 @@ IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Runs DB table creation on startup."""
+    from urllib.parse import urlsplit
+    try:
+        parsed = urlsplit(settings.DATABASE_URL)
+        print(f"🚀 [INIT] Active Database Host: {parsed.hostname}")
+    except Exception:
+        pass
     await create_db_tables()
     yield
 
