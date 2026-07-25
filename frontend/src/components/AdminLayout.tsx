@@ -118,14 +118,14 @@ export default function AdminLayout() {
   };
 
   const menuItems = [
-    { to: "/admin", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
-    { to: "/admin/users", icon: <Users size={18} />, label: "Members" },
-    { to: "/admin/campaigns", icon: <Activity size={18} />, label: "Campaign Monitoring" },
-    { to: "/admin/billing", icon: <CreditCard size={18} />, label: "Financial Review" },
-    { to: "/admin/settings", icon: <Settings size={18} />, label: "Settings" },
-    { to: "/admin/api-settings", icon: <Key size={18} />, label: "API Settings" },
-    { to: "/admin/backups", icon: <Database size={18} />, label: "Remote Backups" },
-    { to: "/admin/audits", icon: <ShieldAlert size={18} />, label: "Audit Ledger" },
+    { to: "/master_adm", icon: <LayoutDashboard size={18} />, label: "Dashboard" },
+    { to: "/master_adm/users", icon: <Users size={18} />, label: "Members" },
+    { to: "/master_adm/campaigns", icon: <Activity size={18} />, label: "Campaign Monitoring" },
+    { to: "/master_adm/billing", icon: <CreditCard size={18} />, label: "Financial Review" },
+    { to: "/master_adm/settings", icon: <Settings size={18} />, label: "Settings" },
+    { to: "/master_adm/api-settings", icon: <Key size={18} />, label: "API Settings" },
+    { to: "/master_adm/backups", icon: <Database size={18} />, label: "Remote Backups" },
+    { to: "/master_adm/audits", icon: <ShieldAlert size={18} />, label: "Audit Ledger" },
     { to: "/master_adm/register", icon: <UserPlus size={18} />, label: "Invite Admin" },
   ];
 
