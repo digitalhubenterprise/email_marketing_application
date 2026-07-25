@@ -20,4 +20,4 @@ slowapi>=0.1.9
 pyotp>=2.9.0
 boto3>=1.34.0
 bleach>=6.0.0
-tinycss2>=1.2.0
+tinycss2>=1.5.1
