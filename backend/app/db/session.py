@@ -97,6 +97,8 @@ async def create_db_tables() -> None:
                 "CREATE INDEX IF NOT EXISTS ix_payment_logs_user_created ON payment_logs (user_id, created_at DESC)",
                 "CREATE INDEX IF NOT EXISTS ix_admin_audit_logs_created ON admin_audit_logs (created_at DESC)",
                 "CREATE INDEX IF NOT EXISTS ix_sms_logs_user_timestamp ON sms_logs (user_id, timestamp DESC)",
+                "ALTER TABLE payment_logs ADD COLUMN IF NOT EXISTS transaction_id VARCHAR(128)",
+                "CREATE UNIQUE INDEX IF NOT EXISTS uq_payment_logs_transaction_id ON payment_logs (transaction_id) WHERE transaction_id IS NOT NULL",
             ):
                 await conn.execute(text(statement))
     except Exception as e:

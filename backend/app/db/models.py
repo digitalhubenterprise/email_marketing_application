@@ -263,6 +263,8 @@ class PaymentLog(Base):
     gateway = Column(String, default="bKash")  # bKash, Stripe, Bank Transfer
     status = Column(String, default="pending")  # paid, pending, failed, refunded
     notes = Column(Text, nullable=True)
+    # Canonical blockchain reference; nullable for legacy/manual payments.
+    transaction_id = Column(String(128), nullable=True, unique=True, index=True)
     created_at = Column(DateTime, default=utc_now_naive)
 
 
@@ -475,4 +477,3 @@ class RemoteBackupLog(Base):
     size_bytes = Column(Integer, default=0)
     message = Column(Text, nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
-

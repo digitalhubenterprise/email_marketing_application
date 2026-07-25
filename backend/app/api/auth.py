@@ -2,7 +2,7 @@ from datetime import timedelta
 from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel, field_validator, EmailStr
+from pydantic import BaseModel, ConfigDict, Field, field_validator, EmailStr
 from slowapi import Limiter
 from slowapi.util import get_remote_address
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -40,12 +40,14 @@ from app.middleware.rate_limit import limiter
 # ─── Schemas ──────────────────────────────────────────────────────────
 
 class UpgradeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     tier: str
     payment_method: Optional[str] = "Stripe"
     billing_cycle: Optional[str] = "monthly"
 
 
 class ChangePasswordRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
     current_password: str
     new_password: str
 
@@ -459,11 +461,12 @@ async def list_public_plans(
 
 
 class PaymentSubmitRequest(BaseModel):
-    amount: float
-    currency: str
-    plan_tier: str
-    gateway: str
-    txhash: str
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    amount: float = Field(gt=0, le=1_000_000)
+    currency: str = Field(min_length=3, max_length=10)
+    plan_tier: str = Field(min_length=1, max_length=32)
+    gateway: str = Field(min_length=1, max_length=32)
+    txhash: str = Field(default="", max_length=128)
     notes: Optional[str] = None
 
 
@@ -818,6 +821,15 @@ async def submit_payment(
                   db.add(current_user)
         else:
             raise HTTPException(status_code=400, detail=log_msg)
+
+        # Redis is only an optimization. Serialize the final credit decision
+        # in PostgreSQL and re-check the canonical transaction ID.
+        await db.scalar(select(User).where(User.id == current_user.id).with_for_update())
+        duplicate = await db.scalar(
+            select(PaymentLog.id).where(PaymentLog.transaction_id == tx_hash)
+        )
+        if duplicate:
+            raise HTTPException(status_code=409, detail="This transaction has already been credited.")
             
     new_payment = PaymentLog(
         user_id=current_user.id,
@@ -827,7 +839,8 @@ async def submit_payment(
         plan_tier=payload.plan_tier,
         gateway=payload.gateway,
         status=status_val,
-        notes=notes_val
+        notes=notes_val,
+        transaction_id=tx_hash if is_blockchain_tx else None,
     )
     db.add(new_payment)
     await db.commit()
