@@ -136,7 +136,10 @@ async def login_admin(
     db: AsyncSession = Depends(get_db)
 ):
     """Handles administrator secure login and issues bearer JWT tokens."""
-    res = await db.execute(select(AdminUser).where(AdminUser.email == form_data.username))
+    # Email addresses are case-insensitive; normalize user input while keeping
+    # the password byte-for-byte unchanged.
+    login_email = form_data.username.strip().lower()
+    res = await db.execute(select(AdminUser).where(AdminUser.email == login_email))
     admin = res.scalars().first()
 
     if not admin or not verify_password(form_data.password, admin.hashed_password):
