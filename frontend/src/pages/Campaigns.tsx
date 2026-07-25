@@ -91,15 +91,26 @@ export default function Campaigns() {
     try {
       const authHeader = { "Authorization": `Bearer ${token}` };
       
-      const cRes = await fetch("/api/campaigns", { headers: authHeader });
-      const smtpRes = await fetch("/api/smtp", { headers: authHeader });
-      const lRes = await fetch("/api/contacts/lists", { headers: authHeader });
-      const tRes = await fetch("/api/templates", { headers: authHeader });
+      // These resources are independent. Fetch them concurrently instead of
+      // making the page wait for four sequential network round trips.
+      const [cRes, smtpRes, lRes, tRes] = await Promise.all([
+        fetch("/api/campaigns", { headers: authHeader }),
+        fetch("/api/smtp", { headers: authHeader }),
+        fetch("/api/contacts/lists", { headers: authHeader }),
+        fetch("/api/templates", { headers: authHeader }),
+      ]);
 
-      if (cRes.ok) setCampaigns(await cRes.json());
-      if (smtpRes.ok) setSmtps(await smtpRes.json());
-      if (lRes.ok) setLists(await lRes.json());
-      if (tRes.ok) setTemplates(await tRes.json());
+      const [campaignData, smtpData, listData, templateData] = await Promise.all([
+        cRes.ok ? cRes.json() : Promise.resolve(null),
+        smtpRes.ok ? smtpRes.json() : Promise.resolve(null),
+        lRes.ok ? lRes.json() : Promise.resolve(null),
+        tRes.ok ? tRes.json() : Promise.resolve(null),
+      ]);
+
+      if (campaignData) setCampaigns(campaignData);
+      if (smtpData) setSmtps(smtpData);
+      if (listData) setLists(listData);
+      if (templateData) setTemplates(templateData);
     } catch (err) {
       console.error(err);
     } finally {
