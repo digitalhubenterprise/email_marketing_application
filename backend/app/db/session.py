@@ -72,8 +72,12 @@ async def create_db_tables() -> None:
     Creates all tables on startup (safe — skips existing tables).
     Also runs inline migration for columns added after initial deploy.
     """
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(Base.metadata.create_all)
+        print("✅ [INIT] Database schema & tables verified/created successfully!")
+    except Exception as e:
+        print(f"❌ [INIT ERROR] Failed creating database tables: {e}")
 
     # High-value indexes for the multi-tenant list/dashboard queries. These
     # are idempotent and safe for existing restored databases.
