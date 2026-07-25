@@ -10,7 +10,10 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from app.core.config import settings
-from app.db.session import create_db_tables
+from app.db.session import create_db_tables, AsyncSessionLocal
+from app.db.models import AdminUser
+from app.core.security import get_password_hash, validate_password_strength
+from sqlalchemy import select
 from app.middleware.security_headers import security_headers_middleware
 from app.api import auth, smtp, contacts, templates, campaigns, tracker, admin, telegram_marketing, dhru, sms_marketing
 from app.api.deps import verify_active_subscription
@@ -32,7 +35,35 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
     await create_db_tables()
+    await bootstrap_master_admin()
     yield
+
+
+async def bootstrap_master_admin() -> None:
+    """Create the initial master admin from Coolify secrets, once only."""
+    email = settings.ADMIN_EMAIL.strip().lower()
+    password = settings.ADMIN_PASSWORD
+    if not email and not password:
+        return
+    if not email or not password:
+        raise RuntimeError("ADMIN_EMAIL and ADMIN_PASSWORD must be configured together.")
+    if "@" not in email or len(email) > 320:
+        raise RuntimeError("ADMIN_EMAIL is invalid.")
+    valid, error = validate_password_strength(password)
+    if not valid:
+        raise RuntimeError(f"ADMIN_PASSWORD is too weak: {error}")
+
+    async with AsyncSessionLocal() as db:
+        existing = await db.scalar(select(AdminUser).where(AdminUser.email == email))
+        if existing:
+            return  # Never overwrite an existing credential on restart.
+        db.add(AdminUser(
+            email=email,
+            hashed_password=get_password_hash(password),
+            role="master_admin",
+            is_active=True,
+        ))
+        await db.commit()
 
 
 # ─── Rate limiter state ──────────────────────────────────────────────

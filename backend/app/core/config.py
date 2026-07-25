@@ -44,6 +44,9 @@ class Settings(BaseSettings):
         default="supersecretadmininvitekey2026",
         alias="ADMIN_REGISTRATION_SECRET"
     )
+    # Optional one-time bootstrap credentials, supplied only through Coolify secrets.
+    ADMIN_EMAIL: str = ""
+    ADMIN_PASSWORD: str = ""
 
     TESTING: bool = False
     ENVIRONMENT: str = "development"
