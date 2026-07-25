@@ -191,7 +191,14 @@ export default function App() {
     // Load initial configurations
     const initApp = async () => {
       await refreshConfig();
-      await refreshUser();
+      // Admin routes use a separate HttpOnly admin_token session. Do not probe
+      // the user session here, otherwise its 401 handler redirects /admin/login
+      // back to the customer login page.
+      if (window.location.pathname.startsWith('/admin')) {
+        setLoading(false);
+      } else {
+        await refreshUser();
+      }
     };
     initApp();
 
