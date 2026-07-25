@@ -72,13 +72,13 @@ export default function AdminLayout() {
         localStorage.removeItem("admin_logged_in");
         localStorage.removeItem("admin_email");
         localStorage.removeItem("admin_role");
-        navigate("/admin/login");
+        navigate("/master_adm/login");
       }
     };
 
     const loggedIn = localStorage.getItem("admin_logged_in");
     if (!loggedIn) {
-      navigate("/admin/login");
+      navigate("/master_adm/login");
     } else {
       checkAdminSession();
     }
@@ -114,7 +114,7 @@ export default function AdminLayout() {
     } catch (e) {
       console.error("Admin logout failed:", e);
     }
-    navigate("/admin/login");
+    navigate("/master_adm/login");
   };
 
   const menuItems = [
@@ -126,7 +126,7 @@ export default function AdminLayout() {
     { to: "/admin/api-settings", icon: <Key size={18} />, label: "API Settings" },
     { to: "/admin/backups", icon: <Database size={18} />, label: "Remote Backups" },
     { to: "/admin/audits", icon: <ShieldAlert size={18} />, label: "Audit Ledger" },
-    { to: "/admin/register", icon: <UserPlus size={18} />, label: "Invite Admin" },
+    { to: "/master_adm/register", icon: <UserPlus size={18} />, label: "Invite Admin" },
   ];
 
   if (verifying) {

@@ -142,14 +142,14 @@ export default function App() {
       // Handle Admin/User Session Expiration (401 Unauthorized)
       const requestUrl = typeof input === 'string' ? input : (input && typeof input === 'object' && 'url' in input ? (input as any).url : '');
       if (response.status === 401) {
-        if (requestUrl.includes('/api/admin') || window.location.pathname.startsWith('/admin')) {
+        if (requestUrl.includes('/api/admin') || window.location.pathname.startsWith('/master_adm')) {
           localStorage.removeItem("admin_logged_in");
           localStorage.removeItem("admin_email");
           localStorage.removeItem("admin_role");
-          if (window.location.pathname !== '/admin/login') {
-            window.location.href = "/admin/login";
+          if (window.location.pathname !== '/master_adm/login') {
+            window.location.href = "/master_adm/login";
           }
-        } else if (requestUrl.includes('/api/auth/me') || !window.location.pathname.startsWith('/admin')) {
+        } else if (requestUrl.includes('/api/auth/me') || !window.location.pathname.startsWith('/master_adm')) {
           localStorage.removeItem("is_logged_in");
           setToken(null);
           setUser(null);
@@ -159,7 +159,7 @@ export default function App() {
         }
       }
 
-      if (response.status === 403 && !window.location.pathname.startsWith('/admin')) {
+      if (response.status === 403 && !window.location.pathname.startsWith('/master_adm')) {
         try {
           const clone = response.clone();
           const body = await clone.json();
@@ -173,7 +173,7 @@ export default function App() {
         }
       }
 
-      if (response.status === 503 && !window.location.pathname.startsWith('/admin')) {
+      if (response.status === 503 && !window.location.pathname.startsWith('/master_adm')) {
         try {
           const clone = response.clone();
           const body = await clone.json();
@@ -194,7 +194,7 @@ export default function App() {
       // Admin routes use a separate HttpOnly admin_token session. Do not probe
       // the user session here, otherwise its 401 handler redirects /admin/login
       // back to the customer login page.
-      if (window.location.pathname.startsWith('/admin')) {
+      if (window.location.pathname.startsWith('/master_adm')) {
         setLoading(false);
       } else {
         await refreshUser();
@@ -257,7 +257,7 @@ export default function App() {
   }
 
   // Full-screen Maintenance Downtime Overlay for standard platform pages
-  if (inMaintenance && !window.location.pathname.startsWith('/admin')) {
+  if (inMaintenance && !window.location.pathname.startsWith('/master_adm')) {
     const siteLogo = appConfig?.logo_url;
     const siteName = appConfig?.site_name || "SmartCampaign";
     const supportEmail = appConfig?.support_email || "support@smartcampaign.today";
@@ -352,8 +352,8 @@ export default function App() {
           </Route>
 
           {/* Super Admin Center Protected Routes */}
-          <Route path="/admin/login" element={<AdminLogin />} />
-          <Route path="/admin" element={<AdminLayout />}>
+          <Route path="/master_adm/login" element={<AdminLogin />} />
+          <Route path="/master_adm" element={<AdminLayout />}>
             <Route index element={<AdminDashboard />} />
             <Route path="register" element={<AdminRegister />} />
             <Route path="users" element={<AdminUsers />} />
