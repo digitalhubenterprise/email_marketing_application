@@ -18,16 +18,24 @@ if database_url.startswith("postgresql+asyncpg://"):
         engine_connect_args["ssl"] = True
     database_url = urlunsplit((parsed_url.scheme, parsed_url.netloc, parsed_url.path, urlencode(query), parsed_url.fragment))
 
-# Create Async Engine with production-safe connection pool settings
+# Disable JIT compilation on Postgres server side for high-frequency small API queries
+# (JIT compilation adds 50-300ms overhead on simple queries).
+engine_connect_args["server_settings"] = {
+    "jit": "off",
+    "application_name": "smartcampaign_api"
+}
+engine_connect_args["command_timeout"] = 15
+
+# Create Async Engine with production-safe connection pool settings for Neon Cloud DB
 engine = create_async_engine(
     database_url,
     echo=False,
     future=True,
     pool_pre_ping=True,      # Verify connections before use (handles dropped connections)
-    pool_size=5,             # Keep app-side pooling small; Neon pooler handles fan-out
-    max_overflow=10,         # Avoid exhausting Neon connections across workers/tasks
+    pool_size=10,            # Keep app-side pooling optimal for Neon pooler
+    max_overflow=20,         # Avoid exhausting Neon connections across workers/tasks
     pool_timeout=30,         # Wait up to 30s for a connection before raising PoolTimeout
-    pool_recycle=1800,       # Recycle connections every 30 minutes (prevents stale connections)
+    pool_recycle=300,        # Recycle connections every 5 minutes (prevents Neon proxy stale connections)
     connect_args=engine_connect_args,
 )
 

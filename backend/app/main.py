@@ -80,7 +80,9 @@ app.state.limiter = get_limiter()
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
-# ─── Maintenance Mode Middleware ─────────────────────────────────────
+import time
+
+_maintenance_mode_cache = {"val": False, "exp": 0.0}
 
 @app.middleware("http")
 async def check_maintenance_mode(request: Request, call_next) -> Response:
@@ -95,24 +97,27 @@ async def check_maintenance_mode(request: Request, call_next) -> Response:
         or path == f"{settings.API_V1_STR}/auth/config"
     )
     if not is_bypass:
-        from app.db.session import AsyncSessionLocal
-        from app.db.models import SystemConfig
-        from sqlalchemy.future import select
-        async with AsyncSessionLocal() as db:
+        now = time.time()
+        if now > _maintenance_mode_cache["exp"]:
+            from app.db.session import AsyncSessionLocal
+            from app.db.models import SystemConfig
+            from sqlalchemy.future import select
             try:
-                res = await db.execute(select(SystemConfig.maintenance_mode).where(SystemConfig.id == 1))
-                maintenance_mode = res.scalar() or False
-                if maintenance_mode:
-                    return JSONResponse(
-                        status_code=503,
-                        content={
-                            "detail": "System is currently undergoing scheduled maintenance. Please try again shortly.",
-                            "maintenance": True
-                        }
-                    )
+                async with AsyncSessionLocal() as db:
+                    res = await db.execute(select(SystemConfig.maintenance_mode).where(SystemConfig.id == 1))
+                    _maintenance_mode_cache["val"] = res.scalar() or False
+                    _maintenance_mode_cache["exp"] = now + 10.0  # Cache for 10 seconds
             except Exception as e:
-                # Fallback to normal behavior if DB connection fails during check
                 _ = e
+
+        if _maintenance_mode_cache["val"]:
+            return JSONResponse(
+                status_code=503,
+                content={
+                    "detail": "System is currently undergoing scheduled maintenance. Please try again shortly.",
+                    "maintenance": True
+                }
+            )
 
     return await call_next(request)
 

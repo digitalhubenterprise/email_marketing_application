@@ -844,14 +844,22 @@ async def submit_payment(
     }
 
 
+import time
+
+_public_config_cache = {"val": None, "exp": 0.0}
+
 @router.get("/config")
 async def get_public_config(response: Response, db: AsyncSession = Depends(get_db)):
     """Exposes public platform configurations for standard branding and announcement broadcasts."""
-    response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    response.headers["Cache-Control"] = "public, max-age=15"
+    now = time.time()
+    if _public_config_cache["val"] is not None and now < _public_config_cache["exp"]:
+        return _public_config_cache["val"]
+
     res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
     config = res.scalars().first()
     if not config:
-        return {
+        data = {
             "site_name": "SmartCampaign",
             "logo_url": None,
             "support_email": "support@smartcampaign.today",
@@ -871,26 +879,31 @@ async def get_public_config(response: Response, db: AsyncSession = Depends(get_d
             "payment_gateway_usdc_bep20_enabled": True,
             "payment_gateway_merchant_enabled": True
         }
-    return {
-        "site_name": config.site_name,
-        "logo_url": config.logo_url,
-        "support_email": config.support_email,
-        "announcement_active": config.announcement_active,
-        "announcement_message": config.announcement_message,
-        "maintenance_mode": config.maintenance_mode,
-        "seo_meta_title": config.seo_meta_title,
-        "seo_meta_description": config.seo_meta_description,
-        "seo_meta_keywords": config.seo_meta_keywords,
-        "payment_gateway_trc20": config.payment_gateway_trc20 or "",
-        "payment_gateway_bep20": config.payment_gateway_bep20 or "",
-        "payment_gateway_usdc_bep20": config.payment_gateway_usdc_bep20 or "",
-        "payment_gateway_merchant_id": config.payment_gateway_merchant_id or "",
-        "payment_gateway_qr_code": config.payment_gateway_qr_code or "",
-        "payment_gateway_trc20_enabled": config.payment_gateway_trc20_enabled if config.payment_gateway_trc20_enabled is not None else True,
-        "payment_gateway_bep20_enabled": config.payment_gateway_bep20_enabled if config.payment_gateway_bep20_enabled is not None else True,
-        "payment_gateway_usdc_bep20_enabled": config.payment_gateway_usdc_bep20_enabled if config.payment_gateway_usdc_bep20_enabled is not None else True,
-        "payment_gateway_merchant_enabled": config.payment_gateway_merchant_enabled if config.payment_gateway_merchant_enabled is not None else True
-    }
+    else:
+        data = {
+            "site_name": config.site_name,
+            "logo_url": config.logo_url,
+            "support_email": config.support_email,
+            "announcement_active": config.announcement_active,
+            "announcement_message": config.announcement_message,
+            "maintenance_mode": config.maintenance_mode,
+            "seo_meta_title": config.seo_meta_title,
+            "seo_meta_description": config.seo_meta_description,
+            "seo_meta_keywords": config.seo_meta_keywords,
+            "payment_gateway_trc20": config.payment_gateway_trc20 or "",
+            "payment_gateway_bep20": config.payment_gateway_bep20 or "",
+            "payment_gateway_usdc_bep20": config.payment_gateway_usdc_bep20 or "",
+            "payment_gateway_merchant_id": config.payment_gateway_merchant_id or "",
+            "payment_gateway_qr_code": config.payment_gateway_qr_code or "",
+            "payment_gateway_trc20_enabled": config.payment_gateway_trc20_enabled if config.payment_gateway_trc20_enabled is not None else True,
+            "payment_gateway_bep20_enabled": config.payment_gateway_bep20_enabled if config.payment_gateway_bep20_enabled is not None else True,
+            "payment_gateway_usdc_bep20_enabled": config.payment_gateway_usdc_bep20_enabled if config.payment_gateway_usdc_bep20_enabled is not None else True,
+            "payment_gateway_merchant_enabled": config.payment_gateway_merchant_enabled if config.payment_gateway_merchant_enabled is not None else True
+        }
+
+    _public_config_cache["val"] = data
+    _public_config_cache["exp"] = now + 15.0
+    return data
 
 
 class SettingsUpdateRequest(BaseModel):

@@ -22,34 +22,23 @@ async def get_dashboard_aggregates(
 ):
     """Returns aggregated metrics for the authenticated user's campaign dashboard."""
 
-    # Total sent
-    total_sent = (
+    # Single aggregated query for Campaign sent, opens, and clicks
+    camp_stats = (
         await db.execute(
-            select(func.sum(Campaign.sent_count)).where(Campaign.user_id == current_user.id)
-        )
-    ).scalar() or 0
-
-    # Open rate
-    open_res = (
-        await db.execute(
-            select(func.sum(Campaign.open_count), func.sum(Campaign.sent_count))
-            .where(Campaign.user_id == current_user.id)
+            select(
+                func.coalesce(func.sum(Campaign.sent_count), 0),
+                func.coalesce(func.sum(Campaign.open_count), 0),
+                func.coalesce(func.sum(Campaign.click_count), 0),
+            ).where(Campaign.user_id == current_user.id)
         )
     ).first()
-    sum_opens = open_res[0] or 0
-    sum_sends = open_res[1] or 0
-    avg_open_rate = round((sum_opens / sum_sends * 100), 2) if sum_sends > 0 else 0.0
 
-    # Click rate
-    click_res = (
-        await db.execute(
-            select(func.sum(Campaign.click_count), func.sum(Campaign.sent_count))
-            .where(Campaign.user_id == current_user.id)
-        )
-    ).first()
-    sum_clicks = click_res[0] or 0
-    sum_sends_c = click_res[1] or 0
-    avg_click_rate = round((sum_clicks / sum_sends_c * 100), 2) if sum_sends_c > 0 else 0.0
+    total_sent = camp_stats[0] or 0
+    sum_opens = camp_stats[1] or 0
+    sum_clicks = camp_stats[2] or 0
+
+    avg_open_rate = round((sum_opens / total_sent * 100), 2) if total_sent > 0 else 0.0
+    avg_click_rate = round((sum_clicks / total_sent * 100), 2) if total_sent > 0 else 0.0
 
     # List count
     total_lists = (
