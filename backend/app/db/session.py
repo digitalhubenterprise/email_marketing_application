@@ -26,6 +26,11 @@ engine_connect_args["server_settings"] = {
 }
 engine_connect_args["command_timeout"] = 15
 
+# Neon PgBouncer pooler compatibility: disable asyncpg prepared statement caching
+# to prevent statement mismatch delays across pooled Neon connections.
+engine_connect_args["statement_cache_size"] = 0
+engine_connect_args["prepared_statement_cache_size"] = 0
+
 # Create Async Engine with production-safe connection pool settings for Neon Cloud DB
 engine = create_async_engine(
     database_url,
