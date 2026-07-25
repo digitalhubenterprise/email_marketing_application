@@ -86,6 +86,10 @@ app.state.limiter = get_limiter()
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_middleware(SlowAPIMiddleware)
 
+# Fast response compression for payloads > 500 bytes
+from fastapi.middleware.gzip import GZipMiddleware
+app.add_middleware(GZipMiddleware, minimum_size=500)
+
 import time
 
 _maintenance_mode_cache = {"val": False, "exp": 0.0}

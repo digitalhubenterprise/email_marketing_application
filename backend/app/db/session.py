@@ -87,10 +87,13 @@ async def create_db_tables() -> None:
             for statement in (
                 "CREATE INDEX IF NOT EXISTS ix_contact_lists_user_id ON contact_lists (user_id)",
                 "CREATE INDEX IF NOT EXISTS ix_contacts_list_id ON contacts (list_id)",
+                "CREATE INDEX IF NOT EXISTS ix_contacts_list_status ON contacts (list_id, status)",
                 "CREATE INDEX IF NOT EXISTS ix_email_templates_user_id ON email_templates (user_id)",
                 "CREATE INDEX IF NOT EXISTS ix_campaigns_user_created ON campaigns (user_id, created_at DESC)",
+                "CREATE INDEX IF NOT EXISTS ix_campaigns_user_status ON campaigns (user_id, status)",
                 "CREATE INDEX IF NOT EXISTS ix_campaign_logs_campaign_id ON campaign_logs (campaign_id)",
                 "CREATE INDEX IF NOT EXISTS ix_campaign_logs_contact_id ON campaign_logs (contact_id)",
+                "CREATE INDEX IF NOT EXISTS ix_campaign_logs_comp_status ON campaign_logs (campaign_id, status)",
                 "CREATE INDEX IF NOT EXISTS ix_payment_logs_user_created ON payment_logs (user_id, created_at DESC)",
                 "CREATE INDEX IF NOT EXISTS ix_admin_audit_logs_created ON admin_audit_logs (created_at DESC)",
                 "CREATE INDEX IF NOT EXISTS ix_sms_logs_user_timestamp ON sms_logs (user_id, timestamp DESC)",
