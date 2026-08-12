@@ -329,13 +329,17 @@ export default function App() {
           {/* Public Landing Home Page */}
           <Route path="/home" element={<LandingPage />} />
 
-          {/* Auth routes */}
-          <Route path="/login" element={!token ? <Login /> : <Navigate to="/" />} />
-          <Route path="/register" element={!token ? <Register /> : <Navigate to="/" />} />
+          {/* Auth Public Routes */}
+          <Route path="/login" element={!token ? <Login /> : <Navigate to="/" replace />} />
+          <Route path="/register" element={!token ? <Register /> : <Navigate to="/" replace />} />
 
-          {/* Root Route: Show LandingPage if not logged in, show Dashboard Layout if logged in */}
+          {/* Root Domain Route: LandingPage for guests, Layout for logged-in users */}
           <Route path="/" element={!token ? <LandingPage /> : <Layout />}>
             <Route index element={<Dashboard />} />
+          </Route>
+
+          {/* Protected User Dashboard Routes (Redirects unauthenticated users to /login) */}
+          <Route path="/" element={token ? <Layout /> : <Navigate to="/login" replace />}>
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="smtp" element={<SMTPServers />} />
             <Route path="lists" element={<ContactLists />} />
@@ -370,7 +374,7 @@ export default function App() {
             <Route path="campaigns" element={<AdminCampaigns />} />
           </Route>
 
-          <Route path="*" element={<Navigate to="/" />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </AuthContext.Provider>
