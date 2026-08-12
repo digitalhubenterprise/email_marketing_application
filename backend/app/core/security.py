@@ -161,13 +161,18 @@ def sanitize_html(html_content: str) -> str:
         "display", "vertical-align", "overflow", "box-shadow"
     ]
     
-    from bleach.css_sanitizer import CSSSanitizer
-    css_sanitizer = CSSSanitizer(allowed_css_properties=allowed_styles)
+    try:
+        from bleach.css_sanitizer import CSSSanitizer
+        css_sanitizer = CSSSanitizer(allowed_css_properties=allowed_styles)
+    except (ImportError, ModuleNotFoundError):
+        css_sanitizer = None
     
-    return bleach.clean(
-        html_content,
-        tags=allowed_tags,
-        attributes=allowed_attributes,
-        css_sanitizer=css_sanitizer,
-        strip=True
-    )
+    clean_kwargs = {
+        "tags": allowed_tags,
+        "attributes": allowed_attributes,
+        "strip": True
+    }
+    if css_sanitizer is not None:
+        clean_kwargs["css_sanitizer"] = css_sanitizer
+
+    return bleach.clean(html_content, **clean_kwargs)

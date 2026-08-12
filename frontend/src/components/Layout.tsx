@@ -8,7 +8,7 @@ export default function Layout() {
   const { user, appConfig } = useAuth();
   const currentYear = new Date().getFullYear();
   const siteName = appConfig?.site_name || 'SmartCampaign';
-  const currentYear = new Date().getFullYear();
+
   const [announcementDismissed, setAnnouncementDismissed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   

@@ -7,7 +7,8 @@ RUN npm ci
 
 # Copy source code and build
 COPY . .
-RUN npm run build
+RUN rm -rf ./dist
+RUN npm run prebuild && npm run build
 
 # Production stage using nginx
 FROM nginx:alpine
