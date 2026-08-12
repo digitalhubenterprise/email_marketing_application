@@ -92,8 +92,8 @@ services:
       dockerfile: Dockerfile
     container_name: smartcampaign_frontend
     restart: always
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     environment:
       - TZ=Asia/Dhaka
     depends_on:
