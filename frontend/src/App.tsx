@@ -117,21 +117,26 @@ export default function App() {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        setToken("authenticated");
+        localStorage.setItem("is_logged_in", "true");
       } else if (response.status === 503) {
-        // Under maintenance - let fetch interceptor handle or manually flag
         setInMaintenance(true);
       } else {
-        // Session expired/invalid
-        logout();
+        // Session expired or unauthenticated guest — clear token without forcing redirect on public pages
+        localStorage.removeItem("is_logged_in");
+        setToken(null);
+        setUser(null);
       }
     } catch (error) {
       console.error("Failed to fetch user:", error);
+      setToken(null);
+      setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  // Global Fetch Interceptor for 503 Maintenance Mode and 401 Admin Session Expirations
+  // Global Fetch Interceptor for 503 Maintenance Mode and 401 Admin/User Session Expirations
   useEffect(() => {
     const originalFetch = window.fetch;
     window.fetch = async (input, init) => {
@@ -143,20 +148,27 @@ export default function App() {
       // Handle Admin/User Session Expiration (401 Unauthorized)
       const requestUrl = typeof input === 'string' ? input : (input && typeof input === 'object' && 'url' in input ? (input as any).url : '');
       if (response.status === 401) {
-        if (requestUrl.includes('/api/admin') || window.location.pathname.startsWith('/master_adm')) {
+        const currentPath = window.location.pathname;
+        const isPublicPath = currentPath === '/' || currentPath === '/home' || currentPath === '/register' || currentPath === '/login';
+
+        if (requestUrl.includes('/api/admin') || currentPath.startsWith('/master_adm')) {
           localStorage.removeItem("admin_logged_in");
           localStorage.removeItem("admin_email");
           localStorage.removeItem("admin_role");
-          if (window.location.pathname !== '/master_adm/login') {
+          if (currentPath !== '/master_adm/login') {
             window.location.href = "/master_adm/login";
           }
-        } else if (requestUrl.includes('/api/auth/me') || !window.location.pathname.startsWith('/master_adm')) {
+        } else if (!isPublicPath) {
+          // Only redirect to /login if unauthenticated user attempts to access protected routes
           localStorage.removeItem("is_logged_in");
           setToken(null);
           setUser(null);
-          if (window.location.pathname !== '/login') {
-            window.location.href = "/login";
-          }
+          window.location.href = "/login";
+        } else {
+          // Public page (Landing Page / Register): clear user state smoothly
+          localStorage.removeItem("is_logged_in");
+          setToken(null);
+          setUser(null);
         }
       }
 
