@@ -186,7 +186,7 @@ export default function AdminLayout() {
             <NavLink
               key={item.to}
               to={item.to}
-              end={item.to === "/admin"}
+              end={item.to === "/master_adm"}
               onClick={() => setSidebarOpen(false)}
               className={({ isActive }) => `
                 flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-200

@@ -42,7 +42,7 @@ export default function AdminLogin() {
         // tokens in localStorage, where an XSS issue could exfiltrate them.
         localStorage.setItem('admin_email', data.email || email);
         localStorage.setItem('admin_role', data.role || (email === 'admin@gmail.com' ? 'master_admin' : 'support'));
-        navigate('/admin');
+        navigate('/master_adm');
       } else {
         let errorMsg = 'Access Denied: Invalid credentials.';
         try {
