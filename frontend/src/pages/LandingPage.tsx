@@ -421,24 +421,23 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-dark-950 text-white font-sans selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
-      {/* Background Ambient Mesh */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-brand-600/20 via-brand-500/10 to-transparent rounded-full filter blur-[140px] pointer-events-none" />
-      <div className="absolute top-[800px] right-0 w-[500px] h-[500px] bg-brand-500/10 rounded-full filter blur-[150px] pointer-events-none" />
-      <div className="absolute top-[1800px] left-0 w-[600px] h-[600px] bg-emerald-600/5 rounded-full filter blur-[160px] pointer-events-none" />
+      {/* Decorative Background Blur Nodes (Exact same blur system as Login Page) */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-brand-500/5 rounded-full filter blur-[100px] animate-pulse pointer-events-none" />
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/5 rounded-full filter blur-[100px] animate-pulse delay-700 pointer-events-none" />
 
       {/* ─── Header / Top Navbar ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-dark-950/80 border-b border-dark-800/80 transition-all">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-dark-950/80 border-b border-dark-700/50 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             {siteLogo ? (
               <img src={siteLogo} alt={siteName} className="h-10 object-contain rounded-xl" />
             ) : (
-              <div className="h-10 w-10 bg-brand-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
-                <Send className="w-5 h-5" />
+              <div className="h-10 w-10 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
+                {siteName.substring(0, 1) || "S"}
               </div>
             )}
             <div>
-              <span className="text-lg font-black tracking-tight text-white group-hover:text-brand-400 transition-colors">
+              <span className="text-lg font-black tracking-tight text-white group-hover:text-brand-400 transition-colors font-sans">
                 {siteName}
               </span>
               <span className="hidden sm:inline-block ml-2 text-[10px] font-black tracking-widest uppercase bg-brand-500/10 text-brand-400 px-2 py-0.5 rounded-full border border-brand-500/20">
@@ -460,13 +459,13 @@ export default function LandingPage() {
           <div className="flex items-center gap-3">
             <button
               onClick={openLoginModal}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-dark-300 hover:text-white hover:bg-dark-900 border border-transparent hover:border-dark-800 transition-all hidden sm:inline-flex"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-dark-300 hover:text-white hover:bg-dark-900 border border-transparent hover:border-dark-700/50 transition-all hidden sm:inline-flex"
             >
               Sign In
             </button>
             <button
               onClick={() => openRegisterModal('free')}
-              className="px-5 py-2.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 active:scale-[0.98] transition-all flex items-center gap-2"
             >
               <span>Get Started Free</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -475,7 +474,7 @@ export default function LandingPage() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl bg-dark-900 border border-dark-800 text-dark-300 hover:text-white transition-all"
+              className="lg:hidden p-2 rounded-xl bg-dark-900 border border-dark-700/50 text-dark-300 hover:text-white transition-all"
               aria-label="Toggle Mobile Menu"
             >
               {mobileMenuOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
@@ -485,7 +484,7 @@ export default function LandingPage() {
 
         {/* Mobile Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden backdrop-blur-2xl bg-dark-950/95 border-b border-dark-800/80 px-4 pt-4 pb-6 space-y-4 animate-slideDown">
+          <div className="lg:hidden backdrop-blur-2xl bg-dark-950/95 border-b border-dark-700/50 px-4 pt-4 pb-6 space-y-4 animate-slideDown">
             <nav className="flex flex-col space-y-3 text-xs font-bold text-dark-200">
               <a 
                 href="#features" 
@@ -527,7 +526,7 @@ export default function LandingPage() {
             <div className="pt-2 flex flex-col gap-2.5">
               <button
                 onClick={() => { setMobileMenuOpen(false); openLoginModal(); }}
-                className="w-full py-3 rounded-xl bg-dark-900 border border-dark-800 text-xs font-bold text-white text-center"
+                className="w-full py-3 rounded-xl bg-dark-900 border border-dark-700/50 text-xs font-bold text-white text-center"
               >
                 Customer Sign In
               </button>
@@ -561,11 +560,11 @@ export default function LandingPage() {
           Automate bulk campaign dispatches across multi-node SMTP load balancers, SMS gateways, and Telegram bots. Features real-time click heatmaps, automated A/B split testing, and crypto billing.
         </p>
 
-        {/* CTA Buttons - Both Trigger Popups */}
+        {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 w-full max-w-md sm:max-w-none mx-auto">
           <button
             onClick={() => openRegisterModal('free')}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl brand-gradient-bg text-sm font-extrabold text-white shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl brand-gradient-bg text-sm font-extrabold text-white shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
           >
             <span>Start Your Free 30-Day Trial</span>
             <ArrowRight className="w-4 h-4" />
@@ -573,24 +572,24 @@ export default function LandingPage() {
 
           <button
             onClick={openLoginModal}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-dark-900 hover:bg-dark-850 border border-dark-700/80 text-sm font-bold text-white transition-all flex items-center justify-center gap-2 hover:border-dark-600"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-dark-900/60 hover:bg-dark-900 border border-dark-700/80 text-sm font-bold text-white transition-all flex items-center justify-center gap-2 hover:border-dark-600"
           >
             <Lock className="w-4 h-4 text-brand-400" />
             <span>Customer Portal Login</span>
           </button>
         </div>
 
-        {/* Metrics Ticker */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto p-4 sm:p-6 rounded-3xl bg-dark-900/60 border border-dark-800/80 backdrop-blur-xl shadow-2xl">
-          <div className="text-center p-3 border-r border-dark-800/60 last:border-0">
+        {/* Metrics Ticker - Glass Panel */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto p-4 sm:p-6 rounded-3xl glass-panel border border-dark-700/50 shadow-2xl">
+          <div className="text-center p-3 border-r border-dark-800/80 last:border-0">
             <div className="text-xl sm:text-3xl font-black text-brand-400">99.8%</div>
             <div className="text-[10px] sm:text-[11px] font-bold text-dark-400 uppercase tracking-wider mt-1">Inbox Delivery Rate</div>
           </div>
-          <div className="text-center p-3 border-r border-dark-800/60 last:border-0">
+          <div className="text-center p-3 border-r border-dark-800/80 last:border-0">
             <div className="text-xl sm:text-3xl font-black text-indigo-400">10M+</div>
             <div className="text-[10px] sm:text-[11px] font-bold text-dark-400 uppercase tracking-wider mt-1">Daily Email Dispatches</div>
           </div>
-          <div className="text-center p-3 border-r border-dark-800/60 last:border-0">
+          <div className="text-center p-3 border-r border-dark-800/80 last:border-0">
             <div className="text-xl sm:text-3xl font-black text-purple-400">&lt; 5ms</div>
             <div className="text-[10px] sm:text-[11px] font-bold text-dark-400 uppercase tracking-wider mt-1">API Dispatch Latency</div>
           </div>
@@ -660,7 +659,8 @@ export default function LandingPage() {
           </button>
         </div>
 
-        <div className="rounded-3xl overflow-hidden border border-dark-700/60 shadow-[0_25px_70px_rgba(0,0,0,0.7)] bg-dark-900/90 relative text-left">
+        {/* Glass Console Container */}
+        <div className="rounded-3xl overflow-hidden glass-panel border border-dark-700/50 shadow-2xl relative text-left">
           <div className="h-10 bg-dark-900 border-b border-dark-800 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
@@ -690,17 +690,17 @@ export default function LandingPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Emails Sent Today</span>
                     <div className="text-2xl font-black text-white mt-1">452,890</div>
                     <div className="text-[11px] text-emerald-400 mt-1 font-bold">↑ 24% vs yesterday</div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Unique Opens</span>
-                    <div className="text-2xl font-black text-indigo-400 mt-1">193,830</div>
-                    <div className="text-[11px] text-indigo-300 mt-1 font-bold">42.8% Open Rate</div>
+                    <div className="text-2xl font-black text-brand-400 mt-1">193,830</div>
+                    <div className="text-[11px] text-brand-300 mt-1 font-bold">42.8% Open Rate</div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Bounce Rate</span>
                     <div className="text-2xl font-black text-emerald-400 mt-1">0.12%</div>
                     <div className="text-[11px] text-emerald-300 mt-1 font-bold">Zero Spam Flags</div>
@@ -722,17 +722,17 @@ export default function LandingPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">SMS Dispatches</span>
                     <div className="text-2xl font-black text-sky-400 mt-1">98,400</div>
                     <div className="text-[11px] text-sky-300 mt-1 font-bold">100% Delivery Callback</div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Active Sender ID</span>
                     <div className="text-2xl font-black text-white mt-1">BRAND_SMS</div>
                     <div className="text-[11px] text-dark-400 mt-1 font-bold">Custom Sender Tag</div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Latency</span>
                     <div className="text-2xl font-black text-emerald-400 mt-1">1.2s</div>
                     <div className="text-[11px] text-emerald-300 mt-1 font-bold">Instant SMS Delivery</div>
@@ -754,17 +754,17 @@ export default function LandingPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Channel Broadcasts</span>
                     <div className="text-2xl font-black text-brand-400 mt-1">34,120</div>
                     <div className="text-[11px] text-brand-300 mt-1 font-bold">Instant Push</div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">IMEI / Server Checks</span>
                     <div className="text-2xl font-black text-purple-400 mt-1">12,890</div>
                     <div className="text-[11px] text-purple-300 mt-1 font-bold">Automated Responses</div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Subscriber Reach</span>
                     <div className="text-2xl font-black text-emerald-400 mt-1">100%</div>
                     <div className="text-[11px] text-emerald-300 mt-1 font-bold">Zero Drop Rate</div>
@@ -786,17 +786,17 @@ export default function LandingPage() {
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Desktop Readers</span>
-                    <div className="text-2xl font-black text-indigo-400 mt-1">68.4%</div>
+                    <div className="text-2xl font-black text-brand-400 mt-1">68.4%</div>
                     <div className="text-[11px] text-dark-400 mt-1 font-bold">Chrome / Edge / Safari</div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Mobile Readers</span>
                     <div className="text-2xl font-black text-purple-400 mt-1">31.6%</div>
                     <div className="text-[11px] text-dark-400 mt-1 font-bold">iOS / Android Devices</div>
                   </div>
-                  <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                  <div className="p-4 rounded-2xl bg-dark-950 border border-dark-800">
                     <span className="text-xs text-dark-400 font-medium">Total Link Clicks</span>
                     <div className="text-2xl font-black text-emerald-400 mt-1">84,920</div>
                     <div className="text-[11px] text-emerald-300 mt-1 font-bold">PDF Report Export Ready</div>
@@ -821,7 +821,7 @@ export default function LandingPage() {
           {features.map((feature, idx) => (
             <div
               key={idx}
-              className="p-8 rounded-3xl bg-dark-900/60 border border-dark-800/80 hover:border-brand-500/40 transition-all hover:-translate-y-1 shadow-xl hover:shadow-brand-500/5 group"
+              className="p-8 rounded-3xl glass-panel border border-dark-700/50 hover:border-brand-500/40 transition-all hover:-translate-y-1 shadow-xl hover:shadow-brand-500/10 group"
             >
               <div className="p-3.5 rounded-2xl bg-dark-950 border border-dark-800 inline-block mb-6 group-hover:scale-110 transition-transform">
                 {feature.icon}
@@ -853,7 +853,7 @@ export default function LandingPage() {
               </p>
 
               <div className="space-y-4 pt-2">
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-dark-950/60 border border-dark-800">
+                <div className="flex items-start gap-4 p-4 rounded-2xl glass-panel border border-dark-700/50">
                   <div className="p-2.5 rounded-xl bg-brand-500/10 text-brand-400 mt-1">
                     <Mail className="w-5 h-5" />
                   </div>
@@ -863,7 +863,7 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-dark-950/60 border border-dark-800">
+                <div className="flex items-start gap-4 p-4 rounded-2xl glass-panel border border-dark-700/50">
                   <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 mt-1">
                     <Smartphone className="w-5 h-5" />
                   </div>
@@ -873,7 +873,7 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-dark-950/60 border border-dark-800">
+                <div className="flex items-start gap-4 p-4 rounded-2xl glass-panel border border-dark-700/50">
                   <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 mt-1">
                     <Send className="w-5 h-5" />
                   </div>
@@ -886,7 +886,7 @@ export default function LandingPage() {
             </div>
 
             {/* Omni-Channel Graphic Card */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-dark-950 border border-dark-800/80 shadow-2xl relative text-left">
+            <div className="p-6 sm:p-8 rounded-3xl glass-panel border border-dark-700/50 shadow-2xl relative text-left">
               <div className="flex items-center justify-between border-b border-dark-800 pb-4 mb-6">
                 <div className="text-sm font-bold text-white flex items-center gap-2">
                   <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
@@ -990,10 +990,10 @@ export default function LandingPage() {
           {plans.map((plan, idx) => (
             <div
               key={idx}
-              className={`p-6 sm:p-8 rounded-3xl bg-dark-900/80 border transition-all flex flex-col justify-between relative ${
+              className={`p-6 sm:p-8 rounded-3xl glass-panel transition-all flex flex-col justify-between relative ${
                 plan.popular
-                  ? 'border-brand-500 shadow-[0_0_40px_rgba(79,70,229,0.2)] scale-[1.03] z-20'
-                  : 'border-dark-800 hover:border-dark-700'
+                  ? 'border-brand-500 shadow-[0_0_40px_rgba(79,70,229,0.3)] scale-[1.03] z-20'
+                  : 'border-dark-700/50 hover:border-dark-600'
               }`}
             >
               {plan.popular && (
@@ -1070,7 +1070,7 @@ export default function LandingPage() {
           {faqs.map((faq, idx) => (
             <div
               key={idx}
-              className="rounded-2xl bg-dark-900/60 border border-dark-800 overflow-hidden transition-colors"
+              className="rounded-2xl glass-panel border border-dark-700/50 overflow-hidden transition-colors"
             >
               <button
                 onClick={() => toggleFaq(idx)}
@@ -1131,11 +1131,11 @@ export default function LandingPage() {
               {siteLogo ? (
                 <img src={siteLogo} alt={siteName} className="h-8 object-contain" />
               ) : (
-                <div className="h-8 w-8 bg-brand-500 rounded-xl flex items-center justify-center text-white font-bold">
-                  <Send className="w-4 h-4" />
+                <div className="h-8 w-8 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-bold">
+                  {siteName.substring(0, 1) || "S"}
                 </div>
               )}
-              <span className="font-extrabold text-white text-base">{siteName}</span>
+              <span className="font-extrabold text-white text-base font-sans">{siteName}</span>
             </div>
             <p className="text-xs text-dark-400 leading-relaxed">
               Modern SaaS email marketing, multi-node SMTP load balancer, bulk SMS gateway & Telegram automation suite.
@@ -1186,17 +1186,17 @@ export default function LandingPage() {
         </div>
       </footer>
 
-      {/* ─── INTERACTIVE AUTH POPUP MODAL ─────────────────────────────────── */}
+      {/* ─── INTERACTIVE AUTH POPUP MODAL (Exact glass panel design as Login Page) ─── */}
       {authModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn overflow-y-auto">
-          {/* Backdrop overlay click to close */}
+          {/* Backdrop overlay */}
           <div 
             className="fixed inset-0" 
             onClick={closeModal}
           />
 
           {/* Modal Container */}
-          <div className="relative z-10 w-full max-w-md bg-dark-900 border border-dark-700/80 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.8)] animate-scaleUp text-left my-8">
+          <div className="relative z-10 w-full max-w-sm glass-panel p-6 sm:p-8 rounded-2xl border border-dark-700/50 shadow-2xl animate-scaleUp text-left my-8">
             {/* Close Button (X) */}
             <button
               onClick={closeModal}
@@ -1206,21 +1206,21 @@ export default function LandingPage() {
               <XIcon className="w-5 h-5" />
             </button>
 
-            {/* Header / Tabs */}
+            {/* Header */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-3">
-                <div className="h-8 w-8 bg-brand-500 rounded-xl flex items-center justify-center text-white font-bold">
-                  <Send className="w-4 h-4" />
+                <div className="h-8 w-8 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-bold shadow-lg shadow-brand-500/30">
+                  {siteName.substring(0, 1) || "S"}
                 </div>
                 <span className="font-extrabold text-white text-sm">{siteName} Portal</span>
               </div>
 
-              {/* Toggle Auth Mode Tabs */}
-              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-dark-950 border border-dark-800">
+              {/* Mode Switcher Tabs */}
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-dark-950 border border-dark-800">
                 <button
                   type="button"
                   onClick={() => { setAuthMode('login'); setError(null); }}
-                  className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`py-2 rounded-lg text-xs font-bold transition-all ${
                     authMode === 'login'
                       ? 'brand-gradient-bg text-white shadow-md'
                       : 'text-dark-400 hover:text-white'
@@ -1231,7 +1231,7 @@ export default function LandingPage() {
                 <button
                   type="button"
                   onClick={() => { setAuthMode('register'); setError(null); }}
-                  className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                  className={`py-2 rounded-lg text-xs font-bold transition-all ${
                     authMode === 'register'
                       ? 'brand-gradient-bg text-white shadow-md'
                       : 'text-dark-400 hover:text-white'
@@ -1244,9 +1244,9 @@ export default function LandingPage() {
 
             {/* Error Alert Box */}
             {error && (
-              <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-start gap-2.5">
-                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
-                <span>{error}</span>
+              <div className="mb-4.5 p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-xs font-medium flex items-start gap-2.5 animate-headShake">
+                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+                <span className="leading-normal">{error}</span>
               </div>
             )}
 
@@ -1257,12 +1257,12 @@ export default function LandingPage() {
                   <KeyRound className="w-10 h-10 text-brand-400 mx-auto mb-2" />
                   <h3 className="text-base font-bold text-white">Enter Verification Code</h3>
                   <p className="text-xs text-dark-400 mt-1">
-                    We sent a 6-digit verification code to <span className="text-white font-semibold">{email}</span>.
+                    A verification OTP code was sent to <span className="text-white font-semibold">{email}</span>.
                   </p>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Verification Code</label>
+                  <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider mb-1">Verification Code</label>
                   <input
                     type="text"
                     required
@@ -1270,14 +1270,14 @@ export default function LandingPage() {
                     value={verificationCode}
                     onChange={(e) => setVerificationCode(e.target.value)}
                     placeholder="123456"
-                    className="w-full px-4 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-white font-mono text-center tracking-widest text-lg focus:border-brand-500 focus:outline-none"
+                    className="w-full px-4 py-3 rounded-xl bg-dark-950 border border-dark-800 text-white font-mono text-center tracking-widest text-lg focus:border-brand-500 focus:outline-none"
                   />
                 </div>
 
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg hover:opacity-95 transition-all disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/30 hover:opacity-95 transition-all disabled:opacity-50"
                 >
                   {loading ? "Verifying..." : "Verify & Sign In"}
                 </button>
@@ -1294,36 +1294,36 @@ export default function LandingPage() {
               /* ─── LOGIN FORM ─── */
               <form onSubmit={handleModalLoginSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Email Address</label>
+                  <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider mb-1">Email Address</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Mail className="w-4 h-4 text-dark-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="user@example.com"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-800 text-xs font-medium text-white placeholder:text-dark-650 focus:border-brand-500 focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Password</label>
+                  <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider mb-1">Password</label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-dark-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type={showPassword ? "text" : "password"}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••"
-                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-dark-950 border border-dark-800 text-xs font-medium text-white placeholder:text-dark-650 focus:border-brand-500 focus:outline-none transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -1338,7 +1338,7 @@ export default function LandingPage() {
                       required
                       value={mfaCode}
                       onChange={(e) => setMfaCode(e.target.value)}
-                      placeholder="Enter 6-digit FA code"
+                      placeholder="Enter 6-digit 2FA code"
                       className="w-full px-4 py-3 rounded-xl bg-dark-950 border border-amber-500/50 text-white font-mono text-center tracking-widest text-sm focus:outline-none"
                     />
                   </div>
@@ -1347,7 +1347,7 @@ export default function LandingPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/30 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -1381,36 +1381,36 @@ export default function LandingPage() {
                 )}
 
                 <div>
-                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Email Address</label>
+                  <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider mb-1">Email Address</label>
                   <div className="relative">
-                    <Mail className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Mail className="w-4 h-4 text-dark-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type="email"
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="user@example.com"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-800 text-xs font-medium text-white placeholder:text-dark-650 focus:border-brand-500 focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Password</label>
+                  <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider mb-1">Password</label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-dark-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type={showPassword ? "text" : "password"}
                       required
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="At least 8 chars, 1 uppercase, 1 symbol"
-                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-dark-950 border border-dark-800 text-xs font-medium text-white placeholder:text-dark-650 focus:border-brand-500 focus:outline-none transition-colors"
                     />
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dark-500 hover:text-white"
                     >
                       {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                     </button>
@@ -1418,16 +1418,16 @@ export default function LandingPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Confirm Password</label>
+                  <label className="block text-[10px] font-bold text-dark-300 uppercase tracking-wider mb-1">Confirm Password</label>
                   <div className="relative">
-                    <Lock className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <Lock className="w-4 h-4 text-dark-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                     <input
                       type={showPassword ? "text" : "password"}
                       required
                       value={confirmPassword}
                       onChange={(e) => setConfirmPassword(e.target.value)}
                       placeholder="Re-enter your password"
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-800 text-xs font-medium text-white placeholder:text-dark-650 focus:border-brand-500 focus:outline-none transition-colors"
                     />
                   </div>
                 </div>
@@ -1435,7 +1435,7 @@ export default function LandingPage() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/30 hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                 >
                   {loading ? (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
