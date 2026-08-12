@@ -1,0 +1,737 @@
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Mail,
+  Send,
+  MessageSquare,
+  ShieldCheck,
+  Zap,
+  BarChart3,
+  Server,
+  Users,
+  CheckCircle2,
+  ChevronDown,
+  ChevronUp,
+  ArrowRight,
+  Sparkles,
+  Lock,
+  Globe,
+  Smartphone,
+  Cpu,
+  Layers,
+  Star,
+  Check,
+  Headphones
+} from 'lucide-react';
+import { useAuth } from '../App';
+
+export default function LandingPage() {
+  const { appConfig } = useAuth();
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+
+  const siteName = appConfig?.site_name || "SmartCampaign";
+  const siteLogo = appConfig?.logo_url;
+  const supportEmail = appConfig?.support_email || "support@smartcampaign.today";
+
+  const toggleFaq = (index: number) => {
+    setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const plans = [
+    {
+      name: "Starter",
+      tier: "free",
+      monthlyPrice: 0,
+      annualPrice: 0,
+      description: "Essential toolkit for individuals & early startups launching first email campaigns.",
+      badge: "Free Trial",
+      popular: false,
+      features: [
+        "1,000 Verified Contacts",
+        "5,000 Email Sends / month",
+        "1 Active SMTP Server Node",
+        "5 Starter HTML Templates",
+        "Basic Click & Open Analytics",
+        "Unsubscribe Link Management",
+        "Standard Email Support"
+      ],
+      ctaText: "Get Started Free",
+      ctaLink: "/register?plan=free"
+    },
+    {
+      name: "Standard",
+      tier: "pro",
+      monthlyPrice: 15,
+      annualPrice: 12,
+      description: "High-performance marketing suite for growing businesses & active senders.",
+      badge: "Most Popular",
+      popular: true,
+      features: [
+        "10,000 Verified Contacts",
+        "50,000 Email Sends / month",
+        "3 Active SMTP Server Nodes",
+        "A/B Subject Line Split Testing",
+        "20+ Premium Responsive Templates",
+        "SMS Gateway Integration (Twilio/BulkSMS)",
+        "Advanced Heatmap & Device Analytics",
+        "Scheduled & Batch Dispatches",
+        "Priority Support Response"
+      ],
+      ctaText: "Start Standard Plan",
+      ctaLink: "/register?plan=pro"
+    },
+    {
+      name: "Premium",
+      tier: "business",
+      monthlyPrice: 35,
+      annualPrice: 28,
+      description: "Maximum throughput & multi-channel automation for high-volume agencies.",
+      badge: "Best Value",
+      popular: false,
+      features: [
+        "50,000 Verified Contacts",
+        "200,000 Email Sends / month",
+        "5 Active SMTP Server Nodes",
+        "Full Telegram Marketing Suite (IMEI/Bot)",
+        "SMS & WhatsApp Dispatch Gateways",
+        "Dedicated IP Warm-up Manager",
+        "Custom Unsubscribe Page Builder",
+        "Automated PDF Analytics Export",
+        "24/7 Priority VIP Support"
+      ],
+      ctaText: "Scale With Premium",
+      ctaLink: "/register?plan=business"
+    },
+    {
+      name: "Enterprise",
+      tier: "enterprise",
+      monthlyPrice: 79,
+      annualPrice: 65,
+      description: "Dedicated infrastructure & custom API access for massive SaaS applications.",
+      badge: "Unlimited",
+      popular: false,
+      features: [
+        "Unlimited Verified Contacts",
+        "Unlimited Email Dispatches",
+        "Unlimited Custom SMTP Nodes",
+        "Dhru Fusion API & Listener Suite",
+        "Dedicated Server Pool Architecture",
+        "TRC20 & BEP20 Crypto Payment Gateways",
+        "Custom Domain & CNAME Tracking",
+        "SLA 99.99% Uptime Guarantee",
+        "Dedicated Account Executive"
+      ],
+      ctaText: "Contact Enterprise",
+      ctaLink: "/register?plan=enterprise"
+    }
+  ];
+
+  const features = [
+    {
+      icon: <Server className="w-6 h-6 text-brand-400" />,
+      title: "Multi-Node SMTP Load Balancing",
+      description: "Rotate dispatches seamlessly across unlimited custom SMTP nodes to maximize inbox placement and maintain peak IP sender reputation."
+    },
+    {
+      icon: <Send className="w-6 h-6 text-indigo-400" />,
+      title: "Automated A/B Subject Testing",
+      description: "Test multiple subject lines simultaneously. SmartCampaign automatically calculates open rate conversion and dispatches the winner."
+    },
+    {
+      icon: <MessageSquare className="w-6 h-6 text-sky-400" />,
+      title: "Telegram & SMS Omni-Channel",
+      description: "Reach customers on their favorite messaging apps. Integrated bulk SMS gateways (Twilio, BulkSMSBD, Vonage) and Telegram Bot tools."
+    },
+    {
+      icon: <BarChart3 className="w-6 h-6 text-emerald-400" />,
+      title: "Real-Time Tracking & Heatmaps",
+      description: "Track opens, clicks, device types, geolocation, and unsubscribes live as campaign dispatches process through Celery workers."
+    },
+    {
+      icon: <Zap className="w-6 h-6 text-amber-400" />,
+      title: "Instant API & Dhru Fusion Sync",
+      description: "Full developer API suite compatible with Dhru Fusion, custom webhooks, and automated background job processing."
+    },
+    {
+      icon: <ShieldCheck className="w-6 h-6 text-rose-400" />,
+      title: "Bank-Grade Encryption & Crypto",
+      description: "AES-256 encrypted SMTP credentials, rate limiting protection, JWT authentication, and TRC20/BEP20 crypto payments."
+    }
+  ];
+
+  const faqs = [
+    {
+      question: "How does Multi-Node SMTP Load Balancing improve deliverability?",
+      answer: "Instead of sending thousands of emails from a single SMTP server (which triggers spam filters), SmartCampaign automatically distributes your dispatch volume across multiple SMTP nodes. This prevents IP reputation burnout and keeps your inbox delivery rate above 99%."
+    },
+    {
+      question: "Can I connect my own custom SMS gateways and Telegram bots?",
+      answer: "Yes! SmartCampaign includes built-in connectors for Twilio, BulkSMSBD, Vonage, custom HTTP GET/POST SMS APIs, as well as Telegram Bot API listeners for automated subscriber broadcasts and IMEI/Server notifications."
+    },
+    {
+      question: "What payment methods are supported for subscription billing?",
+      answer: "We support instant TRC20 (USDT), BEP20 (USDT/USDC), Merchant QR Code payments, as well as standard invoicing and manual admin reviews."
+    },
+    {
+      question: "Can I upgrade or downgrade my subscription plan at any time?",
+      answer: "Absolutely! You can upgrade your plan at any time from your account dashboard. Upgrades take effect immediately with pro-rated quota increases."
+    },
+    {
+      question: "Is my SMTP password and recipient list secure?",
+      answer: "Yes. All custom SMTP passwords are encrypted at rest using AES-256 Fernet cryptography. Your contact lists are strictly isolated in a multi-tenant PostgreSQL database with append-only security logs."
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-dark-950 text-white font-sans selection:bg-brand-500 selection:text-white relative overflow-hidden">
+      {/* Background Decorative Ambient Glow Effects */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-brand-600/15 via-indigo-600/10 to-transparent rounded-full filter blur-[140px] pointer-events-none" />
+      <div className="absolute top-[800px] right-0 w-[500px] h-[500px] bg-purple-600/10 rounded-full filter blur-[150px] pointer-events-none" />
+      <div className="absolute top-[1800px] left-0 w-[600px] h-[600px] bg-emerald-600/5 rounded-full filter blur-[160px] pointer-events-none" />
+
+      {/* ─── Navbar ────────────────────────────────────────────────────────── */}
+      <header className="sticky top-0 z-50 backdrop-blur-xl bg-dark-950/80 border-b border-dark-800/80 transition-all">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3 group">
+            {siteLogo ? (
+              <img src={siteLogo} alt={siteName} className="h-10 object-contain rounded-xl" />
+            ) : (
+              <div className="h-10 w-10 bg-brand-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-brand-500/25 group-hover:scale-105 transition-transform">
+                <Send className="w-5 h-5" />
+              </div>
+            )}
+            <div>
+              <span className="text-lg font-black tracking-tight text-white group-hover:text-brand-400 transition-colors">
+                {siteName}
+              </span>
+              <span className="hidden sm:inline-block ml-2 text-[10px] font-black tracking-widest uppercase bg-brand-500/10 text-brand-400 px-2 py-0.5 rounded-full border border-brand-500/20">
+                SaaS v3.0
+              </span>
+            </div>
+          </Link>
+
+          {/* Nav Links */}
+          <nav className="hidden md:flex items-center gap-8 text-xs font-bold text-dark-300">
+            <a href="#features" className="hover:text-white transition-colors">Features</a>
+            <a href="#omnichannel" className="hover:text-white transition-colors">Omni-Channel</a>
+            <a href="#pricing" className="hover:text-white transition-colors">Pricing Plans</a>
+            <a href="#analytics" className="hover:text-white transition-colors">Analytics</a>
+            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
+          </nav>
+
+          {/* Action CTAs */}
+          <div className="flex items-center gap-3">
+            <Link
+              to="/login"
+              className="px-4 py-2 rounded-xl text-xs font-bold text-dark-300 hover:text-white hover:bg-dark-900 border border-transparent hover:border-dark-800 transition-all"
+            >
+              Sign In
+            </Link>
+            <Link
+              to="/register"
+              className="px-5 py-2.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center gap-2"
+            >
+              <span>Get Started Free</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      {/* ─── Hero Section ─────────────────────────────────────────────────── */}
+      <section className="relative pt-16 pb-24 md:pt-28 md:pb-36 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+        {/* Animated Badge */}
+        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-extrabold mb-8 animate-pulse shadow-lg shadow-brand-500/5">
+          <Sparkles className="w-4 h-4 text-brand-400" />
+          <span>Next-Gen Omni-Channel Marketing & Deliverability Platform</span>
+        </div>
+
+        {/* H1 Heading */}
+        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black text-white tracking-tight max-w-5xl mx-auto leading-[1.1] mb-6">
+          Scale Your Email, SMS & Telegram Marketing With{' '}
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-400 via-indigo-400 to-purple-400">
+            Instant Inbox Placement
+          </span>
+        </h1>
+
+        {/* Subtitle */}
+        <p className="text-sm sm:text-lg text-dark-300 max-w-3xl mx-auto font-medium leading-relaxed mb-10">
+          Automate bulk campaign dispatches across multi-node SMTP load balancers, SMS gateways, and Telegram bots. Features real-time click heatmaps, automated A/B split testing, and crypto billing.
+        </p>
+
+        {/* CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
+          <Link
+            to="/register"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl brand-gradient-bg text-sm font-extrabold text-white shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+          >
+            <span>Start Your Free 30-Day Trial</span>
+            <ArrowRight className="w-4 h-4" />
+          </Link>
+
+          <Link
+            to="/login"
+            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-dark-900 hover:bg-dark-850 border border-dark-700/80 text-sm font-bold text-white transition-all flex items-center justify-center gap-2 hover:border-dark-600"
+          >
+            <Lock className="w-4 h-4 text-brand-400" />
+            <span>Customer Portal Login</span>
+          </Link>
+        </div>
+
+        {/* Live Metrics Ticker */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto p-6 rounded-3xl bg-dark-900/60 border border-dark-800/80 backdrop-blur-xl shadow-2xl">
+          <div className="text-center p-3 border-r border-dark-800/60 last:border-0">
+            <div className="text-2xl sm:text-3xl font-black text-brand-400">99.8%</div>
+            <div className="text-[11px] font-bold text-dark-400 uppercase tracking-wider mt-1">Inbox Delivery Rate</div>
+          </div>
+          <div className="text-center p-3 border-r border-dark-800/60 last:border-0">
+            <div className="text-2xl sm:text-3xl font-black text-indigo-400">10M+</div>
+            <div className="text-[11px] font-bold text-dark-400 uppercase tracking-wider mt-1">Daily Email Dispatches</div>
+          </div>
+          <div className="text-center p-3 border-r border-dark-800/60 last:border-0">
+            <div className="text-2xl sm:text-3xl font-black text-purple-400">&lt; 5ms</div>
+            <div className="text-[11px] font-bold text-dark-400 uppercase tracking-wider mt-1">API Dispatch Latency</div>
+          </div>
+          <div className="text-center p-3">
+            <div className="text-2xl sm:text-3xl font-black text-emerald-400">99.99%</div>
+            <div className="text-[11px] font-bold text-dark-400 uppercase tracking-wider mt-1">Uptime SLA Guarantee</div>
+          </div>
+        </div>
+
+        {/* Dashboard Mockup Banner */}
+        <div className="mt-16 relative max-w-5xl mx-auto rounded-3xl overflow-hidden border border-dark-700/60 shadow-[0_25px_70px_rgba(0,0,0,0.7)] bg-dark-900/90 group">
+          <div className="h-10 bg-dark-900 border-b border-dark-800 px-4 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-3 h-3 rounded-full bg-rose-500/80 inline-block" />
+              <span className="w-3 h-3 rounded-full bg-amber-500/80 inline-block" />
+              <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
+            </div>
+            <div className="text-[11px] font-mono text-dark-400 bg-dark-950 px-4 py-1 rounded-md border border-dark-800">
+              https://app.{siteName.toLowerCase().replace(/\s+/g, '')}.today/dashboard
+            </div>
+            <div className="text-xs text-brand-400 font-bold flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>LIVE</span>
+            </div>
+          </div>
+
+          <div className="p-6 sm:p-8 space-y-6 text-left">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-dark-800 pb-6">
+              <div>
+                <h3 className="text-lg font-bold text-white">SmartCampaign Real-Time Dispatch Console</h3>
+                <p className="text-xs text-dark-400">Multi-node SMTP health, Celery task status & subscriber analytics</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-lg">
+                  SMTP Pool Active (5 Nodes)
+                </span>
+                <span className="px-3 py-1 bg-brand-500/10 text-brand-400 border border-brand-500/20 text-xs font-bold rounded-lg">
+                  Celery Worker 100% Health
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                <span className="text-xs text-dark-400 font-medium">Total Emails Delivered</span>
+                <div className="text-2xl font-black text-white mt-1">1,248,920</div>
+                <div className="text-[11px] text-emerald-400 mt-2 font-bold flex items-center gap-1">
+                  <span>↑ 18.4%</span>
+                  <span className="text-dark-500">vs last campaign</span>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                <span className="text-xs text-dark-400 font-medium">Average Open Rate</span>
+                <div className="text-2xl font-black text-indigo-400 mt-1">42.8%</div>
+                <div className="text-[11px] text-indigo-300 mt-2 font-bold">A/B Subject Winner Selected</div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-dark-950/80 border border-dark-800/80">
+                <span className="text-xs text-dark-400 font-medium">Average Click Rate</span>
+                <div className="text-2xl font-black text-purple-400 mt-1">16.3%</div>
+                <div className="text-[11px] text-purple-300 mt-2 font-bold">14,290 Link Clicks</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Core Platform Features ───────────────────────────────────────── */}
+      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-3">Built for High Volume & High Deliverability</h2>
+          <p className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+            Everything You Need To Execute Flawless Marketing Campaigns
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {features.map((feature, idx) => (
+            <div
+              key={idx}
+              className="p-8 rounded-3xl bg-dark-900/60 border border-dark-800/80 hover:border-brand-500/40 transition-all hover:-translate-y-1 shadow-xl hover:shadow-brand-500/5 group"
+            >
+              <div className="p-3.5 rounded-2xl bg-dark-950 border border-dark-800 inline-block mb-6 group-hover:scale-110 transition-transform">
+                {feature.icon}
+              </div>
+              <h3 className="text-lg font-bold text-white mb-3 group-hover:text-brand-300 transition-colors">
+                {feature.title}
+              </h3>
+              <p className="text-xs text-dark-300 leading-relaxed">
+                {feature.description}
+              </p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── Omni-Channel Marketing Showcase ─────────────────────────────── */}
+      <section id="omnichannel" className="py-20 bg-dark-900/40 border-y border-dark-800/80">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div className="space-y-6">
+              <span className="px-3.5 py-1 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 text-xs font-extrabold inline-block">
+                Omni-Channel Messaging Hub
+              </span>
+              <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+                Combine Email, SMS & Telegram Into One Automation Engine
+              </h2>
+              <p className="text-sm text-dark-300 leading-relaxed font-medium">
+                Don't limit your customer outreach to just email. Engage leads across Telegram channels, automated SMS gateways (Twilio, BulkSMSBD, Vonage), and instant webhooks simultaneously.
+              </p>
+
+              <div className="space-y-4 pt-2">
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-dark-950/60 border border-dark-800">
+                  <div className="p-2 rounded-xl bg-brand-500/10 text-brand-400 mt-1">
+                    <Mail className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Multi-Node SMTP Email Dispatches</h4>
+                    <p className="text-xs text-dark-400 mt-0.5">Custom SMTP server rotation, HTML template builder & automated CSV contacts import.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-dark-950/60 border border-dark-800">
+                  <div className="p-2 rounded-xl bg-sky-500/10 text-sky-400 mt-1">
+                    <Smartphone className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Global SMS Marketing Gateway</h4>
+                    <p className="text-xs text-dark-400 mt-0.5">Send promotional & transactional SMS with personalized template tags via Twilio or custom APIs.</p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4 p-4 rounded-2xl bg-dark-950/60 border border-dark-800">
+                  <div className="p-2 rounded-xl bg-indigo-500/10 text-indigo-400 mt-1">
+                    <Send className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-white">Telegram Broadcasts & Bot Listener</h4>
+                    <p className="text-xs text-dark-400 mt-0.5">Automated Telegram bot notifications, IMEI/Server status alerts, and instant group broadcasts.</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Omni-Channel Graphic Card */}
+            <div className="p-8 rounded-3xl bg-dark-950 border border-dark-800/80 shadow-2xl relative">
+              <div className="absolute top-4 right-4 text-xs text-dark-400 font-bold bg-dark-900 px-3 py-1 rounded-full border border-dark-800">
+                Live Omni-Channel Routing
+              </div>
+
+              <div className="space-y-6 pt-4">
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-dark-900/80 border border-dark-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold">
+                      <Mail className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Email Dispatch Node #1</div>
+                      <div className="text-[10px] text-dark-400">SMTP Host: smtp.smartcampaign.today</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                    Active (100% Inbox)
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-dark-900/80 border border-dark-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
+                      <Smartphone className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">SMS Gateway Node</div>
+                      <div className="text-[10px] text-dark-400">Provider: Twilio / BulkSMS API</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                    Connected
+                  </span>
+                </div>
+
+                <div className="flex items-center justify-between p-4 rounded-2xl bg-dark-900/80 border border-dark-800">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
+                      <Send className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Telegram Marketing Bot</div>
+                      <div className="text-[10px] text-dark-400">Listener: Active Bot Worker</div>
+                    </div>
+                  </div>
+                  <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">
+                    Listening
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Pricing Plans Section ────────────────────────────────────────── */}
+      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <span className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-3 block">Flexible SaaS Billing</span>
+          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-6">
+            Transparent Pricing Plans For Every Scale
+          </h2>
+          <p className="text-sm text-dark-300 font-medium">
+            No hidden fees. Choose a plan tailored to your dispatch volume or start with our free trial.
+          </p>
+
+          {/* Billing Toggle */}
+          <div className="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-dark-900 border border-dark-800 shadow-xl">
+            <button
+              onClick={() => setBillingCycle('monthly')}
+              className={`px-5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+                billingCycle === 'monthly'
+                  ? 'brand-gradient-bg text-white shadow-md'
+                  : 'text-dark-400 hover:text-white'
+              }`}
+            >
+              Monthly Billing
+            </button>
+            <button
+              onClick={() => setBillingCycle('annual')}
+              className={`px-5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+                billingCycle === 'annual'
+                  ? 'brand-gradient-bg text-white shadow-md'
+                  : 'text-dark-400 hover:text-white'
+              }`}
+            >
+              <span>Annual Billing</span>
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded-full border border-emerald-500/30">
+                Save 20%
+              </span>
+            </button>
+          </div>
+        </div>
+
+        {/* Plans Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          {plans.map((plan, idx) => (
+            <div
+              key={idx}
+              className={`p-8 rounded-3xl bg-dark-900/80 border transition-all flex flex-col justify-between relative ${
+                plan.popular
+                  ? 'border-brand-500 shadow-[0_0_40px_rgba(79,70,229,0.2)] scale-[1.03] z-20'
+                  : 'border-dark-800 hover:border-dark-700'
+              }`}
+            >
+              {plan.popular && (
+                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full brand-gradient-bg text-white text-[10px] font-black tracking-wider uppercase shadow-md">
+                  {plan.badge}
+                </div>
+              )}
+
+              <div>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-xl font-black text-white">{plan.name}</h3>
+                  {!plan.popular && (
+                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-dark-800 text-dark-300 border border-dark-700">
+                      {plan.badge}
+                    </span>
+                  )}
+                </div>
+
+                <p className="text-xs text-dark-400 min-h-[36px] mb-6 leading-relaxed">
+                  {plan.description}
+                </p>
+
+                <div className="mb-6 border-b border-dark-800 pb-6">
+                  <div className="flex items-baseline gap-1">
+                    <span className="text-3xl sm:text-4xl font-black text-white">
+                      ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice}
+                    </span>
+                    <span className="text-xs text-dark-400 font-bold">/ month</span>
+                  </div>
+                  {billingCycle === 'annual' && plan.monthlyPrice > 0 && (
+                    <span className="text-[10px] text-emerald-400 font-bold mt-1 block">
+                      Billed annually (Save 20%)
+                    </span>
+                  )}
+                </div>
+
+                {/* Features list */}
+                <ul className="space-y-3 mb-8 text-xs text-dark-300">
+                  {plan.features.map((feat, fIdx) => (
+                    <li key={fIdx} className="flex items-start gap-2.5">
+                      <Check className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+
+              <Link
+                to={plan.ctaLink}
+                className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-center transition-all shadow-lg ${
+                  plan.popular
+                    ? 'brand-gradient-bg text-white hover:opacity-95 shadow-brand-500/20'
+                    : 'bg-dark-800 hover:bg-dark-750 text-white border border-dark-700'
+                }`}
+              >
+                {plan.ctaText}
+              </Link>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── Interactive FAQ Accordion ────────────────────────────────────── */}
+      <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        <div className="text-center mb-16">
+          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
+            Frequently Asked Questions
+          </h2>
+          <p className="text-xs text-dark-400 font-medium">
+            Got questions about SmartCampaign? We have answers.
+          </p>
+        </div>
+
+        <div className="space-y-4">
+          {faqs.map((faq, idx) => (
+            <div
+              key={idx}
+              className="rounded-2xl bg-dark-900/60 border border-dark-800 overflow-hidden transition-colors"
+            >
+              <button
+                onClick={() => toggleFaq(idx)}
+                className="w-full p-6 text-left flex items-center justify-between gap-4 font-bold text-sm text-white hover:text-brand-300 transition-colors"
+              >
+                <span>{faq.question}</span>
+                {openFaq === idx ? (
+                  <ChevronUp className="w-5 h-5 text-brand-400 flex-shrink-0" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-dark-400 flex-shrink-0" />
+                )}
+              </button>
+
+              {openFaq === idx && (
+                <div className="px-6 pb-6 text-xs text-dark-300 leading-relaxed border-t border-dark-800/60 pt-4">
+                  {faq.answer}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* ─── CTA Banner ──────────────────────────────────────────────────── */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="p-8 sm:p-14 rounded-3xl brand-gradient-bg relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
+          <div className="space-y-3 text-center md:text-left z-10 max-w-2xl">
+            <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+              Ready to Supercharge Your Campaign Deliverability?
+            </h2>
+            <p className="text-xs sm:text-sm text-white/80 font-medium">
+              Join thousands of marketers & developers delivering multi-channel campaigns with SmartCampaign.
+            </p>
+          </div>
+
+          <div className="flex flex-col sm:flex-row items-center gap-3 z-10 w-full md:w-auto">
+            <Link
+              to="/register"
+              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-dark-950 font-extrabold text-xs hover:bg-slate-100 transition-all shadow-xl text-center"
+            >
+              Create Your Free Account
+            </Link>
+            <Link
+              to="/login"
+              className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-black/20 hover:bg-black/30 border border-white/20 text-white font-bold text-xs transition-all text-center"
+            >
+              Sign In To Portal
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Footer ──────────────────────────────────────────────────────── */}
+      <footer className="border-t border-dark-800/80 bg-dark-950 pt-16 pb-12 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              {siteLogo ? (
+                <img src={siteLogo} alt={siteName} className="h-8 object-contain" />
+              ) : (
+                <div className="h-8 w-8 bg-brand-500 rounded-xl flex items-center justify-center text-white font-bold">
+                  <Send className="w-4 h-4" />
+                </div>
+              )}
+              <span className="font-extrabold text-white text-base">{siteName}</span>
+            </div>
+            <p className="text-xs text-dark-400 leading-relaxed">
+              Modern SaaS email marketing, multi-node SMTP load balancer, bulk SMS gateway & Telegram automation suite.
+            </p>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Platform Modules</h4>
+            <ul className="space-y-2.5 text-xs text-dark-400 font-medium">
+              <li><a href="#features" className="hover:text-white transition-colors">SMTP Load Balancer</a></li>
+              <li><a href="#features" className="hover:text-white transition-colors">A/B Subject Testing</a></li>
+              <li><a href="#omnichannel" className="hover:text-white transition-colors">Telegram Marketing Suite</a></li>
+              <li><a href="#omnichannel" className="hover:text-white transition-colors">SMS Gateway Integrations</a></li>
+              <li><a href="#analytics" className="hover:text-white transition-colors">Click & Open Heatmaps</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Quick Links</h4>
+            <ul className="space-y-2.5 text-xs text-dark-400 font-medium">
+              <li><Link to="/login" className="hover:text-white transition-colors">User Sign In</Link></li>
+              <li><Link to="/register" className="hover:text-white transition-colors">Register Account</Link></li>
+              <li><Link to="/master_adm/login" className="hover:text-white transition-colors">Super Admin Terminal</Link></li>
+              <li><a href="#pricing" className="hover:text-white transition-colors">Subscription Pricing</a></li>
+              <li><a href="/api/health" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">API Health Status</a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Contact & Support</h4>
+            <ul className="space-y-2.5 text-xs text-dark-400 font-medium">
+              <li>Email: <span className="text-white font-semibold">{supportEmail}</span></li>
+              <li>SLA Uptime: <span className="text-emerald-400 font-semibold">99.99% Guaranteed</span></li>
+              <li>Developer API: <span className="text-indigo-400 font-semibold">Dhru Fusion Compatible</span></li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="max-w-7xl mx-auto pt-8 border-t border-dark-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-dark-500">
+          <div>
+            Copyright &copy; 2026 {siteName} / ASTRA IT, Inc. All rights reserved.
+          </div>
+          <div className="flex gap-6">
+            <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-dark-300 transition-colors">Privacy Policy</a>
+            <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-dark-300 transition-colors">Terms of Service</a>
+            <Link to="/master_adm/login" className="hover:text-brand-400 transition-colors">Admin Portal</Link>
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+}

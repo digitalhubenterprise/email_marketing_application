@@ -6,6 +6,7 @@ import Layout from './components/Layout'
 import AdminLayout from './components/AdminLayout'
 
 // Lazily loaded page components for optimal route-based code-splitting
+const LandingPage = lazy(() => import('./pages/LandingPage'))
 const Login = lazy(() => import('./pages/Login'))
 const Register = lazy(() => import('./pages/Register'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -325,13 +326,17 @@ export default function App() {
         </div>
       }>
         <Routes>
+          {/* Public Landing Home Page */}
+          <Route path="/home" element={<LandingPage />} />
+
           {/* Auth routes */}
           <Route path="/login" element={!token ? <Login /> : <Navigate to="/" />} />
           <Route path="/register" element={!token ? <Register /> : <Navigate to="/" />} />
 
-          {/* Authenticated routes */}
-          <Route path="/" element={token ? <Layout /> : <Navigate to="/login" />}>
+          {/* App Root & Authenticated routes */}
+          <Route path="/" element={token ? <Layout /> : <LandingPage />}>
             <Route index element={<Dashboard />} />
+            <Route path="dashboard" element={<Dashboard />} />
             <Route path="smtp" element={<SMTPServers />} />
             <Route path="lists" element={<ContactLists />} />
             <Route path="templates" element={<Templates />} />
