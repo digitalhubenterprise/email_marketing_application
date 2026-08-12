@@ -333,8 +333,8 @@ export default function App() {
           <Route path="/login" element={!token ? <Login /> : <Navigate to="/" />} />
           <Route path="/register" element={!token ? <Register /> : <Navigate to="/" />} />
 
-          {/* App Root & Authenticated routes */}
-          <Route path="/" element={token ? <Layout /> : <LandingPage />}>
+          {/* Root Route: Show LandingPage if not logged in, show Dashboard Layout if logged in */}
+          <Route path="/" element={!token ? <LandingPage /> : <Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="smtp" element={<SMTPServers />} />
