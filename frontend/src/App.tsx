@@ -222,6 +222,17 @@ export default function App() {
 
   // Dynamically inject dynamic SEO meta parameters inside browser HTML headers
   useEffect(() => {
+    // Update favicon based on config
+    if (appConfig?.logo_url) {
+      let iconLink = document.querySelector("link[rel='icon']") as HTMLLinkElement | null;
+      if (!iconLink) {
+        iconLink = document.createElement('link');
+        iconLink.rel = 'icon';
+        document.head.appendChild(iconLink);
+      }
+      iconLink.href = appConfig.logo_url;
+    }
+
     if (appConfig) {
       document.title = appConfig.seo_meta_title || appConfig.site_name || "SmartCampaign";
       

@@ -6,6 +6,9 @@ import { Mail, CheckCircle, Megaphone, X, AlertCircle, Menu, Sun, Moon } from 'l
 
 export default function Layout() {
   const { user, appConfig } = useAuth();
+  const currentYear = new Date().getFullYear();
+  const siteName = appConfig?.site_name || 'SmartCampaign';
+  const currentYear = new Date().getFullYear();
   const [announcementDismissed, setAnnouncementDismissed] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   
@@ -152,7 +155,7 @@ export default function Layout() {
           <footer className="mt-8">
             <div className="px-5 py-4 bg-dark-900/40 backdrop-blur-md border-t border-x border-dark-700/50 dark:border-dark-800/80 rounded-t-2xl sm:rounded-t-3xl rounded-b-none flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] sm:text-[11px] text-dark-450 dark:text-dark-300 font-semibold shadow-md">
               <div>
-                Copyright &copy; 2025 ASTRA IT, Inc. All Rights Reserved.
+                © {currentYear} {siteName} / ASTRA IT, Inc. All rights reserved.
               </div>
               <div className="flex gap-4 sm:gap-6">
                 <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-brand-500 dark:hover:text-brand-400 transition-colors">Privacy Policy</a>
