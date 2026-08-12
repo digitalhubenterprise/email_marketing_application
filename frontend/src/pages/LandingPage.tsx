@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   Mail,
   Send,
@@ -24,23 +24,258 @@ import {
   Headphones,
   Menu as MenuIcon,
   X as XIcon,
-  Radio
+  Radio,
+  Eye,
+  EyeOff,
+  AlertCircle,
+  UserPlus,
+  KeyRound
 } from 'lucide-react';
 import { useAuth } from '../App';
 
 export default function LandingPage() {
-  const { appConfig } = useAuth();
+  const { appConfig, login } = useAuth();
+  const navigate = useNavigate();
+
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'annual'>('monthly');
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDemoTab, setActiveDemoTab] = useState<'email' | 'sms' | 'telegram' | 'analytics'>('email');
 
+  // Modal Auth State
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
+  const [selectedPlanTier, setSelectedPlanTier] = useState<string>('free');
+
+  // Form Fields
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  // Verification & 2FA state
+  const [verifyEmailMode, setVerifyEmailMode] = useState(false);
+  const [mfaRequired, setMfaRequired] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [mfaCode, setMfaCode] = useState('');
+
   const siteName = appConfig?.site_name || "SmartCampaign";
   const siteLogo = appConfig?.logo_url;
   const supportEmail = appConfig?.support_email || "support@smartcampaign.today";
 
+  // ESC Key listener to close modal
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && authModalOpen) {
+        closeModal();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [authModalOpen]);
+
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
+  };
+
+  const openLoginModal = () => {
+    setAuthMode('login');
+    setError(null);
+    setVerifyEmailMode(false);
+    setMfaRequired(false);
+    setAuthModalOpen(true);
+  };
+
+  const openRegisterModal = (planTier: string = 'free') => {
+    setAuthMode('register');
+    setSelectedPlanTier(planTier);
+    setError(null);
+    setVerifyEmailMode(false);
+    setMfaRequired(false);
+    setAuthModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setAuthModalOpen(false);
+    setError(null);
+    setLoading(false);
+    setVerifyEmailMode(false);
+    setMfaRequired(false);
+  };
+
+  const validatePassword = (pw: string): string | null => {
+    if (pw.length < 8) return "Password must be at least 8 characters.";
+    if (!/[A-Z]/.test(pw)) return "Password must contain at least one uppercase letter.";
+    if (!/[a-z]/.test(pw)) return "Password must contain at least one lowercase letter.";
+    if (!/\d/.test(pw)) return "Password must contain at least one digit.";
+    if (!/[!@#$%^&*(),.?":{}|<>_\-+=\[\]\\\/~`]/.test(pw)) return "Password must contain at least one special character.";
+    return null;
+  };
+
+  // Submit Login inside Modal
+  const handleModalLoginSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const params = new URLSearchParams();
+      params.append("username", email);
+      params.append("password", password);
+
+      const headers: HeadersInit = { "Content-Type": "application/x-www-form-urlencoded" };
+      if (mfaRequired && mfaCode) {
+        headers["X-2FA-Code"] = mfaCode.trim();
+      }
+
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: headers,
+        body: params
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        closeModal();
+        await login(data.access_token);
+      } else {
+        if (response.status === 401) {
+          const clone = response.clone();
+          try {
+            const data = await clone.json();
+            if (data && (data.detail === "2FA_REQUIRED" || data.detail === "2FA_EMAIL_REQUIRED")) {
+              setMfaRequired(true);
+              setLoading(false);
+              return;
+            }
+            if (data && data.detail === "EMAIL_VERIFICATION_REQUIRED") {
+              setVerifyEmailMode(true);
+              setLoading(false);
+              return;
+            }
+          } catch (err) {
+            // ignore JSON error
+          }
+        }
+        const errData = await response.json();
+        setError(errData.detail || "Invalid email or password.");
+      }
+    } catch (err) {
+      setError("Network connection failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit Register inside Modal
+  const handleModalRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+
+    const pwError = validatePassword(password);
+    if (pwError) {
+      setError(pwError);
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const regResponse = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+
+      if (regResponse.ok) {
+        let isVerified = true;
+        try {
+          const regData = await regResponse.clone().json();
+          if (regData && regData.email_verified === false) {
+            isVerified = false;
+          }
+        } catch (e) {
+          // ignore
+        }
+
+        if (!isVerified) {
+          setVerifyEmailMode(true);
+          setLoading(false);
+          return;
+        }
+
+        // Auto Login user
+        const params = new URLSearchParams();
+        params.append("username", email);
+        params.append("password", password);
+
+        const loginResponse = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: params
+        });
+
+        if (loginResponse.ok) {
+          const loginData = await loginResponse.json();
+          closeModal();
+          await login(loginData.access_token);
+        } else {
+          setAuthMode('login');
+          setError("Account created successfully! Please sign in.");
+        }
+      } else {
+        const errData = await regResponse.json();
+        if (errData && errData.detail) {
+          if (typeof errData.detail === "string") {
+            setError(errData.detail);
+          } else if (Array.isArray(errData.detail)) {
+            setError(errData.detail.map((err: any) => err.msg).join(", "));
+          } else {
+            setError("Registration failed.");
+          }
+        } else {
+          setError("Registration failed.");
+        }
+      }
+    } catch (err) {
+      setError("Connection failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Submit Verification Code inside Modal
+  const handleModalVerifyEmailSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/auth/verify-signup-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, code: verificationCode.trim() })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        closeModal();
+        await login(data.access_token);
+      } else {
+        const err = await res.json();
+        setError(err.detail || "Invalid verification code.");
+      }
+    } catch (err) {
+      setError("Connection failed.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const plans = [
@@ -61,8 +296,7 @@ export default function LandingPage() {
         "Unsubscribe Link Management",
         "Standard Email Support"
       ],
-      ctaText: "Get Started Free",
-      ctaLink: "/register?plan=free"
+      ctaText: "Get Started Free"
     },
     {
       name: "Standard",
@@ -83,8 +317,7 @@ export default function LandingPage() {
         "Scheduled & Batch Dispatches",
         "Priority Support Response"
       ],
-      ctaText: "Start Standard Plan",
-      ctaLink: "/register?plan=pro"
+      ctaText: "Start Standard Plan"
     },
     {
       name: "Premium",
@@ -105,8 +338,7 @@ export default function LandingPage() {
         "Automated PDF Analytics Export",
         "24/7 Priority VIP Support"
       ],
-      ctaText: "Scale With Premium",
-      ctaLink: "/register?plan=business"
+      ctaText: "Scale With Premium"
     },
     {
       name: "Enterprise",
@@ -127,8 +359,7 @@ export default function LandingPage() {
         "SLA 99.99% Uptime Guarantee",
         "Dedicated Account Executive"
       ],
-      ctaText: "Contact Enterprise",
-      ctaLink: "/register?plan=enterprise"
+      ctaText: "Contact Enterprise"
     }
   ];
 
@@ -190,13 +421,13 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-dark-950 text-white font-sans selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
-      {/* Original Ambient Glow Background Mesh */}
+      {/* Background Ambient Mesh */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] bg-gradient-to-b from-brand-600/20 via-brand-500/10 to-transparent rounded-full filter blur-[140px] pointer-events-none" />
       <div className="absolute top-[800px] right-0 w-[500px] h-[500px] bg-brand-500/10 rounded-full filter blur-[150px] pointer-events-none" />
       <div className="absolute top-[1800px] left-0 w-[600px] h-[600px] bg-emerald-600/5 rounded-full filter blur-[160px] pointer-events-none" />
 
       {/* ─── Header / Top Navbar ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-50 backdrop-blur-xl bg-dark-950/80 border-b border-dark-800/80 transition-all">
+      <header className="sticky top-0 z-40 backdrop-blur-xl bg-dark-950/80 border-b border-dark-800/80 transition-all">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             {siteLogo ? (
@@ -225,21 +456,21 @@ export default function LandingPage() {
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
           </nav>
 
-          {/* Action CTAs & Mobile Hamburger */}
+          {/* Action CTAs: Triggers Auth Popups */}
           <div className="flex items-center gap-3">
-            <Link
-              to="/login"
+            <button
+              onClick={openLoginModal}
               className="px-4 py-2 rounded-xl text-xs font-bold text-dark-300 hover:text-white hover:bg-dark-900 border border-transparent hover:border-dark-800 transition-all hidden sm:inline-flex"
             >
               Sign In
-            </Link>
-            <Link
-              to="/register"
+            </button>
+            <button
+              onClick={() => openRegisterModal('free')}
               className="px-5 py-2.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/20 hover:opacity-95 active:scale-[0.98] transition-all flex items-center gap-2"
             >
               <span>Get Started Free</span>
               <ArrowRight className="w-3.5 h-3.5" />
-            </Link>
+            </button>
 
             {/* Mobile Menu Button */}
             <button
@@ -252,7 +483,7 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
+        {/* Mobile Drawer */}
         {mobileMenuOpen && (
           <div className="lg:hidden backdrop-blur-2xl bg-dark-950/95 border-b border-dark-800/80 px-4 pt-4 pb-6 space-y-4 animate-slideDown">
             <nav className="flex flex-col space-y-3 text-xs font-bold text-dark-200">
@@ -294,13 +525,12 @@ export default function LandingPage() {
             </nav>
 
             <div className="pt-2 flex flex-col gap-2.5">
-              <Link
-                to="/login"
-                onClick={() => setMobileMenuOpen(false)}
+              <button
+                onClick={() => { setMobileMenuOpen(false); openLoginModal(); }}
                 className="w-full py-3 rounded-xl bg-dark-900 border border-dark-800 text-xs font-bold text-white text-center"
               >
                 Customer Sign In
-              </Link>
+              </button>
               <Link
                 to="/master_adm/login"
                 onClick={() => setMobileMenuOpen(false)}
@@ -315,13 +545,11 @@ export default function LandingPage() {
 
       {/* ─── Hero Section ─────────────────────────────────────────────────── */}
       <section className="relative pt-16 pb-24 md:pt-28 md:pb-36 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-        {/* Original Brand Badge */}
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-extrabold mb-8 animate-pulse shadow-lg shadow-brand-500/5">
           <Sparkles className="w-4 h-4 text-brand-400" />
           <span>Next-Gen Omni-Channel Marketing & Deliverability Platform</span>
         </div>
 
-        {/* H1 Heading */}
         <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-white tracking-tight max-w-5xl mx-auto leading-[1.1] mb-6">
           Scale Your Email, SMS & Telegram Marketing With{' '}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-400 via-indigo-400 to-purple-400">
@@ -329,31 +557,30 @@ export default function LandingPage() {
           </span>
         </h1>
 
-        {/* Subtitle */}
         <p className="text-xs sm:text-base lg:text-lg text-dark-300 max-w-3xl mx-auto font-medium leading-relaxed mb-10">
           Automate bulk campaign dispatches across multi-node SMTP load balancers, SMS gateways, and Telegram bots. Features real-time click heatmaps, automated A/B split testing, and crypto billing.
         </p>
 
-        {/* CTA Buttons */}
+        {/* CTA Buttons - Both Trigger Popups */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 w-full max-w-md sm:max-w-none mx-auto">
-          <Link
-            to="/register"
+          <button
+            onClick={() => openRegisterModal('free')}
             className="w-full sm:w-auto px-8 py-4 rounded-2xl brand-gradient-bg text-sm font-extrabold text-white shadow-xl shadow-brand-500/25 hover:shadow-brand-500/40 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
           >
             <span>Start Your Free 30-Day Trial</span>
             <ArrowRight className="w-4 h-4" />
-          </Link>
+          </button>
 
-          <Link
-            to="/login"
+          <button
+            onClick={openLoginModal}
             className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-dark-900 hover:bg-dark-850 border border-dark-700/80 text-sm font-bold text-white transition-all flex items-center justify-center gap-2 hover:border-dark-600"
           >
             <Lock className="w-4 h-4 text-brand-400" />
             <span>Customer Portal Login</span>
-          </Link>
+          </button>
         </div>
 
-        {/* Live Metrics Ticker Bar */}
+        {/* Metrics Ticker */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto p-4 sm:p-6 rounded-3xl bg-dark-900/60 border border-dark-800/80 backdrop-blur-xl shadow-2xl">
           <div className="text-center p-3 border-r border-dark-800/60 last:border-0">
             <div className="text-xl sm:text-3xl font-black text-brand-400">99.8%</div>
@@ -383,7 +610,6 @@ export default function LandingPage() {
           </h2>
         </div>
 
-        {/* Interactive Tab Switcher */}
         <div className="flex items-center justify-center gap-2 p-1.5 rounded-2xl bg-dark-900 border border-dark-800 max-w-xl mx-auto mb-8 overflow-x-auto">
           <button
             onClick={() => setActiveDemoTab('email')}
@@ -434,7 +660,6 @@ export default function LandingPage() {
           </button>
         </div>
 
-        {/* Live Demo Window Mockup */}
         <div className="rounded-3xl overflow-hidden border border-dark-700/60 shadow-[0_25px_70px_rgba(0,0,0,0.7)] bg-dark-900/90 relative text-left">
           <div className="h-10 bg-dark-900 border-b border-dark-800 px-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -734,7 +959,6 @@ export default function LandingPage() {
             No hidden fees. Choose a plan tailored to your dispatch volume or start with our free trial.
           </p>
 
-          {/* Billing Cycle Toggle */}
           <div className="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-dark-900 border border-dark-800 shadow-xl">
             <button
               onClick={() => setBillingCycle('monthly')}
@@ -762,7 +986,6 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Plans Responsive Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
           {plans.map((plan, idx) => (
             <div
@@ -807,7 +1030,6 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                {/* Features list */}
                 <ul className="space-y-3 mb-8 text-xs text-dark-300">
                   {plan.features.map((feat, fIdx) => (
                     <li key={fIdx} className="flex items-start gap-2.5">
@@ -818,8 +1040,8 @@ export default function LandingPage() {
                 </ul>
               </div>
 
-              <Link
-                to={plan.ctaLink}
+              <button
+                onClick={() => openRegisterModal(plan.tier)}
                 className={`w-full py-3.5 px-4 rounded-xl text-xs font-bold text-center transition-all shadow-lg ${
                   plan.popular
                     ? 'brand-gradient-bg text-white hover:opacity-95 shadow-brand-500/20'
@@ -827,7 +1049,7 @@ export default function LandingPage() {
                 }`}
               >
                 {plan.ctaText}
-              </Link>
+              </button>
             </div>
           ))}
         </div>
@@ -885,18 +1107,18 @@ export default function LandingPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row items-center gap-3 z-10 w-full md:w-auto">
-            <Link
-              to="/register"
+            <button
+              onClick={() => openRegisterModal('free')}
               className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-dark-950 font-extrabold text-xs hover:bg-slate-100 transition-all shadow-xl text-center"
             >
               Create Free Account
-            </Link>
-            <Link
-              to="/login"
+            </button>
+            <button
+              onClick={openLoginModal}
               className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-black/20 hover:bg-black/30 border border-white/20 text-white font-bold text-xs transition-all text-center"
             >
               Sign In To Portal
-            </Link>
+            </button>
           </div>
         </div>
       </section>
@@ -934,8 +1156,8 @@ export default function LandingPage() {
           <div>
             <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Quick Links</h4>
             <ul className="space-y-2.5 text-xs text-dark-400 font-medium">
-              <li><Link to="/login" className="hover:text-white transition-colors">User Sign In</Link></li>
-              <li><Link to="/register" className="hover:text-white transition-colors">Register Account</Link></li>
+              <li><button onClick={openLoginModal} className="hover:text-white transition-colors text-left">User Sign In</button></li>
+              <li><button onClick={() => openRegisterModal('free')} className="hover:text-white transition-colors text-left">Register Account</button></li>
               <li><Link to="/master_adm/login" className="hover:text-white transition-colors">Super Admin Terminal</Link></li>
               <li><a href="#pricing" className="hover:text-white transition-colors">Subscription Pricing</a></li>
               <li><a href="/api/health" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">API Health Status</a></li>
@@ -963,6 +1185,283 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
+
+      {/* ─── INTERACTIVE AUTH POPUP MODAL ─────────────────────────────────── */}
+      {authModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fadeIn overflow-y-auto">
+          {/* Backdrop overlay click to close */}
+          <div 
+            className="fixed inset-0" 
+            onClick={closeModal}
+          />
+
+          {/* Modal Container */}
+          <div className="relative z-10 w-full max-w-md bg-dark-900 border border-dark-700/80 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.8)] animate-scaleUp text-left my-8">
+            {/* Close Button (X) */}
+            <button
+              onClick={closeModal}
+              className="absolute top-4 right-4 p-2 rounded-xl bg-dark-800/80 text-dark-400 hover:text-white hover:bg-dark-800 transition-all"
+              aria-label="Close modal"
+            >
+              <XIcon className="w-5 h-5" />
+            </button>
+
+            {/* Header / Tabs */}
+            <div className="mb-6">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="h-8 w-8 bg-brand-500 rounded-xl flex items-center justify-center text-white font-bold">
+                  <Send className="w-4 h-4" />
+                </div>
+                <span className="font-extrabold text-white text-sm">{siteName} Portal</span>
+              </div>
+
+              {/* Toggle Auth Mode Tabs */}
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-2xl bg-dark-950 border border-dark-800">
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('login'); setError(null); }}
+                  className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                    authMode === 'login'
+                      ? 'brand-gradient-bg text-white shadow-md'
+                      : 'text-dark-400 hover:text-white'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setAuthMode('register'); setError(null); }}
+                  className={`py-2 rounded-xl text-xs font-bold transition-all ${
+                    authMode === 'register'
+                      ? 'brand-gradient-bg text-white shadow-md'
+                      : 'text-dark-400 hover:text-white'
+                  }`}
+                >
+                  Create Account
+                </button>
+              </div>
+            </div>
+
+            {/* Error Alert Box */}
+            {error && (
+              <div className="mb-5 p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs font-medium flex items-start gap-2.5">
+                <AlertCircle className="w-4 h-4 text-rose-400 flex-shrink-0 mt-0.5" />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* ─── EMAIL VERIFICATION MODE ─── */}
+            {verifyEmailMode ? (
+              <form onSubmit={handleModalVerifyEmailSubmit} className="space-y-4">
+                <div className="text-center py-2">
+                  <KeyRound className="w-10 h-10 text-brand-400 mx-auto mb-2" />
+                  <h3 className="text-base font-bold text-white">Enter Verification Code</h3>
+                  <p className="text-xs text-dark-400 mt-1">
+                    We sent a 6-digit verification code to <span className="text-white font-semibold">{email}</span>.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Verification Code</label>
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value)}
+                    placeholder="123456"
+                    className="w-full px-4 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-white font-mono text-center tracking-widest text-lg focus:border-brand-500 focus:outline-none"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg hover:opacity-95 transition-all disabled:opacity-50"
+                >
+                  {loading ? "Verifying..." : "Verify & Sign In"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setVerifyEmailMode(false)}
+                  className="w-full text-center text-xs font-bold text-dark-400 hover:text-white pt-2"
+                >
+                  ← Back to Login
+                </button>
+              </form>
+            ) : authMode === 'login' ? (
+              /* ─── LOGIN FORM ─── */
+              <form onSubmit={handleModalLoginSubmit} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="user@example.com"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Password</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {mfaRequired && (
+                  <div>
+                    <label className="block text-xs font-bold text-amber-400 mb-1.5">Two-Factor Auth (2FA) Code</label>
+                    <input
+                      type="text"
+                      required
+                      value={mfaCode}
+                      onChange={(e) => setMfaCode(e.target.value)}
+                      placeholder="Enter 6-digit FA code"
+                      className="w-full px-4 py-3 rounded-xl bg-dark-950 border border-amber-500/50 text-white font-mono text-center tracking-widest text-sm focus:outline-none"
+                    />
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  ) : (
+                    <>
+                      <span>Sign In to Dashboard</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+
+                <div className="pt-2 text-center text-xs text-dark-400">
+                  New to {siteName}?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('register'); setError(null); }}
+                    className="text-brand-400 font-bold hover:underline"
+                  >
+                    Create a free account
+                  </button>
+                </div>
+              </form>
+            ) : (
+              /* ─── REGISTER FORM ─── */
+              <form onSubmit={handleModalRegisterSubmit} className="space-y-4">
+                {selectedPlanTier !== 'free' && (
+                  <div className="p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-bold flex items-center justify-between">
+                    <span>Selected Plan: <span className="uppercase text-white">{selectedPlanTier}</span></span>
+                    <span className="text-[10px] bg-brand-500 text-white px-2 py-0.5 rounded-full">Trial Included</span>
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Email Address</label>
+                  <div className="relative">
+                    <Mail className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="user@example.com"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Password</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="At least 8 chars, 1 uppercase, 1 symbol"
+                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 text-dark-400 hover:text-white"
+                    >
+                      {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-dark-300 mb-1.5">Confirm Password</label>
+                  <div className="relative">
+                    <Lock className="w-4 h-4 text-dark-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      required
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="Re-enter your password"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-dark-950 border border-dark-700/80 text-xs font-medium text-white placeholder-dark-500 focus:border-brand-500 focus:outline-none transition-colors"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg hover:opacity-95 active:scale-[0.99] transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  {loading ? (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                  ) : (
+                    <>
+                      <UserPlus className="w-4 h-4" />
+                      <span>Create Account & Start Trial</span>
+                    </>
+                  )}
+                </button>
+
+                <div className="pt-2 text-center text-xs text-dark-400">
+                  Already registered?{' '}
+                  <button
+                    type="button"
+                    onClick={() => { setAuthMode('login'); setError(null); }}
+                    className="text-brand-400 font-bold hover:underline"
+                  >
+                    Sign in to your account
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
