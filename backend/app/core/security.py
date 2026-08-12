@@ -8,23 +8,17 @@ from cryptography.fernet import Fernet
 import bleach  # Added bleach for HTML sanitization
 from app.core.config import settings
 
-# SMTP Credentials Cryptography Setup (AES-256 Fernet)
-try:
-    cipher_suite = Fernet(settings.ENCRYPTION_KEY.encode())
-except Exception as exc:
-    raise RuntimeError("ENCRYPTION_KEY must be a valid Fernet key; refusing to start insecurely.") from exc
-'''
-    # Failback: generate a temporary key (logs warning — must be fixed in production)
-    import warnings
-    warnings.warn(
-        "ENCRYPTION_KEY is invalid or missing. Generated a temporary key — SMTP passwords will NOT be recoverable after restart!",
-        RuntimeWarning
-    )
-    temp_key = Fernet.generate_key()
-    cipher_suite = Fernet(temp_key)
+import base64
+import hashlib
 
+def _get_fernet_key(key_str: str) -> bytes:
+    try:
+        f = Fernet(key_str.encode("utf-8"))
+        return key_str.encode("utf-8")
+    except Exception:
+        return base64.urlsafe_b64encode(hashlib.sha256(key_str.encode("utf-8")).digest())
 
-'''
+cipher_suite = Fernet(_get_fernet_key(settings.ENCRYPTION_KEY))
 
 def encrypt_smtp_password(password: str) -> str:
     """Encrypts a plaintext SMTP password using AES-256 Fernet symmetric encryption."""

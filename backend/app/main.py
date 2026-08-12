@@ -46,12 +46,15 @@ async def bootstrap_master_admin() -> None:
     if not email and not password:
         return
     if not email or not password:
-        raise RuntimeError("ADMIN_EMAIL and ADMIN_PASSWORD must be configured together.")
+        print("⚠️ ADMIN_EMAIL and ADMIN_PASSWORD must be configured together. Skipping admin bootstrap.")
+        return
     if "@" not in email or len(email) > 320:
-        raise RuntimeError("ADMIN_EMAIL is invalid.")
+        print("⚠️ ADMIN_EMAIL is invalid. Skipping admin bootstrap.")
+        return
     valid, error = validate_password_strength(password)
     if not valid:
-        raise RuntimeError(f"ADMIN_PASSWORD is too weak: {error}")
+        print(f"⚠️ ADMIN_PASSWORD does not meet complexity requirements: {error}. Skipping admin bootstrap.")
+        return
 
     async with AsyncSessionLocal() as db:
         existing = await db.scalar(select(AdminUser).where(AdminUser.email == email))
