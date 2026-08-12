@@ -1,6 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Shield, Lock, Mail, Eye, EyeOff, AlertCircle } from 'lucide-react'
+import { httpRequest } from '../utils/HttpClient'
 
 export default function AdminLogin() {
   const navigate = useNavigate();
@@ -9,6 +10,20 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    // If admin is already authenticated, redirect straight to admin panel
+    const checkExistingSession = async () => {
+      try {
+        await httpRequest('/api/admin/verify');
+        localStorage.setItem('admin_logged_in', 'true');
+        navigate('/master_adm');
+      } catch (_) {
+        // Not logged in, stay on login form
+      }
+    };
+    checkExistingSession();
+  }, [navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -22,6 +37,7 @@ export default function AdminLogin() {
 
       const response = await fetch('/api/admin/login', {
         method: 'POST',
+        credentials: 'include', // Ensure Set-Cookie is accepted by browser
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },

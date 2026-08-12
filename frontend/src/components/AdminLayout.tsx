@@ -63,26 +63,25 @@ export default function AdminLayout() {
     const checkAdminSession = async () => {
       try {
         const data = await httpRequest<{email: string; role: string}>("/api/admin/verify");
+        localStorage.setItem("admin_logged_in", "true");
+        localStorage.setItem("admin_email", data.email);
+        localStorage.setItem("admin_role", data.role);
         setAdminEmail(data.email);
         setAdminRole(data.role);
         setVerifying(false);
         fetchMaintenanceMode();
       } catch (err) {
-        console.error("Session verification failed:", err);
+        console.error("Admin session verification failed:", err);
         localStorage.removeItem("admin_logged_in");
         localStorage.removeItem("admin_email");
         localStorage.removeItem("admin_role");
-        navigate("/master_adm/login");
+        setVerifying(false);
+        navigate("/master_adm/login", { replace: true });
       }
     };
 
-    const loggedIn = localStorage.getItem("admin_logged_in");
-    if (!loggedIn) {
-      navigate("/master_adm/login");
-    } else {
-      checkAdminSession();
-    }
-  }, [location, navigate]);
+    checkAdminSession();
+  }, [location.pathname, navigate]);
 
   const handleToggleMaintenance = async () => {
     const nextState = !maintenanceMode;

@@ -173,6 +173,7 @@ async def login_admin(
         secure=settings.ENVIRONMENT.lower() == "production",
         samesite="lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
+        path="/"
     )
     return {"access_token": token, "token_type": "bearer", "role": admin.role, "email": admin.email}  # nosec
 
