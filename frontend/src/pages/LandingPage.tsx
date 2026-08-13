@@ -578,28 +578,28 @@ export default function LandingPage() {
       </header>
 
       {/* ─── Hero Section ─────────────────────────────────────────────────── */}
-      <section className="relative pt-16 pb-24 md:pt-28 md:pb-36 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-extrabold mb-8 animate-pulse shadow-lg shadow-brand-500/5">
-          <Sparkles className="w-4 h-4 text-brand-400" />
+      <section className="relative pt-8 pb-12 sm:pt-14 sm:pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-[11px] sm:text-xs font-extrabold mb-5 animate-pulse shadow-lg shadow-brand-500/5">
+          <Sparkles className="w-3.5 h-3.5 text-brand-400" />
           <span>Next-Gen Smart-Campaign Marketing & Deliverability Platform</span>
         </div>
 
-        <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-white tracking-tight max-w-5xl mx-auto leading-[1.1] mb-6">
+        <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black text-white tracking-tight max-w-5xl mx-auto leading-[1.15] mb-4">
           Scale Your Email, SMS & Telegram Marketing With{' '}
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-400 via-indigo-400 to-purple-400">
             Instant Inbox Placement
           </span>
         </h1>
 
-        <p className="text-xs sm:text-base lg:text-lg text-slate-300 max-w-3xl mx-auto font-medium leading-relaxed mb-10">
+        <p className="text-xs sm:text-sm lg:text-base text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed mb-6">
           Automate bulk campaign dispatches across multi-node SMTP load balancers, SMS gateways, and Telegram bots. Features real-time click heatmaps, automated A/B split testing, and crypto billing.
         </p>
 
         {/* CTA Buttons - High Contrast Dark & Gradient Styling */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 w-full max-w-md sm:max-w-none mx-auto">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10 w-full max-w-md sm:max-w-none mx-auto">
           <button
             onClick={() => openRegisterModal('free')}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl brand-gradient-bg text-sm font-extrabold text-white shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
+            className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl brand-gradient-bg text-xs sm:text-sm font-extrabold text-white shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5"
           >
             <span>Start Your Free 30-Day Trial</span>
             <ArrowRight className="w-4 h-4" />
@@ -607,7 +607,7 @@ export default function LandingPage() {
 
           <button
             onClick={openLoginModal}
-            className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-[#1a1c2e] hover:bg-[#252845] border border-slate-700/80 text-sm font-bold text-white transition-all flex items-center justify-center gap-2 hover:border-slate-600 shadow-lg"
+            className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl bg-[#1a1c2e] hover:bg-[#252845] border border-slate-700/80 text-xs sm:text-sm font-bold text-white transition-all flex items-center justify-center gap-2 hover:border-slate-600 shadow-lg"
           >
             <Lock className="w-4 h-4 text-brand-400" />
             <span>Customer Portal Login</span>
@@ -615,31 +615,31 @@ export default function LandingPage() {
         </div>
 
         {/* Metrics Ticker - High Contrast Panel */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-4xl mx-auto p-4 sm:p-6 rounded-3xl bg-[#1a1c2e]/90 border border-slate-800 shadow-2xl backdrop-blur-xl">
-          <div className="text-center p-3 border-r border-slate-800/80 last:border-0">
-            <div className="text-xl sm:text-3xl font-black text-brand-400">99.8%</div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Inbox Delivery Rate</div>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto p-3.5 sm:p-5 rounded-2xl bg-[#1a1c2e]/90 border border-slate-800 shadow-xl backdrop-blur-xl">
+          <div className="text-center p-2.5 border-r border-slate-800/80 last:border-0">
+            <div className="text-lg sm:text-2xl font-black text-brand-400">99.8%</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Inbox Delivery Rate</div>
           </div>
-          <div className="text-center p-3 border-r border-slate-800/80 last:border-0">
-            <div className="text-xl sm:text-3xl font-black text-indigo-400">10M+</div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Daily Email Dispatches</div>
+          <div className="text-center p-2.5 border-r border-slate-800/80 last:border-0">
+            <div className="text-lg sm:text-2xl font-black text-indigo-400">10M+</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Daily Email Dispatches</div>
           </div>
-          <div className="text-center p-3 border-r border-slate-800/80 last:border-0">
-            <div className="text-xl sm:text-3xl font-black text-purple-400">&lt; 5ms</div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">API Dispatch Latency</div>
+          <div className="text-center p-2.5 border-r border-slate-800/80 last:border-0">
+            <div className="text-lg sm:text-2xl font-black text-purple-400">&lt; 5ms</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">API Dispatch Latency</div>
           </div>
-          <div className="text-center p-3">
-            <div className="text-xl sm:text-3xl font-black text-emerald-400">99.99%</div>
-            <div className="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1">Uptime SLA Guarantee</div>
+          <div className="text-center p-2.5">
+            <div className="text-lg sm:text-2xl font-black text-emerald-400">99.99%</div>
+            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Uptime SLA Guarantee</div>
           </div>
         </div>
       </section>
 
       {/* ─── Interactive Live Console Demo Section ────────────────────────── */}
-      <section id="demo" className="py-16 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
-        <div className="text-center mb-10">
-          <span className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-2 block">Interactive Experience</span>
-          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+      <section id="demo" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
+        <div className="text-center mb-6 sm:mb-8">
+          <span className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-1.5 block">Interactive Experience</span>
+          <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
             See How SmartCampaign Powers Your Growth
           </h2>
         </div>
@@ -845,24 +845,24 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Core Platform Features ───────────────────────────────────────── */}
-      <section id="features" className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <h2 className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-3">Built for High Volume & High Deliverability</h2>
-          <p className="text-3xl sm:text-4xl font-black text-white tracking-tight">
+      <section id="features" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+          <h2 className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-2">Built for High Volume & High Deliverability</h2>
+          <p className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Everything You Need To Execute Flawless Marketing Campaigns
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {features.map((feature, idx) => (
             <div
               key={idx}
-              className="p-8 rounded-3xl bg-[#1a1c2e]/90 border border-slate-800/80 hover:border-brand-500/50 transition-all hover:-translate-y-1 shadow-xl group"
+              className="p-5 sm:p-6 rounded-2xl bg-[#1a1c2e]/90 border border-slate-800/80 hover:border-brand-500/50 transition-all hover:-translate-y-1 shadow-lg group"
             >
-              <div className="p-3.5 rounded-2xl bg-[#0d0e1a] border border-slate-800 inline-block mb-6 group-hover:scale-110 transition-transform">
+              <div className="p-3 rounded-xl bg-[#0d0e1a] border border-slate-800 inline-block mb-4 group-hover:scale-105 transition-transform">
                 {feature.icon}
               </div>
-              <h3 className="text-lg font-bold text-white mb-3 group-hover:text-brand-300 transition-colors">
+              <h3 className="text-base font-bold text-white mb-2 group-hover:text-brand-300 transition-colors">
                 {feature.title}
               </h3>
               <p className="text-xs text-slate-300 leading-relaxed">
@@ -874,107 +874,107 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Omni-Channel Marketing Showcase ─────────────────────────────── */}
-      <section id="omnichannel" className="py-20 bg-[#121424]/60 border-y border-slate-800/80">
+      <section id="omnichannel" className="py-10 sm:py-14 bg-[#121424]/60 border-y border-slate-800/80">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6 text-left">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
+            <div className="space-y-4 text-left">
               <span className="px-3.5 py-1 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 text-xs font-extrabold inline-block">
                 Omni-Channel Messaging Hub
               </span>
-              <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+              <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
                 Combine Email, SMS & Telegram Into One Automation Engine
               </h2>
               <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
                 Don't limit your customer outreach to just email. Engage leads across Telegram channels, automated SMS gateways (Twilio, BulkSMSBD, Vonage), and instant webhooks simultaneously.
               </p>
 
-              <div className="space-y-4 pt-2">
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#1a1c2e] border border-slate-800">
-                  <div className="p-2.5 rounded-xl bg-brand-500/10 text-brand-400 mt-1">
-                    <Mail className="w-5 h-5" />
+              <div className="space-y-3 pt-2">
+                <div className="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-[#1a1c2e] border border-slate-800">
+                  <div className="p-2 rounded-lg bg-brand-500/10 text-brand-400 mt-0.5">
+                    <Mail className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">Multi-Node SMTP Email Dispatches</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Custom SMTP server rotation, HTML template builder & automated CSV contacts import.</p>
+                    <h4 className="text-xs sm:text-sm font-bold text-white">Multi-Node SMTP Email Dispatches</h4>
+                    <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Custom SMTP server rotation, HTML template builder & automated CSV contacts import.</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#1a1c2e] border border-slate-800">
-                  <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 mt-1">
-                    <Smartphone className="w-5 h-5" />
+                <div className="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-[#1a1c2e] border border-slate-800">
+                  <div className="p-2 rounded-lg bg-sky-500/10 text-sky-400 mt-0.5">
+                    <Smartphone className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">Global SMS Marketing Gateway</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Send promotional & transactional SMS with personalized template tags via Twilio or custom APIs.</p>
+                    <h4 className="text-xs sm:text-sm font-bold text-white">Global SMS Marketing Gateway</h4>
+                    <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Send promotional & transactional SMS with personalized template tags via Twilio or custom APIs.</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-4 p-4 rounded-2xl bg-[#1a1c2e] border border-slate-800">
-                  <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400 mt-1">
-                    <Send className="w-5 h-5" />
+                <div className="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-[#1a1c2e] border border-slate-800">
+                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 mt-0.5">
+                    <Send className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-sm font-bold text-white">Telegram Broadcasts & Bot Listener</h4>
-                    <p className="text-xs text-slate-400 mt-0.5">Automated Telegram bot notifications, IMEI/Server status alerts, and instant group broadcasts.</p>
+                    <h4 className="text-xs sm:text-sm font-bold text-white">Telegram Broadcasts & Bot Listener</h4>
+                    <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Automated Telegram bot notifications, IMEI/Server status alerts, and instant group broadcasts.</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Omni-Channel Graphic Card */}
-            <div className="p-6 sm:p-8 rounded-3xl bg-[#1a1c2e] border border-slate-800 shadow-2xl relative text-left">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-4 mb-6">
-                <div className="text-sm font-bold text-white flex items-center gap-2">
+            <div className="p-5 sm:p-7 rounded-2xl bg-[#1a1c2e] border border-slate-800 shadow-xl relative text-left">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
                   <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
                   <span>Live Dispatch Routing Engine</span>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
                   Online
                 </span>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-[#0d0e1a] border border-slate-800">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#0d0e1a] border border-slate-800">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold">
-                      <Mail className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold">
+                      <Mail className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-white">Email Dispatch Node #1</div>
                       <div className="text-[10px] text-slate-400">SMTP Host: smtp.smartcampaign.today</div>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                     Active (100% Inbox)
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-[#0d0e1a] border border-slate-800">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#0d0e1a] border border-slate-800">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
-                      <Smartphone className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
+                      <Smartphone className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-white">SMS Gateway Node</div>
                       <div className="text-[10px] text-slate-400">Provider: Twilio / BulkSMS API</div>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-1 rounded-md border border-emerald-500/20">
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                     Connected
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-4 rounded-2xl bg-[#0d0e1a] border border-slate-800">
+                <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#0d0e1a] border border-slate-800">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
-                      <Send className="w-5 h-5" />
+                    <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
+                      <Send className="w-4 h-4" />
                     </div>
                     <div>
                       <div className="text-xs font-bold text-white">Telegram Marketing Bot</div>
                       <div className="text-[10px] text-slate-400">Listener: Active Bot Worker</div>
                     </div>
                   </div>
-                  <span className="text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2.5 py-1 rounded-md border border-indigo-500/20">
+                  <span className="text-[10px] sm:text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
                     Listening
                   </span>
                 </div>
@@ -985,20 +985,20 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Pricing Plans Section ────────────────────────────────────────── */}
-      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
-        <div className="text-center max-w-3xl mx-auto mb-16">
-          <span className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-3 block">Flexible SaaS Billing</span>
-          <h2 className="text-3xl sm:text-5xl font-black text-white tracking-tight mb-6">
+      <section id="pricing" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
+          <span className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-2 block">Flexible SaaS Billing</span>
+          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight mb-4">
             Transparent Pricing Plans For Every Scale
           </h2>
           <p className="text-xs sm:text-sm text-slate-300 font-medium">
             No hidden fees. Choose a plan tailored to your dispatch volume or start with our free trial.
           </p>
 
-          <div className="mt-8 inline-flex items-center p-1.5 rounded-2xl bg-[#1a1c2e] border border-slate-800 shadow-xl">
+          <div className="mt-6 inline-flex items-center p-1 rounded-xl bg-[#1a1c2e] border border-slate-800 shadow-lg">
             <button
               onClick={() => setBillingCycle('monthly')}
-              className={`px-5 py-2 rounded-xl text-xs font-extrabold transition-all ${
+              className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all ${
                 billingCycle === 'monthly'
                   ? 'brand-gradient-bg text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -1008,7 +1008,7 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => setBillingCycle('annual')}
-              className={`px-5 py-2 rounded-xl text-xs font-extrabold transition-all flex items-center gap-1.5 ${
+              className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
                 billingCycle === 'annual'
                   ? 'brand-gradient-bg text-white shadow-md'
                   : 'text-slate-400 hover:text-white'
@@ -1022,25 +1022,25 @@ export default function LandingPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {activePlans.map((plan, idx) => (
             <div
               key={idx}
-              className={`p-6 sm:p-8 rounded-3xl bg-[#1a1c2e]/90 border transition-all flex flex-col justify-between relative ${
+              className={`p-5 sm:p-6 rounded-2xl bg-[#1a1c2e]/90 border transition-all flex flex-col justify-between relative ${
                 plan.popular
-                  ? 'border-2 border-brand-500 shadow-[0_0_40px_rgba(79,70,229,0.3)] scale-[1.03] z-20'
+                  ? 'border-2 border-brand-500 shadow-[0_0_30px_rgba(79,70,229,0.25)] scale-[1.02] z-20'
                   : 'border-slate-800 hover:border-slate-700'
               }`}
             >
               {plan.popular && (
-                <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full brand-gradient-bg text-white text-[10px] font-black tracking-wider uppercase shadow-md">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full brand-gradient-bg text-white text-[10px] font-black tracking-wider uppercase shadow-md">
                   {plan.badge}
                 </div>
               )}
 
               <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-xl font-black text-white">{plan.name}</h3>
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-black text-white">{plan.name}</h3>
                   {!plan.popular && (
                     <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#0d0e1a] text-slate-300 border border-slate-700">
                       {plan.badge}
@@ -1048,13 +1048,13 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                <p className="text-xs text-slate-400 min-h-[36px] mb-6 leading-relaxed">
+                <p className="text-[11px] sm:text-xs text-slate-400 min-h-[32px] mb-4 leading-relaxed">
                   {plan.description}
                 </p>
 
-                <div className="mb-6 border-b border-slate-800 pb-6">
+                <div className="mb-5 border-b border-slate-800 pb-5">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-3xl sm:text-4xl font-black text-white">
+                    <span className="text-2xl sm:text-3xl font-black text-white">
                       ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice}
                     </span>
                     <span className="text-xs text-slate-400 font-bold">/ month</span>
@@ -1066,10 +1066,10 @@ export default function LandingPage() {
                   )}
                 </div>
 
-                <ul className="space-y-3 mb-8 text-xs text-slate-300">
+                <ul className="space-y-2.5 mb-6 text-xs text-slate-300">
                   {(plan.features || []).map((feat: string, fIdx: number) => (
-                    <li key={fIdx} className="flex items-start gap-2.5">
-                      <Check className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
+                    <li key={fIdx} className="flex items-start gap-2">
+                      <Check className="w-3.5 h-3.5 text-brand-400 flex-shrink-0 mt-0.5" />
                       <span>{feat}</span>
                     </li>
                   ))}
@@ -1079,7 +1079,7 @@ export default function LandingPage() {
               {/* Action Button: High contrast text on dark background */}
               <button
                 onClick={() => openRegisterModal(plan.tier)}
-                className={`w-full py-3.5 px-4 rounded-xl text-xs font-bold text-center transition-all shadow-lg ${
+                className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-center transition-all shadow-lg ${
                   plan.popular
                     ? 'brand-gradient-bg text-white hover:opacity-95 shadow-brand-500/20'
                     : 'bg-[#252845] hover:bg-[#30334f] text-white border border-slate-700/80'
@@ -1093,9 +1093,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Interactive FAQ Accordion ────────────────────────────────────── */}
-      <section id="faq" className="py-20 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl sm:text-4xl font-black text-white tracking-tight mb-4">
+      <section id="faq" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+        <div className="text-center mb-8 sm:mb-10">
+          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
             Frequently Asked Questions
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 font-medium">
@@ -1103,26 +1103,26 @@ export default function LandingPage() {
           </p>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {faqs.map((faq, idx) => (
             <div
               key={idx}
-              className="rounded-2xl bg-[#1a1c2e]/90 border border-slate-800 overflow-hidden transition-colors"
+              className="rounded-xl bg-[#1a1c2e]/90 border border-slate-800 overflow-hidden transition-colors"
             >
               <button
                 onClick={() => toggleFaq(idx)}
-                className="w-full p-5 sm:p-6 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-white hover:text-brand-300 transition-colors"
+                className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-white hover:text-brand-300 transition-colors"
               >
                 <span className="text-white font-bold">{faq.question}</span>
                 {openFaq === idx ? (
-                  <ChevronUp className="w-5 h-5 text-brand-400 flex-shrink-0" />
+                  <ChevronUp className="w-4 h-4 text-brand-400 flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="w-5 h-5 text-slate-400 flex-shrink-0" />
+                  <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
                 )}
               </button>
 
               {openFaq === idx && (
-                <div className="px-5 sm:px-6 pb-6 text-xs text-slate-300 leading-relaxed border-t border-slate-800/80 pt-4 text-left">
+                <div className="px-4 sm:px-5 pb-5 text-xs text-slate-300 leading-relaxed border-t border-slate-800/80 pt-3 text-left">
                   {faq.answer}
                 </div>
               )}
@@ -1132,10 +1132,10 @@ export default function LandingPage() {
       </section>
 
       {/* ─── CTA Banner ──────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
-        <div className="p-8 sm:p-14 rounded-3xl brand-gradient-bg relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-8">
-          <div className="space-y-3 text-center md:text-left z-10 max-w-2xl">
-            <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
+      <section className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="p-6 sm:p-10 rounded-2xl brand-gradient-bg relative overflow-hidden shadow-2xl flex flex-col md:flex-row items-center justify-between gap-6 sm:gap-8">
+          <div className="space-y-2 text-center md:text-left z-10 max-w-2xl">
+            <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
               Ready to Supercharge Your Campaign Deliverability?
             </h2>
             <p className="text-xs sm:text-sm text-white/90 font-medium leading-relaxed">
@@ -1146,13 +1146,13 @@ export default function LandingPage() {
           <div className="flex flex-col sm:flex-row items-center gap-3 z-10 w-full md:w-auto">
             <button
               onClick={() => openRegisterModal('free')}
-              className="w-full sm:w-auto px-8 py-4 rounded-2xl bg-white text-slate-950 font-extrabold text-xs hover:bg-slate-100 transition-all shadow-xl text-center"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-white text-slate-950 font-extrabold text-xs hover:bg-slate-100 transition-all shadow-xl text-center"
             >
               Create Free Account
             </button>
             <button
               onClick={openLoginModal}
-              className="w-full sm:w-auto px-6 py-4 rounded-2xl bg-[#0b0c16]/50 hover:bg-[#0b0c16]/75 border border-white/30 text-white font-bold text-xs transition-all text-center"
+              className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#0b0c16]/50 hover:bg-[#0b0c16]/75 border border-white/30 text-white font-bold text-xs transition-all text-center"
             >
               Sign In To Portal
             </button>
@@ -1161,8 +1161,8 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Footer ──────────────────────────────────────────────────────── */}
-      <footer className="border-t border-slate-800/80 bg-[#0d0e1a] pt-16 pb-12 px-4 sm:px-6 lg:px-8 text-left">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
+      <footer className="border-t border-slate-800/80 bg-[#0d0e1a] pt-10 pb-8 px-4 sm:px-6 lg:px-8 text-left">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               {footerLogo ? (
