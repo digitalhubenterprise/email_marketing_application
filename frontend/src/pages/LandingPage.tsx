@@ -682,7 +682,7 @@ export default function LandingPage() {
               <span className="w-3 h-3 rounded-full bg-emerald-500/80 inline-block" />
             </div>
             <div className="text-[10px] font-mono text-slate-400 bg-[#1a1c2e] px-4 py-1 rounded-md border border-slate-800 truncate max-w-[200px] sm:max-w-none">
-              https://app.{siteName.toLowerCase().replace(/\s+/g, '')}.today/{activeDemoTab}
+              https://smartcampaign.today/{activeDemoTab}
             </div>
             <div className="text-xs text-brand-400 font-bold flex items-center gap-1">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
