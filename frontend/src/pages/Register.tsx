@@ -6,6 +6,7 @@ import { Mail, Lock, AlertCircle, ArrowRight, UserPlus, Eye, EyeOff, CheckCircle
 export default function Register() {
   const [email, setEmail] = useState("")
   const [phoneNumber, setPhoneNumber] = useState("")
+  const [websiteHp, setWebsiteHp] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
   const [showPassword, setShowPassword] = useState(false)
@@ -91,11 +92,11 @@ export default function Register() {
     setLoading(true);
 
     try {
-      // 1. Call Register
+      // 1. Call Register with anti-bot honeypot
       const regResponse = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, phone_number: phoneNumber })
+        body: JSON.stringify({ email, password, phone_number: phoneNumber, website_hp: websiteHp })
       });
 
       if (regResponse.ok) {
@@ -194,6 +195,17 @@ export default function Register() {
         )}
 
         <form onSubmit={verifyEmailMode ? handleVerifyEmail : handleSubmit} className="space-y-4">
+          {/* Hidden Anti-Bot Honeypot Trap */}
+          <input
+            type="text"
+            name="website_hp"
+            value={websiteHp}
+            onChange={(e) => setWebsiteHp(e.target.value)}
+            className="hidden absolute opacity-0 pointer-events-none -z-50"
+            tabIndex={-1}
+            autoComplete="off"
+          />
+
           {!verifyEmailMode ? (
             <>
               <div className="space-y-1.5">

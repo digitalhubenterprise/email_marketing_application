@@ -50,6 +50,7 @@ export default function LandingPage() {
   // Form Fields
   const [email, setEmail] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
+  const [websiteHp, setWebsiteHp] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -228,7 +229,7 @@ export default function LandingPage() {
       const regResponse = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password, phone_number: phoneNumber })
+        body: JSON.stringify({ email, password, phone_number: phoneNumber, website_hp: websiteHp })
       });
 
       if (regResponse.ok) {
@@ -1441,6 +1442,16 @@ export default function LandingPage() {
             ) : (
               /* ─── REGISTER FORM ─── */
               <form onSubmit={handleModalRegisterSubmit} className="space-y-3.5">
+                {/* Hidden Anti-Bot Honeypot Trap */}
+                <input
+                  type="text"
+                  name="website_hp"
+                  value={websiteHp}
+                  onChange={(e) => setWebsiteHp(e.target.value)}
+                  className="hidden absolute opacity-0 pointer-events-none -z-50"
+                  tabIndex={-1}
+                  autoComplete="off"
+                />
                 {selectedPlanTier !== 'free' && (
                   <div className="p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-bold flex items-center justify-between">
                     <span>Selected Plan: <span className="uppercase text-white">{selectedPlanTier}</span></span>

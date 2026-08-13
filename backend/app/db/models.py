@@ -39,6 +39,8 @@ class User(Base):
     email_verified = Column(Boolean, default=False)
     email_verification_secret = Column(String, nullable=True)
     email_2fa_secret = Column(String, nullable=True)
+    failed_login_attempts = Column(Integer, default=0)
+    locked_until = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=utc_now_naive)
 
     smtp_servers = relationship("SMTPServer", back_populates="user", cascade="all, delete-orphan")

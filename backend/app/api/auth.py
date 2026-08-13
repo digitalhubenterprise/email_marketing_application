@@ -52,40 +52,60 @@ class ChangePasswordRequest(BaseModel):
     new_password: str
 
 
+import re
+
 # ─── Register ─────────────────────────────────────────────────────────
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("10/minute")          # Max 10 registration attempts per minute per IP
+@limiter.limit("5/minute")          # Max 5 registration attempts per minute per IP
 async def register(request: Request, user_in: UserCreate, db: AsyncSession = Depends(get_db)):
-    # Validate password strength
+    # 1. Anti-Bot Honeypot Trap Check
+    if user_in.website_hp and len(user_in.website_hp.strip()) > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Automated bot submission detected."
+        )
+
+    # 2. Strict Input Boundary Checks & Sanitization
+    email_clean = str(user_in.email).strip().lower()
+    if len(email_clean) > 254:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Email address exceeds maximum length of 254 characters.")
+
+    if len(user_in.password) > 128:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail="Password exceeds maximum length of 128 characters.")
+
+    phone_clean = None
+    if user_in.phone_number:
+        phone_clean = re.sub(r'[<>\'"\`\\]', '', user_in.phone_number.strip())[:32]
+
+    # 3. Validate password strength
     is_strong, pw_error = validate_password_strength(user_in.password)
     if not is_strong:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=pw_error)
 
-    # Check for existing email
-    result = await db.execute(select(User).where(User.email == user_in.email))
+    # 4. Check for existing email
+    result = await db.execute(select(User).where(User.email == email_clean))
     if result.scalars().first():
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="An account with this email address already exists.",
         )
 
-    # Check global config for email verification requirement
+    # 5. Check global config for email verification requirement
     res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
     sys_config = res.scalars().first()
     email_verification_required = sys_config.email_verification_required if sys_config else False
 
     from app.db.models import utc_now_naive
     new_user = User(
-        email=user_in.email,
+        email=email_clean,
         hashed_password=get_password_hash(user_in.password),
-        phone_number=user_in.phone_number,
+        phone_number=phone_clean,
         subscription_tier="trial",
         quota_limit=5000,
         quota_sent=0,
         subscription_expires_at=utc_now_naive() + timedelta(days=15),
     )
-
 
     if email_verification_required:
         import pyotp
@@ -137,23 +157,64 @@ async def register(request: Request, user_in: UserCreate, db: AsyncSession = Dep
 # ─── Login ────────────────────────────────────────────────────────────
 
 @router.post("/login", response_model=Token)
-@limiter.limit("20/minute")          # Max 20 login attempts per minute per IP
+@limiter.limit("10/minute")          # Max 10 login attempts per minute per IP
 async def login(
     request: Request,
     response: Response,
     form_data: OAuth2PasswordRequestForm = Depends(),
     db: AsyncSession = Depends(get_db),
 ):
-    result = await db.execute(select(User).where(User.email == form_data.username))
-    user = result.scalars().first()
+    from app.db.models import utc_now_naive
+    now = utc_now_naive()
 
-    # Constant-time comparison prevents timing attacks
-    if not user or not verify_password(form_data.password, user.hashed_password):
+    email_clean = form_data.username.strip().lower()
+    if len(email_clean) > 254 or len(form_data.password) > 128:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password.",
             headers={"WWW-Authenticate": "Bearer"},
         )
+
+    result = await db.execute(select(User).where(User.email == email_clean))
+    user = result.scalars().first()
+
+    # 1. Check Account Lockout Policy
+    if user and user.locked_until:
+        if user.locked_until > now:
+            diff_mins = int((user.locked_until - now).total_seconds() / 60) + 1
+            raise HTTPException(
+                status_code=status.HTTP_429_TOO_MANY_REQUESTS,
+                detail=f"Account is temporarily locked due to multiple failed login attempts. Please try again in {diff_mins} minute(s)."
+            )
+        else:
+            # Lock expired, reset lockout state
+            user.locked_until = None
+            user.failed_login_attempts = 0
+            db.add(user)
+            await db.commit()
+
+    # 2. Constant-time password comparison to prevent timing attacks
+    password_valid = verify_password(form_data.password, user.hashed_password) if user else False
+
+    if not user or not password_valid:
+        if user:
+            user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
+            if user.failed_login_attempts >= 5:
+                user.locked_until = now + timedelta(minutes=15)
+            db.add(user)
+            await db.commit()
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    # 3. Successful login - Reset failure counter & lockout status
+    if (user.failed_login_attempts or 0) > 0 or user.locked_until is not None:
+        user.failed_login_attempts = 0
+        user.locked_until = None
+        db.add(user)
+        await db.commit()
 
     if not user.is_active:
         raise HTTPException(
