@@ -200,8 +200,12 @@ html {
 
 /* Accessibility & Light-Mode Layout Overrides */
 h1, h2, h3, h4, h5, h6 {
-  color: var(--header-text-color) !important;
+  color: var(--header-text-color);
   transition: color 0.3s ease;
+}
+
+.light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+  color: #0f172a;
 }
 
 /* Force placeholders to correct style */
@@ -209,13 +213,10 @@ h1, h2, h3, h4, h5, h6 {
   color: var(--placeholder-color) !important;
 }
 
-/* Text-white overrides inside light-mode cards & panels to keep it readable, bypassing colored buttons/badges */
-.glass-panel .text-white:not(.brand-gradient-bg):not([class*="bg-brand"]):not([class*="bg-emerald"]):not([class*="bg-rose"]):not([class*="bg-indigo"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not(button):not(a),
-[class*="bg-dark-"] .text-white:not(.brand-gradient-bg):not([class*="bg-brand"]):not([class*="bg-emerald"]):not([class*="bg-rose"]):not([class*="bg-indigo"]):not([class*="bg-amber"]):not([class*="bg-blue"]):not(button):not(a),
-.glass-panel span.text-white:not(.brand-gradient-bg):not([class*="bg-brand"]):not([class*="bg-emerald"]):not([class*="bg-rose"]):not([class*="bg-indigo"]):not([class*="bg-amber"]):not([class*="bg-blue"]),
-[class*="bg-dark-"] span.text-white:not(.brand-gradient-bg):not([class*="bg-brand"]):not([class*="bg-emerald"]):not([class*="bg-rose"]):not([class*="bg-indigo"]):not([class*="bg-amber"]):not([class*="bg-blue"]) {
-  color: var(--card-text-white-override) !important;
-  transition: color 0.3s ease;
+/* Text-white overrides inside light-mode cards & panels */
+.dark .glass-panel .text-white,
+.dark [class*="bg-dark-"] .text-white {
+  color: #ffffff;
 }
 
 /* Form inputs & select options legibility safeguards */
