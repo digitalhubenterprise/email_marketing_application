@@ -139,6 +139,12 @@ async def create_db_tables() -> None:
                 text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS seo_meta_title VARCHAR DEFAULT 'SmartCampaign - Modern SaaS Email Marketing Platform'")
             )
             await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS dark_logo_url VARCHAR")
+            )
+            await conn.execute(
+                text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS footer_dark_logo_url VARCHAR")
+            )
+            await conn.execute(
                 text("ALTER TABLE system_configs ADD COLUMN IF NOT EXISTS seo_meta_description VARCHAR DEFAULT 'Create, personalize, monitor, and scale email marketing campaigns dynamically.'")
             )
             await conn.execute(

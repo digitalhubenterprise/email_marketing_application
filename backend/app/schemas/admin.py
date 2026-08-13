@@ -26,6 +26,8 @@ class SystemConfigResponse(BaseModel):
     id: int
     site_name: str
     logo_url: Optional[str]
+    dark_logo_url: Optional[str] = None
+    footer_dark_logo_url: Optional[str] = None
     support_email: str
     maintenance_mode: Optional[bool] = False
     global_send_rate_limit: int
@@ -78,6 +80,8 @@ class SystemConfigResponse(BaseModel):
 class SystemConfigUpdate(BaseModel):
     site_name: Optional[str] = None
     logo_url: Optional[str] = None
+    dark_logo_url: Optional[str] = None
+    footer_dark_logo_url: Optional[str] = None
     support_email: Optional[str] = None
     global_send_rate_limit: Optional[int] = None
     default_from_email: Optional[str] = None

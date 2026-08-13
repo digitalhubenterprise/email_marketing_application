@@ -206,6 +206,8 @@ class SystemConfig(Base):
     id = Column(Integer, primary_key=True, index=True)
     site_name = Column(String, default="SmartCampaign")
     logo_url = Column(String, nullable=True)
+    dark_logo_url = Column(String, nullable=True)
+    footer_dark_logo_url = Column(String, nullable=True)
     support_email = Column(String, default="support@smartcampaign.today")
     maintenance_mode = Column(Boolean, default=False)
     global_send_rate_limit = Column(Integer, default=1000)  # max sends per hour per user

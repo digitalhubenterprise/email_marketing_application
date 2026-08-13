@@ -28,6 +28,8 @@ interface SystemConfig {
   id: number;
   site_name: string;
   logo_url: string | null;
+  dark_logo_url?: string | null;
+  footer_dark_logo_url?: string | null;
   support_email: string;
   maintenance_mode: boolean;
   global_send_rate_limit: number;
@@ -115,6 +117,8 @@ export default function AdminSettings() {
   // Backend SystemConfig States (General & Registration)
   const [siteName, setSiteName] = useState('SmartCampaign');
   const [logoUrl, setLogoUrl] = useState('');
+  const [darkLogoUrl, setDarkLogoUrl] = useState('');
+  const [footerDarkLogoUrl, setFooterDarkLogoUrl] = useState('');
   const [supportEmail, setSupportEmail] = useState('support@smartcampaign.today');
   const [rateLimit, setRateLimit] = useState(1000);
   const [defaultFrom, setDefaultFrom] = useState('noreply@smartcampaign.today');
@@ -404,6 +408,8 @@ export default function AdminSettings() {
         setConfig(data);
         setSiteName(data.site_name);
         setLogoUrl(data.logo_url || '');
+        setDarkLogoUrl(data.dark_logo_url || data.extra_settings?.general_extra?.darkLogoUrl || '');
+        setFooterDarkLogoUrl(data.footer_dark_logo_url || data.extra_settings?.general_extra?.footerDarkLogoUrl || '');
         setSupportEmail(data.support_email);
         setSmtpTestRecipient(data.support_email || '');
         setRateLimit(data.global_send_rate_limit);
@@ -652,6 +658,8 @@ export default function AdminSettings() {
           body: JSON.stringify({
             site_name: siteName,
             logo_url: logoUrl || null,
+            dark_logo_url: darkLogoUrl || null,
+            footer_dark_logo_url: footerDarkLogoUrl || null,
             support_email: supportEmail,
             global_send_rate_limit: rateLimit,
             default_from_email: defaultFrom,
@@ -679,6 +687,8 @@ export default function AdminSettings() {
                 companyName,
                 faviconUrl,
                 footerLogoUrl,
+                darkLogoUrl,
+                footerDarkLogoUrl,
                 siteLink,
                 siteSslLink,
                 seoFriendlyUrl,
@@ -1078,42 +1088,71 @@ export default function AdminSettings() {
                           </div>
                         </div>
 
-                        {/* Main Logo Link, Footer Logo Link & Favicon Icon */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          {/* Main Logo Link */}
+                        {/* Brand Logo & Favicon Assets Grid */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                          {/* Main Logo Link (Light / Standard) */}
                           <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col justify-between">
                             <div>
                               <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                                Main Logo Link
+                                Main Logo Link (Light Version)
                               </label>
                               <input
                                 type="url"
                                 value={logoUrl}
                                 onChange={(e) => setLogoUrl(e.target.value)}
-                                placeholder="https://yourdomain.com/assets/logo.png"
+                                placeholder="https://yourdomain.com/assets/logo-light.png"
                                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
                               />
                               <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
-                                Direct image URL for main header logo (PNG / SVG recommended).
+                                Direct image URL for main header logo in Light Mode (PNG / SVG recommended).
                               </span>
                             </div>
                             
                             {/* Live Preview Box */}
                             <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
-                              <span className="text-[9px] font-bold text-slate-400 uppercase">Preview</span>
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Light Header Preview</span>
                               {logoUrl ? (
-                                <img src={logoUrl} alt="Main Logo Preview" className="h-7 max-w-[120px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                                <img src={logoUrl} alt="Main Light Logo Preview" className="h-7 max-w-[120px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
                               ) : (
                                 <span className="text-[9px] text-slate-400 italic">No image URL</span>
                               )}
                             </div>
                           </div>
 
-                          {/* Footer Logo Link */}
+                          {/* Main Logo Link (Dark Version) */}
                           <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col justify-between">
                             <div>
                               <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
-                                Footer Logo Link
+                                Main Logo Link (Dark Version)
+                              </label>
+                              <input
+                                type="url"
+                                value={darkLogoUrl}
+                                onChange={(e) => setDarkLogoUrl(e.target.value)}
+                                placeholder="https://yourdomain.com/assets/logo-dark.png"
+                                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
+                              />
+                              <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
+                                Direct image URL for main header logo in Dark Mode (PNG / SVG recommended).
+                              </span>
+                            </div>
+
+                            {/* Live Preview Box */}
+                            <div className="mt-3 p-3 bg-[#0d0e1a] border border-slate-800 rounded-lg flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Dark Header Preview</span>
+                              {darkLogoUrl ? (
+                                <img src={darkLogoUrl} alt="Main Dark Logo Preview" className="h-7 max-w-[120px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                              ) : (
+                                <span className="text-[9px] text-slate-500 italic">No image URL</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Footer Logo Link (Light Version) */}
+                          <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col justify-between">
+                            <div>
+                              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Footer Logo Link (Light Version)
                               </label>
                               <input
                                 type="url"
@@ -1123,15 +1162,44 @@ export default function AdminSettings() {
                                 className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
                               />
                               <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
-                                Direct image URL for page footer logo (PNG / SVG recommended).
+                                Direct image URL for page footer logo in Light Mode (PNG / SVG recommended).
                               </span>
                             </div>
 
                             {/* Live Preview Box */}
-                            <div className="mt-3 p-3 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between">
-                              <span className="text-[9px] font-bold text-slate-400 uppercase">Dark Footer Preview</span>
+                            <div className="mt-3 p-3 bg-slate-100 border border-slate-200 rounded-lg flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Light Footer Preview</span>
                               {footerLogoUrl ? (
-                                <img src={footerLogoUrl} alt="Footer Logo Preview" className="h-7 max-w-[120px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                                <img src={footerLogoUrl} alt="Footer Light Logo Preview" className="h-7 max-w-[120px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                              ) : (
+                                <span className="text-[9px] text-slate-400 italic">No image URL</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Footer Logo Link (Dark Version) */}
+                          <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col justify-between">
+                            <div>
+                              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Footer Logo Link (Dark Version)
+                              </label>
+                              <input
+                                type="url"
+                                value={footerDarkLogoUrl}
+                                onChange={(e) => setFooterDarkLogoUrl(e.target.value)}
+                                placeholder="https://yourdomain.com/assets/footer-logo-dark.png"
+                                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
+                              />
+                              <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
+                                Direct image URL for page footer logo in Dark Mode (PNG / SVG recommended).
+                              </span>
+                            </div>
+
+                            {/* Live Preview Box */}
+                            <div className="mt-3 p-3 bg-[#0d0e1a] border border-slate-800 rounded-lg flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Dark Footer Preview</span>
+                              {footerDarkLogoUrl ? (
+                                <img src={footerDarkLogoUrl} alt="Footer Dark Logo Preview" className="h-7 max-w-[120px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
                               ) : (
                                 <span className="text-[9px] text-slate-500 italic">No image URL</span>
                               )}

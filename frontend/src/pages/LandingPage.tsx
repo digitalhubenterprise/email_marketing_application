@@ -92,7 +92,13 @@ export default function LandingPage() {
   const siteName = appConfig?.site_name || "SmartCampaign";
   const companyName = appConfig?.company_name || "ASTRA IT, Inc.";
   const siteLogo = appConfig?.logo_url;
-  const footerLogo = appConfig?.footer_logo_url || appConfig?.logo_url;
+  const siteDarkLogo = appConfig?.dark_logo_url;
+  const activeHeaderLogo = theme === 'dark' ? (siteDarkLogo || siteLogo) : (siteLogo || siteDarkLogo);
+
+  const footerLogo = appConfig?.footer_logo_url || siteLogo;
+  const footerDarkLogo = appConfig?.footer_dark_logo_url || siteDarkLogo || footerLogo;
+  const activeFooterLogo = theme === 'dark' ? (footerDarkLogo || footerLogo) : (footerLogo || footerDarkLogo);
+
   const faviconUrl = appConfig?.favicon_url;
   const supportEmail = appConfig?.support_email || "support@smartcampaign.today";
 
@@ -505,8 +511,8 @@ export default function LandingPage() {
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
-            {siteLogo ? (
-              <img src={siteLogo} alt={siteName} loading="eager" decoding="async" className="h-10 object-contain rounded-xl" />
+            {activeHeaderLogo ? (
+              <img src={activeHeaderLogo} alt={siteName} loading="eager" decoding="async" className="h-10 object-contain rounded-xl" />
             ) : (
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
@@ -1311,10 +1317,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              {footerLogo ? (
-                <img src={footerLogo} alt={siteName} loading="lazy" decoding="async" className="h-8 object-contain" />
-              ) : siteLogo ? (
-                <img src={siteLogo} alt={siteName} loading="lazy" decoding="async" className="h-8 object-contain" />
+              {activeFooterLogo ? (
+                <img src={activeFooterLogo} alt={siteName} loading="lazy" decoding="async" className="h-8 object-contain" />
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-bold">

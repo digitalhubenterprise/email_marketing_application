@@ -38,7 +38,9 @@ interface AuthConfigType {
   site_name: string;
   company_name?: string | null;
   logo_url: string | null;
+  dark_logo_url?: string | null;
   footer_logo_url?: string | null;
+  footer_dark_logo_url?: string | null;
   favicon_url?: string | null;
   support_email: string;
   announcement_active: boolean;
