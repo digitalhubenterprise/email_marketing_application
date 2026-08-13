@@ -1181,7 +1181,7 @@ export default function LandingPage() {
               )}
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Modern SaaS email marketing, multi-node SMTP load balancer, bulk SMS gateway & Telegram automation suite.
+              {appConfig?.seo_meta_description || "Modern SaaS email marketing, multi-node SMTP load balancer, bulk SMS gateway & Telegram automation suite."}
             </p>
           </div>
 
