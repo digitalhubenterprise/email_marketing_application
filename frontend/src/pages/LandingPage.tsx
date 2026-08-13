@@ -485,7 +485,6 @@ export default function LandingPage() {
           <nav className="hidden lg:flex items-center gap-8 text-xs font-bold text-slate-300">
             <a href="#features" className="hover:text-white transition-colors">Features</a>
             <a href="#demo" className="hover:text-white transition-colors">Live Console</a>
-            <a href="#omnichannel" className="hover:text-white transition-colors">Omni-Channel</a>
             <a href="#pricing" className="hover:text-white transition-colors">Pricing Plans</a>
             <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
           </nav>
@@ -534,13 +533,6 @@ export default function LandingPage() {
                 className="p-2.5 rounded-xl hover:bg-[#1a1c2e] transition-colors"
               >
                 Live Console Demo
-              </a>
-              <a 
-                href="#omnichannel" 
-                onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl hover:bg-[#1a1c2e] transition-colors"
-              >
-                Omni-Channel Engine
               </a>
               <a 
                 href="#pricing" 
