@@ -594,7 +594,7 @@ export default function LandingPage() {
             onClick={() => openRegisterModal('free')}
             className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl brand-gradient-bg text-xs sm:text-sm font-extrabold text-white shadow-xl shadow-brand-500/30 hover:shadow-brand-500/50 hover:scale-[1.02] active:scale-[0.98] transition-all flex items-center justify-center gap-2.5"
           >
-            <span>Start Your Free 30-Day Trial</span>
+            <span>Start Your Free 15-Day Trial</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 
@@ -603,7 +603,7 @@ export default function LandingPage() {
             className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl bg-[#1a1c2e] hover:bg-[#252845] border border-slate-700/80 text-xs sm:text-sm font-bold text-white transition-all flex items-center justify-center gap-2 hover:border-slate-600 shadow-lg"
           >
             <Lock className="w-4 h-4 text-brand-400" />
-            <span>Customer Portal Login</span>
+            <span>Login Account</span>
           </button>
         </div>
 
@@ -1156,7 +1156,7 @@ export default function LandingPage() {
               onClick={openLoginModal}
               className="w-full sm:w-auto px-6 py-3.5 rounded-xl bg-[#0b0c16]/50 hover:bg-[#0b0c16]/75 border border-white/30 text-white font-bold text-xs transition-all text-center"
             >
-              Sign In To Portal
+              Login Account
             </button>
           </div>
         </div>
@@ -1189,7 +1189,6 @@ export default function LandingPage() {
             <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Platform Modules</h4>
             <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
               <li><a href="#features" className="hover:text-white transition-colors">SMTP Load Balancer</a></li>
-              <li><a href="#features" className="hover:text-white transition-colors">A/B Subject Testing</a></li>
               <li><a href="#omnichannel" className="hover:text-white transition-colors">Telegram Marketing Suite</a></li>
               <li><a href="#omnichannel" className="hover:text-white transition-colors">SMS Gateway Integrations</a></li>
               <li><a href="#demo" className="hover:text-white transition-colors">Click & Open Heatmaps</a></li>
