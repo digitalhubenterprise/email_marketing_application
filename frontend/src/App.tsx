@@ -272,7 +272,7 @@ export default function App() {
     } catch (e) {
       console.error("Logout request failed:", e);
     }
-    navigate("/login");
+    navigate("/");
   };
 
   if (loading) {
