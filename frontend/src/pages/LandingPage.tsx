@@ -559,7 +559,7 @@ export default function LandingPage() {
       <section className="relative pt-16 pb-24 md:pt-28 md:pb-36 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
         <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-xs font-extrabold mb-8 animate-pulse shadow-lg shadow-brand-500/5">
           <Sparkles className="w-4 h-4 text-brand-400" />
-          <span>Next-Gen Omni-Channel Marketing & Deliverability Platform</span>
+          <span>Next-Gen Smart-Campaign Marketing & Deliverability Platform</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl lg:text-7xl font-black text-white tracking-tight max-w-5xl mx-auto leading-[1.1] mb-6">
