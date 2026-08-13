@@ -745,7 +745,7 @@ export default function LandingPage() {
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeDemoTab === 'sms'
                 ? 'brand-gradient-bg text-white shadow-md'
-                : 'text-slate-300 hover:text-white bg-transparent hover:bg-slate-800/50'
+                : theme === 'dark' ? 'text-slate-300 hover:text-white bg-transparent hover:bg-slate-800/50' : 'text-slate-700 hover:text-slate-900 bg-transparent hover:bg-slate-300/50'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
@@ -757,7 +757,7 @@ export default function LandingPage() {
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeDemoTab === 'telegram'
                 ? 'brand-gradient-bg text-white shadow-md'
-                : 'text-slate-300 hover:text-white bg-transparent hover:bg-slate-800/50'
+                : theme === 'dark' ? 'text-slate-300 hover:text-white bg-transparent hover:bg-slate-800/50' : 'text-slate-700 hover:text-slate-900 bg-transparent hover:bg-slate-300/50'
             }`}
           >
             <Send className="w-3.5 h-3.5" />
@@ -769,7 +769,7 @@ export default function LandingPage() {
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeDemoTab === 'analytics'
                 ? 'brand-gradient-bg text-white shadow-md'
-                : 'text-slate-300 hover:text-white bg-transparent hover:bg-slate-800/50'
+                : theme === 'dark' ? 'text-slate-300 hover:text-white bg-transparent hover:bg-slate-800/50' : 'text-slate-700 hover:text-slate-900 bg-transparent hover:bg-slate-300/50'
             }`}
           >
             <BarChart3 className="w-3.5 h-3.5" />
