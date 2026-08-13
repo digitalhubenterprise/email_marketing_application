@@ -204,8 +204,19 @@ h1, h2, h3, h4, h5, h6 {
   transition: color 0.3s ease;
 }
 
-.light h1, .light h2, .light h3, .light h4, .light h5, .light h6 {
+.light h1:not([class*="text-white"]),
+.light h2:not([class*="text-white"]),
+.light h3:not([class*="text-white"]),
+.light h4:not([class*="text-white"]),
+.light h5:not([class*="text-white"]),
+.light h6:not([class*="text-white"]) {
   color: #0f172a;
+}
+
+/* Dark card panel headers & text in Light mode stay white */
+.light [class*="bg-[#"] h1, .light [class*="bg-[#"] h2, .light [class*="bg-[#"] h3, .light [class*="bg-[#"] h4, .light [class*="bg-[#"] h5, .light [class*="bg-[#"] h6,
+.light [class*="bg-dark-"] h1, .light [class*="bg-dark-"] h2, .light [class*="bg-dark-"] h3, .light [class*="bg-dark-"] h4, .light [class*="bg-dark-"] h5, .light [class*="bg-dark-"] h6 {
+  color: #ffffff !important;
 }
 
 /* Force placeholders to correct style */

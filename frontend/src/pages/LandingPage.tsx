@@ -803,7 +803,7 @@ export default function LandingPage() {
               <div className="space-y-6 animate-fadeIn">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                   <div>
-                    <h3 className="text-base font-bold text-white">Multi-Node SMTP Email Rotation Pool</h3>
+                    <h3 className="text-base font-bold text-white !text-white">Multi-Node SMTP Email Rotation Pool</h3>
                     <p className="text-xs text-slate-400">Load balanced across 5 SMTP IP nodes for 99.8% deliverability</p>
                   </div>
                   <span className="px-3 py-1 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs font-bold rounded-lg">
@@ -814,7 +814,7 @@ export default function LandingPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   <div className="p-4 rounded-2xl bg-[#1a1c2e] border border-slate-800">
                     <span className="text-xs text-slate-400 font-medium">Emails Sent Today</span>
-                    <div className="text-2xl font-black text-white mt-1">452,890</div>
+                    <div className="text-2xl font-black text-white !text-white mt-1">452,890</div>
                     <div className="text-[11px] text-emerald-400 mt-1 font-bold">↑ 24% vs yesterday</div>
                   </div>
                   <div className="p-4 rounded-2xl bg-[#1a1c2e] border border-slate-800">
@@ -835,7 +835,7 @@ export default function LandingPage() {
               <div className="space-y-6 animate-fadeIn">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                   <div>
-                    <h3 className="text-base font-bold text-white">Global SMS Gateway Router</h3>
+                    <h3 className="text-base font-bold text-white !text-white">Global SMS Gateway Router</h3>
                     <p className="text-xs text-slate-400">Twilio, BulkSMSBD, Vonage & Custom HTTP GET/POST API Connectors</p>
                   </div>
                   <span className="px-3 py-1 bg-sky-500/10 text-sky-400 border border-sky-500/20 text-xs font-bold rounded-lg">
@@ -851,7 +851,7 @@ export default function LandingPage() {
                   </div>
                   <div className="p-4 rounded-2xl bg-[#1a1c2e] border border-slate-800">
                     <span className="text-xs text-slate-400 font-medium">Active Sender ID</span>
-                    <div className="text-2xl font-black text-white mt-1">BRAND_SMS</div>
+                    <div className="text-2xl font-black text-white !text-white mt-1">BRAND_SMS</div>
                     <div className="text-[11px] text-slate-400 mt-1 font-bold">Custom Sender Tag</div>
                   </div>
                   <div className="p-4 rounded-2xl bg-[#1a1c2e] border border-slate-800">
@@ -867,7 +867,7 @@ export default function LandingPage() {
               <div className="space-y-6 animate-fadeIn">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                   <div>
-                    <h3 className="text-base font-bold text-white">Telegram Broadcast & Bot Listener</h3>
+                    <h3 className="text-base font-bold text-white !text-white">Telegram Broadcast & Bot Listener</h3>
                     <p className="text-xs text-slate-400">Automated Subscriber Broadcasts, IMEI Checks & Server Notifications</p>
                   </div>
                   <span className="px-3 py-1 bg-brand-500/10 text-brand-400 border border-brand-500/20 text-xs font-bold rounded-lg">
@@ -899,7 +899,7 @@ export default function LandingPage() {
               <div className="space-y-6 animate-fadeIn">
                 <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                   <div>
-                    <h3 className="text-base font-bold text-white">Live Click & Device Tracking Analytics</h3>
+                    <h3 className="text-base font-bold text-white !text-white">Live Click & Device Tracking Analytics</h3>
                     <p className="text-xs text-slate-400">Pixel-based tracking, device breakdown & location heatmaps</p>
                   </div>
                   <span className="px-3 py-1 bg-purple-500/10 text-purple-400 border border-purple-500/20 text-xs font-bold rounded-lg">
