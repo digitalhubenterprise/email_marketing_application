@@ -563,15 +563,8 @@ export default function LandingPage() {
                 onClick={() => { setMobileMenuOpen(false); openLoginModal(); }}
                 className="w-full py-3 rounded-xl bg-[#1a1c2e] border border-slate-700/80 text-xs font-bold text-white text-center"
               >
-                Customer Sign In
+                Sign In
               </button>
-              <Link
-                to="/master_adm/login"
-                onClick={() => setMobileMenuOpen(false)}
-                className="w-full py-2.5 text-[11px] font-bold text-slate-400 text-center hover:text-white"
-              >
-                Super Admin Terminal →
-              </Link>
             </div>
           </div>
         )}
@@ -1206,9 +1199,8 @@ export default function LandingPage() {
           <div>
             <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Quick Links</h4>
             <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
-              <li><button onClick={openLoginModal} className="hover:text-white transition-colors text-left">User Sign In</button></li>
+              <li><button onClick={openLoginModal} className="hover:text-white transition-colors text-left">Sign In</button></li>
               <li><button onClick={() => openRegisterModal('free')} className="hover:text-white transition-colors text-left">Register Account</button></li>
-              <li><Link to="/master_adm/login" className="hover:text-white transition-colors">Super Admin Terminal</Link></li>
               <li><a href="#pricing" className="hover:text-white transition-colors">Subscription Pricing</a></li>
               <li><a href="/api/health" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">API Health Status</a></li>
             </ul>
