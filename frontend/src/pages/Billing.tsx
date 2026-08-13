@@ -168,15 +168,14 @@ export default function Billing() {
               icon = <Layers className="text-indigo-400" size={16} />;
             }
 
-            // Convert cents from database to dollars
-            const costPriceUSD = p.price / 100.0;
-            const publicPriceUSD = (p.publicPrice || 0) / 100.0;
-            const discountUSD = (p.discount || 0) / 100.0;
+            // Determine price in dollars (DB can return dollars e.g. 15 or cents e.g. 1500)
+            const rawPrice = p.price || 0;
+            const costPriceUSD = rawPrice > 200 ? rawPrice / 100.0 : rawPrice;
+            const rawPublic = p.public_price ?? p.publicPrice ?? rawPrice;
+            const publicPriceUSD = rawPublic > 200 ? rawPublic / 100.0 : rawPublic;
+            const discountUSD = (p.discount || 0) > 200 ? (p.discount || 0) / 100.0 : (p.discount || 0);
 
-            // Logic:
-            // Logged-in user sees (Public Cost Price - discount)
-            // Guest sees Public Cost Price
-            const displayPriceNum = token ? Math.max(0, publicPriceUSD - discountUSD) : publicPriceUSD;
+            const displayPriceNum = publicPriceUSD;
             const displayPriceStr = `$${displayPriceNum.toFixed(2)}`;
 
             return {

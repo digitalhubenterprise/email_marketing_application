@@ -997,7 +997,7 @@ async def get_public_subscription_plans(db: AsyncSession = Depends(get_db)):
         popular = False
         cta_text = "Get Started Free"
 
-        if tier_lower == "pro":
+        if tier_lower in ("pro", "standard"):
             badge = "Most Popular"
             popular = True
             cta_text = "Start Standard Plan"
@@ -1007,22 +1007,33 @@ async def get_public_subscription_plans(db: AsyncSession = Depends(get_db)):
         elif tier_lower == "enterprise":
             badge = "Unlimited"
             cta_text = "Contact Enterprise"
-        elif tier_lower not in ("free", "pro", "business", "enterprise"):
+        elif tier_lower not in ("free", "starter"):
             badge = f"{p.name} Tier"
             cta_text = f"Select {p.name}"
+
+        # Normalize price to dollars (DB may store cents e.g. 1199, 2499 or dollars e.g. 15, 35)
+        raw_price = p.price if p.price is not None else 0
+        dollar_price = int(raw_price / 100) if raw_price > 200 else int(raw_price)
 
         output.append({
             "id": p.id,
             "tier": p.tier,
             "name": p.name,
-            "price": p.price,
-            "monthlyPrice": p.price,
-            "annualPrice": int(p.price * 0.8) if p.price > 0 else 0,
+            "price": dollar_price,
+            "monthlyPrice": dollar_price,
+            "annualPrice": int(dollar_price * 0.8) if dollar_price > 0 else 0,
+            "public_price": dollar_price,
+            "publicPrice": dollar_price,
+            "discount": p.discount or 0,
+            "quota": p.quota,
+            "smtp_limit": p.smtp_limit,
+            "validity": p.validity or "30 Days",
             "description": f"{p.name} tier plan with {p.quota:,} dispatch quota and {p.smtp_limit} SMTP nodes.",
             "badge": badge,
             "popular": popular,
             "features": feature_list,
-            "ctaText": cta_text
+            "ctaText": cta_text,
+            "btnText": cta_text
         })
 
     return output

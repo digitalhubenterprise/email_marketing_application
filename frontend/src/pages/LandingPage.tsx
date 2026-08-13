@@ -1023,72 +1023,81 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {activePlans.map((plan, idx) => (
-            <div
-              key={idx}
-              className={`p-5 sm:p-6 rounded-2xl bg-[#1a1c2e]/90 border transition-all flex flex-col justify-between relative ${
-                plan.popular
-                  ? 'border-2 border-brand-500 shadow-[0_0_30px_rgba(79,70,229,0.25)] scale-[1.02] z-20'
-                  : 'border-slate-800 hover:border-slate-700'
-              }`}
-            >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full brand-gradient-bg text-white text-[10px] font-black tracking-wider uppercase shadow-md">
-                  {plan.badge}
-                </div>
-              )}
+          {activePlans.map((plan, idx) => {
+            const rawPrice = plan.monthlyPrice ?? plan.price ?? 0;
+            const mPrice = rawPrice > 200 ? Math.round(rawPrice / 100) : rawPrice;
+            const aPrice = plan.annualPrice ? (plan.annualPrice > 200 ? Math.round(plan.annualPrice / 100) : plan.annualPrice) : (mPrice > 0 ? Math.round(mPrice * 0.8) : 0);
+            const currentPrice = billingCycle === 'monthly' ? mPrice : aPrice;
+            const badgeText = plan.badge || (plan.popular ? "Most Popular" : plan.tier === 'free' ? "Free Trial" : plan.tier === 'business' ? "Best Value" : plan.tier === 'enterprise' ? "Unlimited" : null);
+            const buttonText = plan.ctaText || plan.btnText || (plan.tier === 'free' ? "Get Started Free" : `Upgrade to ${plan.name}`);
 
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-black text-white">{plan.name}</h3>
-                  {!plan.popular && (
-                    <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#0d0e1a] text-slate-300 border border-slate-700">
-                      {plan.badge}
-                    </span>
-                  )}
-                </div>
-
-                <p className="text-[11px] sm:text-xs text-slate-400 min-h-[32px] mb-4 leading-relaxed">
-                  {plan.description}
-                </p>
-
-                <div className="mb-5 border-b border-slate-800 pb-5">
-                  <div className="flex items-baseline gap-1">
-                    <span className="text-2xl sm:text-3xl font-black text-white">
-                      ${billingCycle === 'monthly' ? plan.monthlyPrice : plan.annualPrice}
-                    </span>
-                    <span className="text-xs text-slate-400 font-bold">/ month</span>
-                  </div>
-                  {billingCycle === 'annual' && plan.monthlyPrice > 0 && (
-                    <span className="text-[10px] text-emerald-400 font-bold mt-1 block">
-                      Billed annually (Save 20%)
-                    </span>
-                  )}
-                </div>
-
-                <ul className="space-y-2.5 mb-6 text-xs text-slate-300">
-                  {(plan.features || []).map((feat: string, fIdx: number) => (
-                    <li key={fIdx} className="flex items-start gap-2">
-                      <Check className="w-3.5 h-3.5 text-brand-400 flex-shrink-0 mt-0.5" />
-                      <span>{feat}</span>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-
-              {/* Action Button: High contrast text on dark background */}
-              <button
-                onClick={() => openRegisterModal(plan.tier)}
-                className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-center transition-all shadow-lg ${
+            return (
+              <div
+                key={idx}
+                className={`p-5 sm:p-6 rounded-2xl bg-[#1a1c2e]/90 border transition-all flex flex-col justify-between relative ${
                   plan.popular
-                    ? 'brand-gradient-bg text-white hover:opacity-95 shadow-brand-500/20'
-                    : 'bg-[#252845] hover:bg-[#30334f] text-white border border-slate-700/80'
+                    ? 'border-2 border-brand-500 shadow-[0_0_30px_rgba(79,70,229,0.25)] scale-[1.02] z-20'
+                    : 'border-slate-800 hover:border-slate-700'
                 }`}
               >
-                {plan.ctaText}
-              </button>
-            </div>
-          ))}
+                {plan.popular && badgeText && (
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3.5 py-0.5 rounded-full brand-gradient-bg text-white text-[10px] font-black tracking-wider uppercase shadow-md">
+                    {badgeText}
+                  </div>
+                )}
+
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-lg font-black text-white">{plan.name}</h3>
+                    {!plan.popular && badgeText && (
+                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#0d0e1a] text-slate-300 border border-slate-700">
+                        {badgeText}
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-[11px] sm:text-xs text-slate-400 min-h-[32px] mb-4 leading-relaxed">
+                    {plan.description || `${plan.name} package tier`}
+                  </p>
+
+                  <div className="mb-5 border-b border-slate-800 pb-5">
+                    <div className="flex items-baseline gap-1">
+                      <span className="text-2xl sm:text-3xl font-black text-white">
+                        ${currentPrice}
+                      </span>
+                      <span className="text-xs text-slate-400 font-bold">/ month</span>
+                    </div>
+                    {billingCycle === 'annual' && mPrice > 0 && (
+                      <span className="text-[10px] text-emerald-400 font-bold mt-1 block">
+                        Billed annually (Save 20%)
+                      </span>
+                    )}
+                  </div>
+
+                  <ul className="space-y-2.5 mb-6 text-xs text-slate-300">
+                    {(plan.features || []).map((feat: string, fIdx: number) => (
+                      <li key={fIdx} className="flex items-start gap-2">
+                        <Check className="w-3.5 h-3.5 text-brand-400 flex-shrink-0 mt-0.5" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+
+                {/* Action Button: High contrast text on dark background */}
+                <button
+                  onClick={() => openRegisterModal(plan.tier)}
+                  className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-center transition-all shadow-lg ${
+                    plan.popular
+                      ? 'brand-gradient-bg text-white hover:opacity-95 shadow-brand-500/20'
+                      : 'bg-[#252845] hover:bg-[#30334f] text-white border border-slate-700/80'
+                  }`}
+                >
+                  {buttonText}
+                </button>
+              </div>
+            );
+          })}
         </div>
       </section>
 
