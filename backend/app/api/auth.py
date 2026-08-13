@@ -874,7 +874,10 @@ async def get_public_config(response: Response, db: AsyncSession = Depends(get_d
     if not config:
         data = {
             "site_name": "SmartCampaign",
+            "company_name": "ASTRA IT, Inc.",
             "logo_url": None,
+            "footer_logo_url": None,
+            "favicon_url": None,
             "support_email": "support@smartcampaign.today",
             "announcement_active": False,
             "announcement_message": None,
@@ -893,9 +896,13 @@ async def get_public_config(response: Response, db: AsyncSession = Depends(get_d
             "payment_gateway_merchant_enabled": True
         }
     else:
+        extra_gen = (config.extra_settings or {}).get("general_extra", {})
         data = {
             "site_name": config.site_name,
+            "company_name": extra_gen.get("companyName") or "ASTRA IT, Inc.",
             "logo_url": config.logo_url,
+            "footer_logo_url": extra_gen.get("footerLogoUrl") or None,
+            "favicon_url": extra_gen.get("faviconUrl") or None,
             "support_email": config.support_email,
             "announcement_active": config.announcement_active,
             "announcement_message": config.announcement_message,

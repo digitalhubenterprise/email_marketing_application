@@ -62,8 +62,24 @@ export default function LandingPage() {
   const [mfaCode, setMfaCode] = useState('');
 
   const siteName = appConfig?.site_name || "SmartCampaign";
+  const companyName = appConfig?.company_name || "ASTRA IT, Inc.";
   const siteLogo = appConfig?.logo_url;
+  const footerLogo = appConfig?.footer_logo_url || appConfig?.logo_url;
+  const faviconUrl = appConfig?.favicon_url;
   const supportEmail = appConfig?.support_email || "support@smartcampaign.today";
+
+  // Dynamic Favicon Update
+  useEffect(() => {
+    if (faviconUrl) {
+      let link: HTMLLinkElement | null = document.querySelector("link[rel*='icon']");
+      if (!link) {
+        link = document.createElement('link');
+        link.rel = 'shortcut icon';
+        document.getElementsByTagName('head')[0].appendChild(link);
+      }
+      link.href = faviconUrl;
+    }
+  }, [faviconUrl]);
 
   // ESC Key listener to close modal
   useEffect(() => {
@@ -1130,7 +1146,9 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-10 mb-12">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              {siteLogo ? (
+              {footerLogo ? (
+                <img src={footerLogo} alt={siteName} className="h-8 object-contain" />
+              ) : siteLogo ? (
                 <img src={siteLogo} alt={siteName} className="h-8 object-contain" />
               ) : (
                 <div className="h-8 w-8 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-bold">
@@ -1178,7 +1196,7 @@ export default function LandingPage() {
 
         <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
           <div>
-            Copyright &copy; 2026 {siteName} / ASTRA IT, Inc. All rights reserved.
+            Copyright &copy; 2026 {siteName} / {companyName}. All rights reserved.
           </div>
           <div className="flex gap-6">
             <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-300 transition-colors">Privacy Policy</a>

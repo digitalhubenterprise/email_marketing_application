@@ -93,6 +93,7 @@ export default function AdminSettings() {
   // LocalStorage general_extra States
   const [companyName, setCompanyName] = useState('Your Company Name');
   const [faviconUrl, setFaviconUrl] = useState('');
+  const [footerLogoUrl, setFooterLogoUrl] = useState('');
   const [siteLink, setSiteLink] = useState('');
   const [siteSslLink, setSiteSslLink] = useState('');
   const [seoFriendlyUrl, setSeoFriendlyUrl] = useState('Disable');
@@ -367,6 +368,7 @@ export default function AdminSettings() {
         const p = JSON.parse(generalExtra);
         if (p.companyName !== undefined) setCompanyName(p.companyName);
         if (p.faviconUrl !== undefined) setFaviconUrl(p.faviconUrl);
+        if (p.footerLogoUrl !== undefined) setFooterLogoUrl(p.footerLogoUrl);
         if (p.siteLink !== undefined) setSiteLink(p.siteLink);
         if (p.siteSslLink !== undefined) setSiteSslLink(p.siteSslLink);
         if (p.seoFriendlyUrl !== undefined) setSeoFriendlyUrl(p.seoFriendlyUrl);
@@ -535,6 +537,7 @@ export default function AdminSettings() {
           if (generalExtra) {
             if (generalExtra.companyName !== undefined) setCompanyName(generalExtra.companyName);
             if (generalExtra.faviconUrl !== undefined) setFaviconUrl(generalExtra.faviconUrl);
+            if (generalExtra.footerLogoUrl !== undefined) setFooterLogoUrl(generalExtra.footerLogoUrl);
             if (generalExtra.siteLink !== undefined) setSiteLink(generalExtra.siteLink);
             if (generalExtra.siteSslLink !== undefined) setSiteSslLink(generalExtra.siteSslLink);
             if (generalExtra.seoFriendlyUrl !== undefined) setSeoFriendlyUrl(generalExtra.seoFriendlyUrl);
@@ -675,6 +678,7 @@ export default function AdminSettings() {
               general_extra: {
                 companyName,
                 faviconUrl,
+                footerLogoUrl,
                 siteLink,
                 siteSslLink,
                 seoFriendlyUrl,
@@ -701,6 +705,7 @@ export default function AdminSettings() {
           const extraPayload = {
             companyName,
             faviconUrl,
+            footerLogoUrl,
             siteLink,
             siteSslLink,
             seoFriendlyUrl,
@@ -1026,54 +1031,140 @@ export default function AdminSettings() {
                   {generalSubTab === 'site_info' && (
                     <div className="space-y-6 animate-fadeIn">
                       {/* Site Information */}
-                      <div className="space-y-4">
-                        <h4 className="text-[10px] font-extrabold text-slate-700 uppercase tracking-wider">🏢 Site Information</h4>
+                      <div className="space-y-5">
+                        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                          <h4 className="text-xs font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                            🏢 Site Information & Identity Branding
+                          </h4>
+                          <span className="text-[10px] font-bold text-brand-600 bg-brand-50 px-2.5 py-1 rounded-full border border-brand-100">
+                            Active SaaS Branding
+                          </span>
+                        </div>
+
+                        {/* Company Name & Site Name */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Company Name</label>
+                          <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors">
+                            <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                              Company Name
+                            </label>
                             <input
                               type="text"
                               required
                               value={companyName}
                               onChange={(e) => setCompanyName(e.target.value)}
-                              placeholder="Your Company Name"
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              placeholder="e.g. ASTRA IT, Inc."
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
                             />
-                            <span className="text-[8px] text-slate-400 block mt-1">Your Company Name as you want it to appear throughout the system</span>
+                            <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
+                              Your official registered organization or company title shown on billing and copyright notices.
+                            </span>
                           </div>
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Site Name</label>
+
+                          <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors">
+                            <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                              Site Name
+                            </label>
                             <input
                               type="text"
                               required
                               value={siteName}
                               onChange={(e) => setSiteName(e.target.value)}
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
+                              placeholder="e.g. SmartCampaign"
+                              className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
                             />
+                            <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
+                              Main brand name displayed across system headers, email subject templates, and title tags.
+                            </span>
                           </div>
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Logo Link</label>
-                            <input
-                              type="text"
-                              value={logoUrl}
-                              onChange={(e) => setLogoUrl(e.target.value)}
-                              placeholder="https://yourdomain.com/logo.png"
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
-                            />
-                            <span className="text-[8px] text-slate-400 block mt-1">Enter your logo URL to display in email messages or leave blank for none</span>
+
+                        {/* Main Logo Link, Footer Logo Link & Favicon Icon */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          {/* Main Logo Link */}
+                          <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col justify-between">
+                            <div>
+                              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Main Logo Link
+                              </label>
+                              <input
+                                type="url"
+                                value={logoUrl}
+                                onChange={(e) => setLogoUrl(e.target.value)}
+                                placeholder="https://yourdomain.com/assets/logo.png"
+                                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
+                              />
+                              <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
+                                Direct image URL for main header logo (PNG / SVG recommended).
+                              </span>
+                            </div>
+                            
+                            {/* Live Preview Box */}
+                            <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Preview</span>
+                              {logoUrl ? (
+                                <img src={logoUrl} alt="Main Logo Preview" className="h-7 max-w-[120px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                              ) : (
+                                <span className="text-[9px] text-slate-400 italic">No image URL</span>
+                              )}
+                            </div>
                           </div>
-                          <div>
-                            <label className="block text-[9px] font-bold text-slate-500 uppercase tracking-widest mb-1.5">Favicon Icon</label>
-                            <input
-                              type="text"
-                              value={faviconUrl}
-                              onChange={(e) => setFaviconUrl(e.target.value)}
-                              placeholder="https://yourdomain.com/favicon.png"
-                              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
-                            />
-                            <span className="text-[8px] text-slate-400 block mt-1">64 Kb PNG image recommended</span>
+
+                          {/* Footer Logo Link */}
+                          <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col justify-between">
+                            <div>
+                              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Footer Logo Link
+                              </label>
+                              <input
+                                type="url"
+                                value={footerLogoUrl}
+                                onChange={(e) => setFooterLogoUrl(e.target.value)}
+                                placeholder="https://yourdomain.com/assets/footer-logo.png"
+                                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
+                              />
+                              <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
+                                Direct image URL for page footer logo (PNG / SVG recommended).
+                              </span>
+                            </div>
+
+                            {/* Live Preview Box */}
+                            <div className="mt-3 p-3 bg-slate-900 border border-slate-800 rounded-lg flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Dark Footer Preview</span>
+                              {footerLogoUrl ? (
+                                <img src={footerLogoUrl} alt="Footer Logo Preview" className="h-7 max-w-[120px] object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                              ) : (
+                                <span className="text-[9px] text-slate-500 italic">No image URL</span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Favicon Icon */}
+                          <div className="bg-slate-50/60 p-4 rounded-xl border border-slate-200/80 hover:border-slate-300 transition-colors flex flex-col justify-between">
+                            <div>
+                              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1.5">
+                                Favicon Icon
+                              </label>
+                              <input
+                                type="url"
+                                value={faviconUrl}
+                                onChange={(e) => setFaviconUrl(e.target.value)}
+                                placeholder="https://yourdomain.com/assets/favicon.ico"
+                                className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-semibold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
+                              />
+                              <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">
+                                Square icon URL for browser tab display (64x64 PNG or ICO format).
+                              </span>
+                            </div>
+
+                            {/* Live Preview Box */}
+                            <div className="mt-3 p-3 bg-white border border-slate-200 rounded-lg flex items-center justify-between">
+                              <span className="text-[9px] font-bold text-slate-400 uppercase">Tab Preview</span>
+                              {faviconUrl ? (
+                                <img src={faviconUrl} alt="Favicon Preview" className="w-6 h-6 object-contain" onError={(e) => (e.currentTarget.style.display = 'none')} />
+                              ) : (
+                                <span className="text-[9px] text-slate-400 italic">No icon URL</span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
