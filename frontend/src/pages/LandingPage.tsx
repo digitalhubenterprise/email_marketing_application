@@ -49,6 +49,7 @@ export default function LandingPage() {
 
   // Form Fields
   const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -227,7 +228,7 @@ export default function LandingPage() {
       const regResponse = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ email, password, phone_number: phoneNumber })
       });
 
       if (regResponse.ok) {
@@ -1455,6 +1456,17 @@ export default function LandingPage() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     placeholder="Enter your email"
+                    className="w-full px-4 py-3 rounded-2xl bg-[#0d0e1a] border border-slate-700/80 text-xs font-medium text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none transition-colors"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="block text-xs font-semibold text-slate-300 text-left">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(e) => setPhoneNumber(e.target.value)}
+                    placeholder="+1 (555) 000-0000"
                     className="w-full px-4 py-3 rounded-2xl bg-[#0d0e1a] border border-slate-700/80 text-xs font-medium text-white placeholder:text-slate-500 focus:border-brand-500 focus:outline-none transition-colors"
                   />
                 </div>

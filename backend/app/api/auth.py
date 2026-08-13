@@ -79,6 +79,7 @@ async def register(request: Request, user_in: UserCreate, db: AsyncSession = Dep
     new_user = User(
         email=user_in.email,
         hashed_password=get_password_hash(user_in.password),
+        phone_number=user_in.phone_number,
         subscription_tier="trial",
         quota_limit=5000,
         quota_sent=0,
