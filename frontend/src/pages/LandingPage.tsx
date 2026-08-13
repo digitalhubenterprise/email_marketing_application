@@ -81,6 +81,26 @@ export default function LandingPage() {
     }
   }, [faviconUrl]);
 
+  // Dynamic Real-time Subscription Plans from Database
+  const [dbPlans, setDbPlans] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchPublicPlans = async () => {
+      try {
+        const res = await fetch("/api/auth/plans");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
+            setDbPlans(data);
+          }
+        }
+      } catch (err) {
+        console.error("Failed loading subscription plans from database", err);
+      }
+    };
+    fetchPublicPlans();
+  }, []);
+
   // ESC Key listener to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -294,7 +314,7 @@ export default function LandingPage() {
     }
   };
 
-  const plans = [
+  const defaultPlans = [
     {
       name: "Starter",
       tier: "free",
@@ -378,6 +398,8 @@ export default function LandingPage() {
       ctaText: "Contact Enterprise"
     }
   ];
+
+  const activePlans = dbPlans.length > 0 ? dbPlans : defaultPlans;
 
   const features = [
     {
@@ -1001,7 +1023,7 @@ export default function LandingPage() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 sm:gap-8">
-          {plans.map((plan, idx) => (
+          {activePlans.map((plan, idx) => (
             <div
               key={idx}
               className={`p-6 sm:p-8 rounded-3xl bg-[#1a1c2e]/90 border transition-all flex flex-col justify-between relative ${
@@ -1045,7 +1067,7 @@ export default function LandingPage() {
                 </div>
 
                 <ul className="space-y-3 mb-8 text-xs text-slate-300">
-                  {plan.features.map((feat, fIdx) => (
+                  {(plan.features || []).map((feat: string, fIdx: number) => (
                     <li key={fIdx} className="flex items-start gap-2.5">
                       <Check className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />
                       <span>{feat}</span>

@@ -926,6 +926,108 @@ async def get_public_config(response: Response, db: AsyncSession = Depends(get_d
     return data
 
 
+@router.get("/plans")
+async def get_public_subscription_plans(db: AsyncSession = Depends(get_db)):
+    """
+    Public endpoint to fetch all active subscription plans from the database in real-time.
+    Auto-seeds default SaaS tiers if no plans exist in the database yet.
+    """
+    res = await db.execute(select(SubscriptionPlan).order_by(SubscriptionPlan.price.asc()))
+    plans = res.scalars().all()
+
+    # Seed default plans if table is empty
+    if not plans:
+        default_plans = [
+            SubscriptionPlan(
+                tier="free",
+                name="Starter",
+                price=0,
+                public_price=0,
+                quota=1000,
+                smtp_limit=1,
+                validity="30 Days",
+                features="1,000 Verified Contacts\n5,000 Email Sends / month\n1 Active SMTP Server Node\n5 Starter HTML Templates\nBasic Click & Open Analytics\nUnsubscribe Link Management\nStandard Email Support"
+            ),
+            SubscriptionPlan(
+                tier="pro",
+                name="Standard",
+                price=15,
+                public_price=15,
+                quota=50000,
+                smtp_limit=3,
+                validity="30 Days",
+                features="10,000 Verified Contacts\n50,000 Email Sends / month\n3 Active SMTP Server Nodes\nA/B Subject Line Split Testing\n20+ Premium Responsive Templates\nSMS Gateway Integration (Twilio/BulkSMS)\nAdvanced Heatmap & Device Analytics\nScheduled & Batch Dispatches\nPriority Support Response"
+            ),
+            SubscriptionPlan(
+                tier="business",
+                name="Premium",
+                price=35,
+                public_price=35,
+                quota=200000,
+                smtp_limit=5,
+                validity="30 Days",
+                features="50,000 Verified Contacts\n200,000 Email Sends / month\n5 Active SMTP Server Nodes\nFull Telegram Marketing Suite (IMEI/Bot)\nSMS & WhatsApp Dispatch Gateways\nDedicated IP Warm-up Manager\nCustom Unsubscribe Page Builder\nAutomated PDF Analytics Export\n24/7 Priority VIP Support"
+            ),
+            SubscriptionPlan(
+                tier="enterprise",
+                name="Enterprise",
+                price=79,
+                public_price=79,
+                quota=1000000,
+                smtp_limit=99,
+                validity="30 Days",
+                features="Unlimited Verified Contacts\nUnlimited Email Dispatches\nUnlimited Custom SMTP Nodes\nDhru Fusion API & Listener Suite\nDedicated Server Pool Architecture\nTRC20 & BEP20 Crypto Payment Gateways\nCustom Domain & CNAME Tracking\nSLA 99.99% Uptime Guarantee\nDedicated Account Executive"
+            ),
+        ]
+        for p in default_plans:
+            db.add(p)
+        try:
+            await db.commit()
+            res = await db.execute(select(SubscriptionPlan).order_by(SubscriptionPlan.price.asc()))
+            plans = res.scalars().all()
+        except Exception as e:
+            await db.rollback()
+
+    output = []
+    for p in plans:
+        feature_list = [f.strip() for f in p.features.split("\n") if f.strip()] if p.features else []
+        tier_lower = p.tier.lower()
+        
+        badge = "Free Trial"
+        popular = False
+        cta_text = "Get Started Free"
+
+        if tier_lower == "pro":
+            badge = "Most Popular"
+            popular = True
+            cta_text = "Start Standard Plan"
+        elif tier_lower == "business":
+            badge = "Best Value"
+            cta_text = "Scale With Premium"
+        elif tier_lower == "enterprise":
+            badge = "Unlimited"
+            cta_text = "Contact Enterprise"
+        elif tier_lower not in ("free", "pro", "business", "enterprise"):
+            badge = f"{p.name} Tier"
+            cta_text = f"Select {p.name}"
+
+        output.append({
+            "id": p.id,
+            "tier": p.tier,
+            "name": p.name,
+            "price": p.price,
+            "monthlyPrice": p.price,
+            "annualPrice": int(p.price * 0.8) if p.price > 0 else 0,
+            "description": f"{p.name} tier plan with {p.quota:,} dispatch quota and {p.smtp_limit} SMTP nodes.",
+            "badge": badge,
+            "popular": popular,
+            "features": feature_list,
+            "ctaText": cta_text
+        })
+
+    return output
+
+
 class SettingsUpdateRequest(BaseModel):
     brand_primary_color: Optional[str] = None
     brand_secondary_color: Optional[str] = None
