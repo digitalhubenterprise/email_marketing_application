@@ -949,23 +949,12 @@ export default function AdminSettings() {
 
   return (
     <div className="space-y-6 animate-fadeIn text-slate-800 -mt-3">
-      {/* Title Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] gap-4">
-        <div>
-          <h2 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
-            ⚙️ Platform Settings Panel
-          </h2>
-          <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
-            Configure system rules, commerce, localization, tax metrics, invoices, security levels and layouts
-          </p>
+      {saveSuccess && (
+        <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-xl text-xs font-bold animate-slideDown flex items-center gap-2 shadow-sm">
+          <CheckCircle2 size={16} className="text-emerald-500 shrink-0" />
+          <span>{saveSuccess}</span>
         </div>
-        {saveSuccess && (
-          <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold animate-slideDown flex items-center gap-1.5 self-start md:self-auto">
-            <CheckCircle2 size={14} className="text-emerald-500" />
-            {saveSuccess}
-          </div>
-        )}
-      </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         {/* Left-hand Navigation Sidebar */}
