@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import {
   Mail,
@@ -50,11 +50,13 @@ export default function LandingPage() {
     return (saved as 'dark' | 'light') || 'dark';
   });
 
-  const toggleTheme = () => {
-    const nextTheme = theme === 'dark' ? 'light' : 'dark';
-    setTheme(nextTheme);
-    localStorage.setItem('landing_theme', nextTheme);
-  };
+  const toggleTheme = useCallback(() => {
+    setTheme((prevTheme) => {
+      const nextTheme = prevTheme === 'dark' ? 'light' : 'dark';
+      localStorage.setItem('landing_theme', nextTheme);
+      return nextTheme;
+    });
+  }, []);
 
   useEffect(() => {
     if (theme === 'dark') {
@@ -127,6 +129,14 @@ export default function LandingPage() {
     fetchPublicPlans();
   }, []);
 
+  const closeModal = useCallback(() => {
+    setAuthModalOpen(false);
+    setError(null);
+    setLoading(false);
+    setVerifyEmailMode(false);
+    setMfaRequired(false);
+  }, []);
+
   // ESC Key listener to close modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -136,36 +146,28 @@ export default function LandingPage() {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [authModalOpen]);
+  }, [authModalOpen, closeModal]);
 
-  const toggleFaq = (index: number) => {
-    setOpenFaq(openFaq === index ? null : index);
-  };
+  const toggleFaq = useCallback((index: number) => {
+    setOpenFaq((prev) => (prev === index ? null : index));
+  }, []);
 
-  const openLoginModal = () => {
+  const openLoginModal = useCallback(() => {
     setAuthMode('login');
     setError(null);
     setVerifyEmailMode(false);
     setMfaRequired(false);
     setAuthModalOpen(true);
-  };
+  }, []);
 
-  const openRegisterModal = (planTier: string = 'free') => {
+  const openRegisterModal = useCallback((planTier: string = 'free') => {
     setAuthMode('register');
     setSelectedPlanTier(planTier);
     setError(null);
     setVerifyEmailMode(false);
     setMfaRequired(false);
     setAuthModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setAuthModalOpen(false);
-    setError(null);
-    setLoading(false);
-    setVerifyEmailMode(false);
-    setMfaRequired(false);
-  };
+  }, []);
 
   const validatePassword = (pw: string): string | null => {
     if (pw.length < 8) return "Password must be at least 8 characters.";
@@ -425,9 +427,11 @@ export default function LandingPage() {
     }
   ];
 
-  const activePlans = dbPlans.length > 0 ? dbPlans : defaultPlans;
+  const activePlans = useMemo(() => {
+    return dbPlans.length > 0 ? dbPlans : defaultPlans;
+  }, [dbPlans]);
 
-  const features = [
+  const features = useMemo(() => [
     {
       icon: <Server className="w-6 h-6 text-brand-400" />,
       title: "Multi-Node SMTP Load Balancing",
@@ -458,9 +462,9 @@ export default function LandingPage() {
       title: "Bank-Grade Encryption & Crypto",
       description: "AES-256 encrypted SMTP credentials, rate limiting protection, JWT authentication, and TRC20/BEP20 crypto payments."
     }
-  ];
+  ], []);
 
-  const faqs = [
+  const faqs = useMemo(() => [
     {
       question: "How does Multi-Node SMTP Load Balancing improve deliverability?",
       answer: "Instead of sending thousands of emails from a single SMTP server (which triggers spam filters), SmartCampaign automatically distributes your dispatch volume across multiple SMTP nodes. This prevents IP reputation burnout and keeps your inbox delivery rate above 99%."
@@ -481,17 +485,17 @@ export default function LandingPage() {
       question: "Is my SMTP password and recipient list secure?",
       answer: "Yes. All custom SMTP passwords are encrypted at rest using AES-256 Fernet cryptography. Your contact lists are strictly isolated in a multi-tenant PostgreSQL database with append-only security logs."
     }
-  ];
+  ], []);
 
   return (
     <div className={`min-h-screen font-sans selection:bg-brand-500 selection:text-white relative overflow-x-hidden transition-colors duration-300 ${
       theme === 'dark' ? 'dark bg-[#0d0e1a] text-slate-100' : 'light bg-slate-50 text-slate-900'
     }`}>
-      {/* Background Glow Blurs */}
-      <div className={`absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full filter blur-[140px] animate-pulse pointer-events-none ${
+      {/* Background Glow Blurs (GPU Accelerated) */}
+      <div className={`absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full filter blur-[140px] animate-pulse pointer-events-none transform-gpu will-change-transform ${
         theme === 'dark' ? 'bg-brand-500/10' : 'bg-brand-500/5'
       }`} />
-      <div className={`absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full filter blur-[140px] animate-pulse delay-700 pointer-events-none ${
+      <div className={`absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full filter blur-[140px] animate-pulse delay-700 pointer-events-none transform-gpu will-change-transform ${
         theme === 'dark' ? 'bg-indigo-500/10' : 'bg-indigo-500/5'
       }`} />
 
@@ -502,7 +506,7 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             {siteLogo ? (
-              <img src={siteLogo} alt={siteName} className="h-10 object-contain rounded-xl" />
+              <img src={siteLogo} alt={siteName} loading="eager" decoding="async" className="h-10 object-contain rounded-xl" />
             ) : (
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
@@ -927,7 +931,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Core Platform Features ───────────────────────────────────────── */}
-      <section id="features" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
+      <section id="features" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 600px' }} className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <h2 className="text-xs font-extrabold tracking-widest text-brand-500 uppercase mb-2">Built for High Volume & High Deliverability</h2>
           <p className={`text-2xl sm:text-3xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
@@ -964,7 +968,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Omni-Channel Marketing Showcase ─────────────────────────────── */}
-      <section id="omnichannel" className={`py-10 sm:py-14 border-y transition-colors duration-300 ${
+      <section id="omnichannel" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 600px' }} className={`py-10 sm:py-14 border-y transition-colors duration-300 ${
         theme === 'dark' ? 'bg-[#121424]/60 border-slate-800/80' : 'bg-slate-100/70 border-slate-200'
       }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1099,7 +1103,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Pricing Plans Section ────────────────────────────────────────── */}
-      <section id="pricing" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
+      <section id="pricing" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 600px' }} className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
           <span className="text-xs font-extrabold tracking-widest text-brand-500 uppercase mb-2 block">Flexible SaaS Billing</span>
           <h2 className={`text-2xl sm:text-4xl font-black tracking-tight mb-4 ${
@@ -1225,7 +1229,7 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Interactive FAQ Accordion ────────────────────────────────────── */}
-      <section id="faq" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
+      <section id="faq" style={{ contentVisibility: 'auto', containIntrinsicSize: '1px 600px' }} className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="text-center mb-8 sm:mb-10">
           <h2 className={`text-2xl sm:text-3xl font-black tracking-tight mb-2 ${
             theme === 'dark' ? 'text-white' : 'text-slate-900'
@@ -1308,9 +1312,9 @@ export default function LandingPage() {
           <div className="space-y-4">
             <div className="flex items-center gap-2">
               {footerLogo ? (
-                <img src={footerLogo} alt={siteName} className="h-8 object-contain" />
+                <img src={footerLogo} alt={siteName} loading="lazy" decoding="async" className="h-8 object-contain" />
               ) : siteLogo ? (
-                <img src={siteLogo} alt={siteName} className="h-8 object-contain" />
+                <img src={siteLogo} alt={siteName} loading="lazy" decoding="async" className="h-8 object-contain" />
               ) : (
                 <div className="flex items-center gap-2">
                   <div className="h-8 w-8 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-bold">
