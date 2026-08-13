@@ -220,18 +220,30 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Form inputs & select options legibility safeguards */
-input[type="text"],
-input[type="password"],
-input[type="email"],
-input[type="number"],
-input[type="url"],
-input[type="tel"],
-textarea,
-select {
-  color: var(--header-text-color) !important;
-  background-color: var(--color-dark-850) !important;
-  border-color: var(--color-dark-700) !important;
-  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+.dark input[type="text"],
+.dark input[type="password"],
+.dark input[type="email"],
+.dark input[type="number"],
+.dark input[type="url"],
+.dark input[type="tel"],
+.dark textarea,
+.dark select {
+  color: #ffffff !important;
+  background-color: #0d0e1a !important;
+  border-color: rgba(51, 65, 85, 0.8) !important;
+}
+
+.light input[type="text"],
+.light input[type="password"],
+.light input[type="email"],
+.light input[type="number"],
+.light input[type="url"],
+.light input[type="tel"],
+.light textarea,
+.light select {
+  color: #0f172a !important;
+  background-color: #f8fafc !important;
+  border-color: #cbd5e1 !important;
 }
 
 select option {
