@@ -29,7 +29,9 @@ import {
   EyeOff,
   AlertCircle,
   UserPlus,
-  KeyRound
+  KeyRound,
+  Sun,
+  Moon
 } from 'lucide-react';
 import { useAuth } from '../App';
 
@@ -41,6 +43,18 @@ export default function LandingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDemoTab, setActiveDemoTab] = useState<'email' | 'sms' | 'telegram' | 'analytics'>('email');
+
+  // Theme (Dark / Light Mode) State
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    const saved = localStorage.getItem('landing_theme');
+    return (saved as 'dark' | 'light') || 'dark';
+  });
+
+  const toggleTheme = () => {
+    const nextTheme = theme === 'dark' ? 'light' : 'dark';
+    setTheme(nextTheme);
+    localStorage.setItem('landing_theme', nextTheme);
+  };
 
   // Modal Auth State
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -460,13 +474,21 @@ export default function LandingPage() {
   ];
 
   return (
-    <div className="dark min-h-screen bg-[#0d0e1a] text-slate-100 font-sans selection:bg-brand-500 selection:text-white relative overflow-x-hidden">
+    <div className={`min-h-screen font-sans selection:bg-brand-500 selection:text-white relative overflow-x-hidden transition-colors duration-300 ${
+      theme === 'dark' ? 'dark bg-[#0d0e1a] text-slate-100' : 'light bg-slate-50 text-slate-900'
+    }`}>
       {/* Background Glow Blurs */}
-      <div className="absolute top-1/4 left-1/4 w-[500px] h-[500px] bg-brand-500/10 rounded-full filter blur-[140px] animate-pulse pointer-events-none" />
-      <div className="absolute bottom-1/4 right-1/4 w-[500px] h-[500px] bg-indigo-500/10 rounded-full filter blur-[140px] animate-pulse delay-700 pointer-events-none" />
+      <div className={`absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full filter blur-[140px] animate-pulse pointer-events-none ${
+        theme === 'dark' ? 'bg-brand-500/10' : 'bg-brand-500/5'
+      }`} />
+      <div className={`absolute bottom-1/4 right-1/4 w-[500px] h-[500px] rounded-full filter blur-[140px] animate-pulse delay-700 pointer-events-none ${
+        theme === 'dark' ? 'bg-indigo-500/10' : 'bg-indigo-500/5'
+      }`} />
 
       {/* ─── Header / Top Navbar ─────────────────────────────────────────── */}
-      <header className="sticky top-0 z-40 backdrop-blur-xl bg-[#0d0e1a]/85 border-b border-slate-800/80 transition-all">
+      <header className={`sticky top-0 z-40 backdrop-blur-xl border-b transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-[#0d0e1a]/85 border-slate-800/80' : 'bg-white/90 border-slate-200 shadow-sm'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3 group">
             {siteLogo ? (
@@ -476,7 +498,9 @@ export default function LandingPage() {
                 <div className="h-10 w-10 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
                   {siteName.substring(0, 1) || "S"}
                 </div>
-                <span className="text-lg font-black tracking-tight text-white group-hover:text-brand-400 transition-colors font-sans">
+                <span className={`text-lg font-black tracking-tight group-hover:text-brand-500 transition-colors font-sans ${
+                  theme === 'dark' ? 'text-white' : 'text-slate-900'
+                }`}>
                   {siteName}
                 </span>
               </div>
@@ -484,18 +508,39 @@ export default function LandingPage() {
           </Link>
 
           {/* Desktop Nav Links */}
-          <nav className="hidden lg:flex items-center gap-8 text-xs font-bold text-slate-300">
-            <a href="#features" className="hover:text-white transition-colors">Features</a>
-            <a href="#demo" className="hover:text-white transition-colors">Live Console</a>
-            <a href="#pricing" className="hover:text-white transition-colors">Pricing Plans</a>
-            <a href="#faq" className="hover:text-white transition-colors">FAQ</a>
+          <nav className={`hidden lg:flex items-center gap-8 text-xs font-bold ${
+            theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+          }`}>
+            <a href="#features" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>Features</a>
+            <a href="#demo" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>Live Console</a>
+            <a href="#pricing" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>Pricing Plans</a>
+            <a href="#faq" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>FAQ</a>
           </nav>
 
           {/* Action CTAs */}
           <div className="flex items-center gap-3">
+            {/* Dark / Light Mode Toggle Button */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className={`p-2.5 rounded-xl border transition-all flex items-center justify-center ${
+                theme === 'dark'
+                  ? 'bg-[#1a1c2e] border-slate-700/80 text-amber-400 hover:bg-slate-800 hover:text-amber-300 shadow-md'
+                  : 'bg-slate-100 border-slate-300 text-indigo-600 hover:bg-slate-200 shadow-sm'
+              }`}
+              title={theme === 'dark' ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+              aria-label="Toggle Dark and Light Mode"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
             <button
               onClick={openLoginModal}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-300 hover:text-white hover:bg-slate-800/60 border border-slate-700/60 transition-all hidden sm:inline-flex"
+              className={`px-4 py-2 rounded-xl text-xs font-bold border transition-all hidden sm:inline-flex ${
+                theme === 'dark'
+                  ? 'text-slate-300 hover:text-white hover:bg-slate-800/60 border-slate-700/60'
+                  : 'text-slate-700 hover:text-slate-900 hover:bg-slate-100 border-slate-300'
+              }`}
             >
               Sign In
             </button>
@@ -510,7 +555,11 @@ export default function LandingPage() {
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="lg:hidden p-2 rounded-xl bg-[#1a1c2e] border border-slate-700/80 text-slate-300 hover:text-white transition-all"
+              className={`lg:hidden p-2 rounded-xl border transition-all ${
+                theme === 'dark'
+                  ? 'bg-[#1a1c2e] border-slate-700/80 text-slate-300 hover:text-white'
+                  : 'bg-slate-100 border-slate-300 text-slate-700 hover:text-slate-900'
+              }`}
               aria-label="Toggle Mobile Menu"
             >
               {mobileMenuOpen ? <XIcon className="w-5 h-5" /> : <MenuIcon className="w-5 h-5" />}
@@ -520,37 +569,55 @@ export default function LandingPage() {
 
         {/* Mobile Drawer */}
         {mobileMenuOpen && (
-          <div className="lg:hidden backdrop-blur-2xl bg-[#0d0e1a]/95 border-b border-slate-800/80 px-4 pt-4 pb-6 space-y-4 animate-slideDown">
-            <nav className="flex flex-col space-y-3 text-xs font-bold text-slate-200">
+          <div className={`lg:hidden backdrop-blur-2xl border-b px-4 pt-4 pb-6 space-y-4 animate-slideDown ${
+            theme === 'dark' ? 'bg-[#0d0e1a]/95 border-slate-800/80 text-slate-200' : 'bg-white/95 border-slate-200 text-slate-800'
+          }`}>
+            <nav className="flex flex-col space-y-3 text-xs font-bold">
               <a 
                 href="#features" 
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl hover:bg-[#1a1c2e] transition-colors"
+                className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
               >
                 Features
               </a>
               <a 
                 href="#demo" 
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl hover:bg-[#1a1c2e] transition-colors"
+                className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
               >
                 Live Console Demo
               </a>
               <a 
                 href="#pricing" 
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl hover:bg-[#1a1c2e] transition-colors"
+                className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
               >
                 Pricing Plans
               </a>
               <a 
                 href="#faq" 
                 onClick={() => setMobileMenuOpen(false)}
-                className="p-2.5 rounded-xl hover:bg-[#1a1c2e] transition-colors"
+                className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
               >
                 FAQ
               </a>
             </nav>
+
+            <div className={`pt-2 flex items-center justify-between border-t ${theme === 'dark' ? 'border-slate-800/80' : 'border-slate-200'}`}>
+              <span className={`text-xs font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Appearance Theme</span>
+              <button
+                type="button"
+                onClick={toggleTheme}
+                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
+                  theme === 'dark'
+                    ? 'bg-[#1a1c2e] border-slate-700/80 text-amber-400'
+                    : 'bg-slate-100 border-slate-300 text-indigo-600'
+                }`}
+              >
+                {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              </button>
+            </div>
 
             <div className="pt-2 flex flex-col gap-2.5">
               <button
@@ -566,23 +633,31 @@ export default function LandingPage() {
 
       {/* ─── Hero Section ─────────────────────────────────────────────────── */}
       <section className="relative pt-8 pb-12 sm:pt-14 sm:pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-300 text-[11px] sm:text-xs font-extrabold mb-5 animate-pulse shadow-lg shadow-brand-500/5">
-          <Sparkles className="w-3.5 h-3.5 text-brand-400" />
+        <div className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-[11px] sm:text-xs font-extrabold mb-5 animate-pulse shadow-lg ${
+          theme === 'dark'
+            ? 'bg-brand-500/10 border border-brand-500/20 text-brand-300 shadow-brand-500/5'
+            : 'bg-brand-50 border border-brand-200 text-brand-700 shadow-brand-500/10'
+        }`}>
+          <Sparkles className="w-3.5 h-3.5 text-brand-500" />
           <span>Next-Gen Smart-Campaign Marketing & Deliverability Platform</span>
         </div>
 
-        <h1 className="text-2xl sm:text-4xl lg:text-6xl font-black text-white tracking-tight max-w-5xl mx-auto leading-[1.15] mb-4">
+        <h1 className={`text-2xl sm:text-4xl lg:text-6xl font-black tracking-tight max-w-5xl mx-auto leading-[1.15] mb-4 ${
+          theme === 'dark' ? 'text-white' : 'text-slate-900'
+        }`}>
           Scale Your Email, SMS & Telegram Marketing With{' '}
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-400 via-indigo-400 to-purple-400">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-brand-500 via-indigo-500 to-purple-500">
             Instant Inbox Placement
           </span>
         </h1>
 
-        <p className="text-xs sm:text-sm lg:text-base text-slate-300 max-w-2xl mx-auto font-medium leading-relaxed mb-6">
+        <p className={`text-xs sm:text-sm lg:text-base max-w-2xl mx-auto font-medium leading-relaxed mb-6 ${
+          theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+        }`}>
           Automate bulk campaign dispatches across multi-node SMTP load balancers, SMS gateways, and Telegram bots. Features real-time click heatmaps, automated A/B split testing, and crypto billing.
         </p>
 
-        {/* CTA Buttons - High Contrast Dark & Gradient Styling */}
+        {/* CTA Buttons */}
         <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-10 w-full max-w-md sm:max-w-none mx-auto">
           <button
             onClick={() => openRegisterModal('free')}
@@ -594,30 +669,36 @@ export default function LandingPage() {
 
           <button
             onClick={openLoginModal}
-            className="w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl bg-[#1a1c2e] hover:bg-[#252845] border border-slate-700/80 text-xs sm:text-sm font-bold text-white transition-all flex items-center justify-center gap-2 hover:border-slate-600 shadow-lg"
+            className={`w-full sm:w-auto px-6 py-3.5 sm:px-8 sm:py-4 rounded-xl border text-xs sm:text-sm font-bold transition-all flex items-center justify-center gap-2 shadow-lg ${
+              theme === 'dark'
+                ? 'bg-[#1a1c2e] hover:bg-[#252845] border-slate-700/80 text-white'
+                : 'bg-white hover:bg-slate-100 border-slate-300 text-slate-900'
+            }`}
           >
-            <Lock className="w-4 h-4 text-brand-400" />
+            <Lock className="w-4 h-4 text-brand-500" />
             <span>Login Account</span>
           </button>
         </div>
 
         {/* Metrics Ticker - High Contrast Panel */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto p-3.5 sm:p-5 rounded-2xl bg-[#1a1c2e]/90 border border-slate-800 shadow-xl backdrop-blur-xl">
-          <div className="text-center p-2.5 border-r border-slate-800/80 last:border-0">
-            <div className="text-lg sm:text-2xl font-black text-brand-400">99.8%</div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Inbox Delivery Rate</div>
+        <div className={`grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4 max-w-4xl mx-auto p-3.5 sm:p-5 rounded-2xl border shadow-xl backdrop-blur-xl ${
+          theme === 'dark' ? 'bg-[#1a1c2e]/90 border-slate-800' : 'bg-white/90 border-slate-200 shadow-slate-200/50'
+        }`}>
+          <div className={`text-center p-2.5 border-r last:border-0 ${theme === 'dark' ? 'border-slate-800/80' : 'border-slate-200'}`}>
+            <div className="text-lg sm:text-2xl font-black text-brand-500">99.8%</div>
+            <div className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Inbox Delivery Rate</div>
           </div>
-          <div className="text-center p-2.5 border-r border-slate-800/80 last:border-0">
-            <div className="text-lg sm:text-2xl font-black text-indigo-400">10M+</div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Daily Email Dispatches</div>
+          <div className={`text-center p-2.5 border-r last:border-0 ${theme === 'dark' ? 'border-slate-800/80' : 'border-slate-200'}`}>
+            <div className="text-lg sm:text-2xl font-black text-indigo-500">10M+</div>
+            <div className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Daily Email Dispatches</div>
           </div>
-          <div className="text-center p-2.5 border-r border-slate-800/80 last:border-0">
-            <div className="text-lg sm:text-2xl font-black text-purple-400">&lt; 5ms</div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">API Dispatch Latency</div>
+          <div className={`text-center p-2.5 border-r last:border-0 ${theme === 'dark' ? 'border-slate-800/80' : 'border-slate-200'}`}>
+            <div className="text-lg sm:text-2xl font-black text-purple-500">&lt; 5ms</div>
+            <div className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>API Dispatch Latency</div>
           </div>
           <div className="text-center p-2.5">
-            <div className="text-lg sm:text-2xl font-black text-emerald-400">99.99%</div>
-            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mt-0.5">Uptime SLA Guarantee</div>
+            <div className="text-lg sm:text-2xl font-black text-emerald-500">99.99%</div>
+            <div className={`text-[10px] font-bold uppercase tracking-wider mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Uptime SLA Guarantee</div>
           </div>
         </div>
       </section>
@@ -625,20 +706,24 @@ export default function LandingPage() {
       {/* ─── Interactive Live Console Demo Section ────────────────────────── */}
       <section id="demo" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-6xl mx-auto">
         <div className="text-center mb-6 sm:mb-8">
-          <span className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-1.5 block">Interactive Experience</span>
-          <h2 className="text-xl sm:text-3xl font-black text-white tracking-tight">
+          <span className="text-xs font-extrabold tracking-widest text-brand-500 uppercase mb-1.5 block">Interactive Experience</span>
+          <h2 className={`text-xl sm:text-3xl font-black tracking-tight ${
+            theme === 'dark' ? 'text-white' : 'text-slate-900'
+          }`}>
             See How SmartCampaign Powers Your Growth
           </h2>
         </div>
 
-        {/* High-Contrast Tab Switcher Container */}
-        <div className="flex items-center justify-center gap-2 p-2 rounded-2xl bg-[#1a1c2e] border border-slate-800 max-w-2xl mx-auto mb-8 overflow-x-auto shadow-xl">
+        {/* Tab Switcher Container */}
+        <div className={`flex items-center justify-center gap-2 p-2 rounded-2xl border max-w-2xl mx-auto mb-8 overflow-x-auto shadow-xl ${
+          theme === 'dark' ? 'bg-[#1a1c2e] border-slate-800' : 'bg-slate-200/70 border-slate-300'
+        }`}>
           <button
             onClick={() => setActiveDemoTab('email')}
             className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 whitespace-nowrap ${
               activeDemoTab === 'email'
                 ? 'brand-gradient-bg text-white shadow-md'
-                : 'text-slate-300 hover:text-white bg-transparent hover:bg-slate-800/50'
+                : theme === 'dark' ? 'text-slate-300 hover:text-white bg-transparent hover:bg-slate-800/50' : 'text-slate-700 hover:text-slate-900 bg-transparent hover:bg-slate-300/50'
             }`}
           >
             <Mail className="w-3.5 h-3.5" />
@@ -834,8 +919,8 @@ export default function LandingPage() {
       {/* ─── Core Platform Features ───────────────────────────────────────── */}
       <section id="features" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-          <h2 className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-2">Built for High Volume & High Deliverability</h2>
-          <p className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+          <h2 className="text-xs font-extrabold tracking-widest text-brand-500 uppercase mb-2">Built for High Volume & High Deliverability</h2>
+          <p className={`text-2xl sm:text-3xl font-black tracking-tight ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
             Everything You Need To Execute Flawless Marketing Campaigns
           </p>
         </div>
@@ -844,15 +929,23 @@ export default function LandingPage() {
           {features.map((feature, idx) => (
             <div
               key={idx}
-              className="p-5 sm:p-6 rounded-2xl bg-[#1a1c2e]/90 border border-slate-800/80 hover:border-brand-500/50 transition-all hover:-translate-y-1 shadow-lg group"
+              className={`p-5 sm:p-6 rounded-2xl border transition-all hover:-translate-y-1 shadow-lg group ${
+                theme === 'dark'
+                  ? 'bg-[#1a1c2e]/90 border-slate-800/80 hover:border-brand-500/50'
+                  : 'bg-white border-slate-200 hover:border-brand-400 shadow-slate-200/50'
+              }`}
             >
-              <div className="p-3 rounded-xl bg-[#0d0e1a] border border-slate-800 inline-block mb-4 group-hover:scale-105 transition-transform">
+              <div className={`p-3 rounded-xl border inline-block mb-4 group-hover:scale-105 transition-transform ${
+                theme === 'dark' ? 'bg-[#0d0e1a] border-slate-800' : 'bg-slate-100 border-slate-200'
+              }`}>
                 {feature.icon}
               </div>
-              <h3 className="text-base font-bold text-white mb-2 group-hover:text-brand-300 transition-colors">
+              <h3 className={`text-base font-bold mb-2 group-hover:text-brand-500 transition-colors ${
+                theme === 'dark' ? 'text-white' : 'text-slate-900'
+              }`}>
                 {feature.title}
               </h3>
-              <p className="text-xs text-slate-300 leading-relaxed">
+              <p className={`text-xs leading-relaxed ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
                 {feature.description}
               </p>
             </div>
@@ -861,107 +954,131 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Omni-Channel Marketing Showcase ─────────────────────────────── */}
-      <section id="omnichannel" className="py-10 sm:py-14 bg-[#121424]/60 border-y border-slate-800/80">
+      <section id="omnichannel" className={`py-10 sm:py-14 border-y transition-colors duration-300 ${
+        theme === 'dark' ? 'bg-[#121424]/60 border-slate-800/80' : 'bg-slate-100/70 border-slate-200'
+      }`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-12 items-center">
             <div className="space-y-4 text-left">
-              <span className="px-3.5 py-1 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 text-xs font-extrabold inline-block">
+              <span className="px-3.5 py-1 rounded-full bg-brand-500/10 text-brand-500 border border-brand-500/20 text-xs font-extrabold inline-block">
                 Omni-Channel Messaging Hub
               </span>
-              <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+              <h2 className={`text-2xl sm:text-4xl font-black tracking-tight leading-tight ${
+                theme === 'dark' ? 'text-white' : 'text-slate-900'
+              }`}>
                 Combine Email, SMS & Telegram Into One Automation Engine
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-medium">
+              <p className={`text-xs sm:text-sm leading-relaxed font-medium ${
+                theme === 'dark' ? 'text-slate-300' : 'text-slate-600'
+              }`}>
                 Don't limit your customer outreach to just email. Engage leads across Telegram channels, automated SMS gateways (Twilio, BulkSMSBD, Vonage), and instant webhooks simultaneously.
               </p>
 
               <div className="space-y-3 pt-2">
-                <div className="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-[#1a1c2e] border border-slate-800">
-                  <div className="p-2 rounded-lg bg-brand-500/10 text-brand-400 mt-0.5">
+                <div className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl border ${
+                  theme === 'dark' ? 'bg-[#1a1c2e] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+                }`}>
+                  <div className="p-2 rounded-lg bg-brand-500/10 text-brand-500 mt-0.5">
                     <Mail className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-white">Multi-Node SMTP Email Dispatches</h4>
-                    <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Custom SMTP server rotation, HTML template builder & automated CSV contacts import.</p>
+                    <h4 className={`text-xs sm:text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Multi-Node SMTP Email Dispatches</h4>
+                    <p className={`text-[11px] sm:text-xs mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Custom SMTP server rotation, HTML template builder & automated CSV contacts import.</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-[#1a1c2e] border border-slate-800">
-                  <div className="p-2 rounded-lg bg-sky-500/10 text-sky-400 mt-0.5">
+                <div className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl border ${
+                  theme === 'dark' ? 'bg-[#1a1c2e] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+                }`}>
+                  <div className="p-2 rounded-lg bg-sky-500/10 text-sky-500 mt-0.5">
                     <Smartphone className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-white">Global SMS Marketing Gateway</h4>
-                    <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Send promotional & transactional SMS with personalized template tags via Twilio or custom APIs.</p>
+                    <h4 className={`text-xs sm:text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Global SMS Marketing Gateway</h4>
+                    <p className={`text-[11px] sm:text-xs mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Send promotional & transactional SMS with personalized template tags via Twilio or custom APIs.</p>
                   </div>
                 </div>
 
-                <div className="flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl bg-[#1a1c2e] border border-slate-800">
-                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400 mt-0.5">
+                <div className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-xl border ${
+                  theme === 'dark' ? 'bg-[#1a1c2e] border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+                }`}>
+                  <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500 mt-0.5">
                     <Send className="w-4 h-4" />
                   </div>
                   <div>
-                    <h4 className="text-xs sm:text-sm font-bold text-white">Telegram Broadcasts & Bot Listener</h4>
-                    <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">Automated Telegram bot notifications, IMEI/Server status alerts, and instant group broadcasts.</p>
+                    <h4 className={`text-xs sm:text-sm font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Telegram Broadcasts & Bot Listener</h4>
+                    <p className={`text-[11px] sm:text-xs mt-0.5 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Automated Telegram bot notifications, IMEI/Server status alerts, and instant group broadcasts.</p>
                   </div>
                 </div>
               </div>
             </div>
 
             {/* Omni-Channel Graphic Card */}
-            <div className="p-5 sm:p-7 rounded-2xl bg-[#1a1c2e] border border-slate-800 shadow-xl relative text-left">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
-                <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                  <Radio className="w-4 h-4 text-emerald-400 animate-pulse" />
+            <div className={`p-5 sm:p-7 rounded-2xl border shadow-xl relative text-left ${
+              theme === 'dark' ? 'bg-[#1a1c2e] border-slate-800' : 'bg-white border-slate-200 shadow-slate-200/50'
+            }`}>
+              <div className={`flex items-center justify-between border-b pb-3 mb-4 ${
+                theme === 'dark' ? 'border-slate-800' : 'border-slate-200'
+              }`}>
+                <div className={`text-xs sm:text-sm font-bold flex items-center gap-2 ${
+                  theme === 'dark' ? 'text-white' : 'text-slate-900'
+                }`}>
+                  <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
                   <span>Live Dispatch Routing Engine</span>
                 </div>
-                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
+                <span className="text-[10px] font-bold text-emerald-500 bg-emerald-500/10 px-2.5 py-0.5 rounded-md border border-emerald-500/20">
                   Online
                 </span>
               </div>
 
               <div className="space-y-3">
-                <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#0d0e1a] border border-slate-800">
+                <div className={`flex items-center justify-between p-3.5 rounded-xl border ${
+                  theme === 'dark' ? 'bg-[#0d0e1a] border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-400 flex items-center justify-center font-bold">
+                    <div className="w-9 h-9 rounded-lg bg-brand-500/10 text-brand-500 flex items-center justify-center font-bold">
                       <Mail className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-white">Email Dispatch Node #1</div>
-                      <div className="text-[10px] text-slate-400">SMTP Host: smtp.smartcampaign.today</div>
+                      <div className={`text-xs font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Email Dispatch Node #1</div>
+                      <div className={`text-[10px] ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>SMTP Host: smtp.smartcampaign.today</div>
                     </div>
                   </div>
-                  <span className="text-[10px] sm:text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                     Active (100% Inbox)
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#0d0e1a] border border-slate-800">
+                <div className={`flex items-center justify-between p-3.5 rounded-xl border ${
+                  theme === 'dark' ? 'bg-[#0d0e1a] border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-sky-500/10 text-sky-400 flex items-center justify-center font-bold">
+                    <div className="w-9 h-9 rounded-lg bg-sky-500/10 text-sky-500 flex items-center justify-center font-bold">
                       <Smartphone className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-white">SMS Gateway Node</div>
-                      <div className="text-[10px] text-slate-400">Provider: Twilio / BulkSMS API</div>
+                      <div className={`text-xs font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>SMS Gateway Node</div>
+                      <div className={`text-[10px] ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Provider: Twilio / BulkSMS API</div>
                     </div>
                   </div>
-                  <span className="text-[10px] sm:text-xs font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+                  <span className="text-[10px] sm:text-xs font-bold text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
                     Connected
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between p-3.5 rounded-xl bg-[#0d0e1a] border border-slate-800">
+                <div className={`flex items-center justify-between p-3.5 rounded-xl border ${
+                  theme === 'dark' ? 'bg-[#0d0e1a] border-slate-800' : 'bg-slate-50 border-slate-200'
+                }`}>
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
+                    <div className="w-9 h-9 rounded-lg bg-indigo-500/10 text-indigo-500 flex items-center justify-center font-bold">
                       <Send className="w-4 h-4" />
                     </div>
                     <div>
-                      <div className="text-xs font-bold text-white">Telegram Marketing Bot</div>
-                      <div className="text-[10px] text-slate-400">Listener: Active Bot Worker</div>
+                      <div className={`text-xs font-bold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Telegram Marketing Bot</div>
+                      <div className={`text-[10px] ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>Listener: Active Bot Worker</div>
                     </div>
                   </div>
-                  <span className="text-[10px] sm:text-xs font-bold text-indigo-400 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
+                  <span className="text-[10px] sm:text-xs font-bold text-indigo-500 bg-indigo-500/10 px-2 py-0.5 rounded-md border border-indigo-500/20">
                     Listening
                   </span>
                 </div>
@@ -974,21 +1091,25 @@ export default function LandingPage() {
       {/* ─── Pricing Plans Section ────────────────────────────────────────── */}
       <section id="pricing" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto relative z-10">
         <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-10">
-          <span className="text-xs font-extrabold tracking-widest text-brand-400 uppercase mb-2 block">Flexible SaaS Billing</span>
-          <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight mb-4">
+          <span className="text-xs font-extrabold tracking-widest text-brand-500 uppercase mb-2 block">Flexible SaaS Billing</span>
+          <h2 className={`text-2xl sm:text-4xl font-black tracking-tight mb-4 ${
+            theme === 'dark' ? 'text-white' : 'text-slate-900'
+          }`}>
             Transparent Pricing Plans For Every Scale
           </h2>
-          <p className="text-xs sm:text-sm text-slate-300 font-medium">
+          <p className={`text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
             No hidden fees. Choose a plan tailored to your dispatch volume or start with our free trial.
           </p>
 
-          <div className="mt-6 inline-flex items-center p-1 rounded-xl bg-[#1a1c2e] border border-slate-800 shadow-lg">
+          <div className={`mt-6 inline-flex items-center p-1 rounded-xl border shadow-lg ${
+            theme === 'dark' ? 'bg-[#1a1c2e] border-slate-800' : 'bg-slate-200/80 border-slate-300'
+          }`}>
             <button
               onClick={() => setBillingCycle('monthly')}
               className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all ${
                 billingCycle === 'monthly'
                   ? 'brand-gradient-bg text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  : theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Monthly Billing
@@ -998,11 +1119,11 @@ export default function LandingPage() {
               className={`px-4 py-2 rounded-lg text-xs font-extrabold transition-all flex items-center gap-1.5 ${
                 billingCycle === 'annual'
                   ? 'brand-gradient-bg text-white shadow-md'
-                  : 'text-slate-400 hover:text-white'
+                  : theme === 'dark' ? 'text-slate-400 hover:text-white' : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               <span>Annual Billing</span>
-              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-300 text-[10px] rounded-full border border-emerald-500/30">
+              <span className="px-2 py-0.5 bg-emerald-500/20 text-emerald-500 text-[10px] rounded-full border border-emerald-500/30">
                 Save 20%
               </span>
             </button>
@@ -1021,10 +1142,10 @@ export default function LandingPage() {
             return (
               <div
                 key={idx}
-                className={`p-5 sm:p-6 rounded-2xl bg-[#1a1c2e]/90 border transition-all flex flex-col justify-between relative ${
+                className={`p-5 sm:p-6 rounded-2xl border transition-all flex flex-col justify-between relative ${
                   plan.popular
-                    ? 'border-2 border-brand-500 shadow-[0_0_30px_rgba(79,70,229,0.25)] scale-[1.02] z-20'
-                    : 'border-slate-800 hover:border-slate-700'
+                    ? 'border-2 border-brand-500 shadow-[0_0_30px_rgba(79,70,229,0.25)] scale-[1.02] z-20 ' + (theme === 'dark' ? 'bg-[#1a1c2e]' : 'bg-white')
+                    : theme === 'dark' ? 'bg-[#1a1c2e]/90 border-slate-800 hover:border-slate-700' : 'bg-white border-slate-200 hover:border-slate-300 shadow-xl shadow-slate-200/50'
                 }`}
               >
                 {plan.popular && badgeText && (
@@ -1035,49 +1156,54 @@ export default function LandingPage() {
 
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-lg font-black text-white">{plan.name}</h3>
+                    <h3 className={`text-lg font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{plan.name}</h3>
                     {!plan.popular && badgeText && (
-                      <span className="text-[10px] font-extrabold px-2.5 py-0.5 rounded-full bg-[#0d0e1a] text-slate-300 border border-slate-700">
+                      <span className={`text-[10px] font-extrabold px-2.5 py-0.5 rounded-full border ${
+                        theme === 'dark' ? 'bg-[#0d0e1a] text-slate-300 border-slate-700' : 'bg-slate-100 text-slate-700 border-slate-300'
+                      }`}>
                         {badgeText}
                       </span>
                     )}
                   </div>
 
-                  <p className="text-[11px] sm:text-xs text-slate-400 min-h-[32px] mb-4 leading-relaxed">
+                  <p className={`text-[11px] sm:text-xs min-h-[32px] mb-4 leading-relaxed ${
+                    theme === 'dark' ? 'text-slate-400' : 'text-slate-600'
+                  }`}>
                     {plan.description || `${plan.name} package tier`}
                   </p>
 
-                  <div className="mb-5 border-b border-slate-800 pb-5">
+                  <div className={`mb-5 border-b pb-5 ${theme === 'dark' ? 'border-slate-800' : 'border-slate-200'}`}>
                     <div className="flex items-baseline gap-1">
-                      <span className="text-2xl sm:text-3xl font-black text-white">
+                      <span className={`text-2xl sm:text-3xl font-black ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
                         ${currentPrice}
                       </span>
-                      <span className="text-xs text-slate-400 font-bold">/ month</span>
+                      <span className={`text-xs font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`}>/ month</span>
                     </div>
                     {billingCycle === 'annual' && mPrice > 0 && (
-                      <span className="text-[10px] text-emerald-400 font-bold mt-1 block">
+                      <span className="text-[10px] text-emerald-500 font-bold mt-1 block">
                         Billed annually (Save 20%)
                       </span>
                     )}
                   </div>
 
-                  <ul className="space-y-2.5 mb-6 text-xs text-slate-300">
+                  <ul className={`space-y-2.5 mb-6 text-xs ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
                     {(plan.features || []).map((feat: string, fIdx: number) => (
                       <li key={fIdx} className="flex items-start gap-2">
-                        <Check className="w-3.5 h-3.5 text-brand-400 flex-shrink-0 mt-0.5" />
+                        <Check className="w-3.5 h-3.5 text-brand-500 flex-shrink-0 mt-0.5" />
                         <span>{feat}</span>
                       </li>
                     ))}
                   </ul>
                 </div>
 
-                {/* Action Button: High contrast text on dark background */}
                 <button
                   onClick={() => openRegisterModal(plan.tier)}
                   className={`w-full py-3 px-4 rounded-xl text-xs font-bold text-center transition-all shadow-lg ${
                     plan.popular
                       ? 'brand-gradient-bg text-white hover:opacity-95 shadow-brand-500/20'
-                      : 'bg-[#252845] hover:bg-[#30334f] text-white border border-slate-700/80'
+                      : theme === 'dark'
+                      ? 'bg-[#252845] hover:bg-[#30334f] text-white border border-slate-700/80'
+                      : 'bg-slate-900 hover:bg-slate-800 text-white border border-slate-800'
                   }`}
                 >
                   {buttonText}
@@ -1091,10 +1217,12 @@ export default function LandingPage() {
       {/* ─── Interactive FAQ Accordion ────────────────────────────────────── */}
       <section id="faq" className="py-10 sm:py-14 px-4 sm:px-6 lg:px-8 max-w-4xl mx-auto">
         <div className="text-center mb-8 sm:mb-10">
-          <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight mb-2">
+          <h2 className={`text-2xl sm:text-3xl font-black tracking-tight mb-2 ${
+            theme === 'dark' ? 'text-white' : 'text-slate-900'
+          }`}>
             Frequently Asked Questions
           </h2>
-          <p className="text-xs sm:text-sm text-slate-400 font-medium">
+          <p className={`text-xs sm:text-sm font-medium ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>
             Got questions about SmartCampaign? We have answers.
           </p>
         </div>
@@ -1103,22 +1231,28 @@ export default function LandingPage() {
           {faqs.map((faq, idx) => (
             <div
               key={idx}
-              className="rounded-xl bg-[#1a1c2e]/90 border border-slate-800 overflow-hidden transition-colors"
+              className={`rounded-xl border overflow-hidden transition-colors ${
+                theme === 'dark' ? 'bg-[#1a1c2e]/90 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
+              }`}
             >
               <button
                 onClick={() => toggleFaq(idx)}
-                className="w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm text-white hover:text-brand-300 transition-colors"
+                className={`w-full p-4 sm:p-5 text-left flex items-center justify-between gap-4 font-bold text-xs sm:text-sm transition-colors ${
+                  theme === 'dark' ? 'text-white hover:text-brand-300' : 'text-slate-900 hover:text-brand-600'
+                }`}
               >
-                <span className="text-white font-bold">{faq.question}</span>
+                <span className="font-bold">{faq.question}</span>
                 {openFaq === idx ? (
-                  <ChevronUp className="w-4 h-4 text-brand-400 flex-shrink-0" />
+                  <ChevronUp className="w-4 h-4 text-brand-500 flex-shrink-0" />
                 ) : (
-                  <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                  <ChevronDown className={`w-4 h-4 flex-shrink-0 ${theme === 'dark' ? 'text-slate-400' : 'text-slate-500'}`} />
                 )}
               </button>
 
               {openFaq === idx && (
-                <div className="px-4 sm:px-5 pb-5 text-xs text-slate-300 leading-relaxed border-t border-slate-800/80 pt-3 text-left">
+                <div className={`px-4 sm:px-5 pb-5 text-xs leading-relaxed border-t pt-3 text-left ${
+                  theme === 'dark' ? 'text-slate-300 border-slate-800/80' : 'text-slate-600 border-slate-200'
+                }`}>
                   {faq.answer}
                 </div>
               )}
@@ -1157,7 +1291,9 @@ export default function LandingPage() {
       </section>
 
       {/* ─── Footer ──────────────────────────────────────────────────────── */}
-      <footer className="border-t border-slate-800/80 bg-[#0d0e1a] pt-10 pb-8 px-4 sm:px-6 lg:px-8 text-left">
+      <footer className={`border-t pt-10 pb-8 px-4 sm:px-6 lg:px-8 text-left transition-colors duration-300 ${
+        theme === 'dark' ? 'border-slate-800/80 bg-[#0d0e1a] text-slate-400' : 'border-slate-200 bg-slate-100 text-slate-600'
+      }`}>
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           <div className="space-y-4">
             <div className="flex items-center gap-2">
@@ -1170,53 +1306,55 @@ export default function LandingPage() {
                   <div className="h-8 w-8 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-bold">
                     {siteName.substring(0, 1) || "S"}
                   </div>
-                  <span className="font-extrabold text-white text-base font-sans">{siteName}</span>
+                  <span className={`font-extrabold text-base font-sans ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{siteName}</span>
                 </div>
               )}
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
+            <p className="text-xs leading-relaxed">
               {appConfig?.seo_meta_description || "Modern SaaS email marketing, multi-node SMTP load balancer, bulk SMS gateway & Telegram automation suite."}
             </p>
           </div>
 
           <div>
-            <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Platform Modules</h4>
-            <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
-              <li><a href="#features" className="hover:text-white transition-colors">SMTP Load Balancer</a></li>
-              <li><a href="#omnichannel" className="hover:text-white transition-colors">Telegram Marketing Suite</a></li>
-              <li><a href="#omnichannel" className="hover:text-white transition-colors">SMS Gateway Integrations</a></li>
-              <li><a href="#demo" className="hover:text-white transition-colors">Click & Open Heatmaps</a></li>
+            <h4 className={`text-xs font-extrabold uppercase tracking-wider mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Platform Modules</h4>
+            <ul className="space-y-2.5 text-xs font-medium">
+              <li><a href="#features" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>SMTP Load Balancer</a></li>
+              <li><a href="#omnichannel" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>Telegram Marketing Suite</a></li>
+              <li><a href="#omnichannel" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>SMS Gateway Integrations</a></li>
+              <li><a href="#demo" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>Click & Open Heatmaps</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Quick Links</h4>
-            <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
-              <li><button onClick={openLoginModal} className="hover:text-white transition-colors text-left">Sign In</button></li>
-              <li><button onClick={() => openRegisterModal('free')} className="hover:text-white transition-colors text-left">Register Account</button></li>
-              <li><a href="#pricing" className="hover:text-white transition-colors">Subscription Pricing</a></li>
-              <li><a href="/api/health" target="_blank" rel="noreferrer" className="hover:text-white transition-colors">API Health Status</a></li>
+            <h4 className={`text-xs font-extrabold uppercase tracking-wider mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Quick Links</h4>
+            <ul className="space-y-2.5 text-xs font-medium">
+              <li><button onClick={openLoginModal} className={`text-left transition-colors ${theme === 'dark' ? 'hover:text-white' : 'hover:text-slate-900'}`}>Sign In</button></li>
+              <li><button onClick={() => openRegisterModal('free')} className={`text-left transition-colors ${theme === 'dark' ? 'hover:text-white' : 'hover:text-slate-900'}`}>Register Account</button></li>
+              <li><a href="#pricing" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>Subscription Pricing</a></li>
+              <li><a href="/api/health" target="_blank" rel="noreferrer" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>API Health Status</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="text-xs font-extrabold text-white uppercase tracking-wider mb-4">Contact & Support</h4>
-            <ul className="space-y-2.5 text-xs text-slate-400 font-medium">
-              <li>Email: <span className="text-white font-semibold">{supportEmail}</span></li>
-              <li>SLA Uptime: <span className="text-emerald-400 font-semibold">99.99% Guaranteed</span></li>
-              <li>Developer API: <span className="text-indigo-400 font-semibold">Dhru Fusion Compatible</span></li>
+            <h4 className={`text-xs font-extrabold uppercase tracking-wider mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Contact & Support</h4>
+            <ul className="space-y-2.5 text-xs font-medium">
+              <li>Email: <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{supportEmail}</span></li>
+              <li>SLA Uptime: <span className="text-emerald-500 font-semibold">99.99% Guaranteed</span></li>
+              <li>Developer API: <span className="text-indigo-500 font-semibold">Dhru Fusion Compatible</span></li>
             </ul>
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto pt-8 border-t border-slate-800/60 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-500">
+        <div className={`max-w-7xl mx-auto pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs ${
+          theme === 'dark' ? 'border-slate-800/60 text-slate-500' : 'border-slate-200 text-slate-500'
+        }`}>
           <div>
             Copyright &copy; 2026 {siteName} / {companyName}. All rights reserved.
           </div>
           <div className="flex gap-6">
-            <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-300 transition-colors">Privacy Policy</a>
-            <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-300 transition-colors">Terms of Service</a>
-            <Link to="/master_adm/login" className="hover:text-brand-400 transition-colors">Admin Portal</Link>
+            <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-400 transition-colors">Privacy Policy</a>
+            <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-400 transition-colors">Terms of Service</a>
+            <Link to="/master_adm/login" className="hover:text-brand-500 transition-colors">Admin Portal</Link>
           </div>
         </div>
       </footer>
