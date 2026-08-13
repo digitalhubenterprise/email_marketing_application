@@ -448,18 +448,15 @@ export default function LandingPage() {
             {siteLogo ? (
               <img src={siteLogo} alt={siteName} className="h-10 object-contain rounded-xl" />
             ) : (
-              <div className="h-10 w-10 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
-                {siteName.substring(0, 1) || "S"}
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-black text-xl shadow-lg shadow-brand-500/30 group-hover:scale-105 transition-transform">
+                  {siteName.substring(0, 1) || "S"}
+                </div>
+                <span className="text-lg font-black tracking-tight text-white group-hover:text-brand-400 transition-colors font-sans">
+                  {siteName}
+                </span>
               </div>
             )}
-            <div>
-              <span className="text-lg font-black tracking-tight text-white group-hover:text-brand-400 transition-colors font-sans">
-                {siteName}
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[10px] font-black tracking-widest uppercase bg-brand-500/10 text-brand-400 px-2 py-0.5 rounded-full border border-brand-500/20">
-                SaaS v3.0
-              </span>
-            </div>
           </Link>
 
           {/* Desktop Nav Links */}
