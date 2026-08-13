@@ -1179,11 +1179,13 @@ export default function LandingPage() {
               ) : siteLogo ? (
                 <img src={siteLogo} alt={siteName} className="h-8 object-contain" />
               ) : (
-                <div className="h-8 w-8 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-bold">
-                  {siteName.substring(0, 1) || "S"}
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 brand-gradient-bg rounded-xl flex items-center justify-center text-white font-bold">
+                    {siteName.substring(0, 1) || "S"}
+                  </div>
+                  <span className="font-extrabold text-white text-base font-sans">{siteName}</span>
                 </div>
               )}
-              <span className="font-extrabold text-white text-base font-sans">{siteName}</span>
             </div>
             <p className="text-xs text-slate-400 leading-relaxed">
               Modern SaaS email marketing, multi-node SMTP load balancer, bulk SMS gateway & Telegram automation suite.
