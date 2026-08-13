@@ -65,13 +65,19 @@ services:
       - TRACKING_BASE_URL=${TRACKING_BASE_URL}
       - ENVIRONMENT=production
       - TZ=Asia/Dhaka
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - ADMIN_REGISTRATION_SECRET=${ADMIN_REGISTRATION_SECRET}
+      - TRACKING_BASE_URL=${TRACKING_BASE_URL}
+      - ENVIRONMENT=production
+      - TZ=Asia/Dhaka
     depends_on:
       db:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/api/health', timeout=5)"]
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/api/health', timeout=5)"]
       interval: 10s
       timeout: 10s
       retries: 6
@@ -90,7 +96,7 @@ services:
       - DATABASE_URL=${NEON_DATABASE_URL}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - JWT_SECRET=${JWT_SECRET}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - ADMIN_REGISTRATION_SECRET=${ADMIN_REGISTRATION_SECRET}
       - TRACKING_BASE_URL=${TRACKING_BASE_URL}
@@ -113,7 +119,7 @@ services:
       - DATABASE_URL=${NEON_DATABASE_URL}
       - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       - JWT_SECRET=${JWT_SECRET}
-      - ACCESS_TOKEN_EXPIRE_MINUTES=${ACCESS_TOKEN_EXPIRE_MINUTES:-30}
+      - ACCESS_TOKEN_EXPIRE_MINUTES=1440
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
       - ADMIN_REGISTRATION_SECRET=${ADMIN_REGISTRATION_SECRET}
       - TRACKING_BASE_URL=${TRACKING_BASE_URL}
@@ -134,7 +140,7 @@ services:
     expose:
       - "80"
     healthcheck:
-      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/ || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
