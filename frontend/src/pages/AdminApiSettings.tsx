@@ -16,7 +16,9 @@ import {
   History,
   DollarSign,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Eye,
+  X
 } from 'lucide-react'
 
 interface DhruLog {
@@ -106,6 +108,10 @@ export default function AdminApiSettings() {
   const itemsPerPage = 15;
   const [ordersPage, setOrdersPage] = useState(1);
   const [logsPage, setLogsPage] = useState(1);
+
+  // Modal inspection states
+  const [selectedOrder, setSelectedOrder] = useState<ApiOrder | null>(null);
+  const [selectedLog, setSelectedLog] = useState<DhruLog | null>(null);
   
   const apiEndpointUrl = `${window.location.origin}/api/dhru`;
 
@@ -906,6 +912,7 @@ export default function AdminApiSettings() {
                       <th className="p-3 text-right">Amount (USD)</th>
                       <th className="p-3 text-center">Status</th>
                       <th className="p-3">Details / Notes</th>
+                      <th className="p-3 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-600 font-medium">
@@ -937,8 +944,17 @@ export default function AdminApiSettings() {
                             {order.status}
                           </span>
                         </td>
-                        <td className="p-3 text-[11px] text-slate-500 max-w-sm truncate" title={order.notes || ''}>
+                        <td className="p-3 text-[11px] text-slate-500 max-w-xs truncate" title={order.notes || ''}>
                           {order.notes || '-'}
+                        </td>
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedOrder(order)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all"
+                          >
+                            <Eye size={12} /> View Details
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1051,6 +1067,7 @@ export default function AdminApiSettings() {
                       <th className="p-3">Client IP</th>
                       <th className="p-3 text-center">Status</th>
                       <th className="p-3">Details / Message</th>
+                      <th className="p-3 text-center">Action</th>
                     </tr>
                   </thead>
                   <tbody className="text-slate-600 font-medium">
@@ -1077,8 +1094,17 @@ export default function AdminApiSettings() {
                             {log.status}
                           </span>
                         </td>
-                        <td className="p-3 text-[11px] text-slate-500 max-w-sm truncate" title={log.message || ''}>
+                        <td className="p-3 text-[11px] text-slate-500 max-w-xs truncate" title={log.message || ''}>
                           {log.message || '-'}
+                        </td>
+                        <td className="p-3 text-center">
+                          <button
+                            type="button"
+                            onClick={() => setSelectedLog(log)}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all"
+                          >
+                            <Eye size={12} /> View Details
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -1119,6 +1145,145 @@ export default function AdminApiSettings() {
           </div>
         );
       })()}
+
+      {/* Order Details Modal */}
+      {selectedOrder && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+                  #{selectedOrder.id}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Order Details</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Recorded at {new Date(selectedOrder.created_at).toLocaleString()}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedOrder(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Customer Email</span>
+                <span className="font-bold text-slate-800 break-all">{selectedOrder.user_email}</span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Plan Tier</span>
+                <span className="font-black text-brand-600 uppercase tracking-wider">{selectedOrder.plan_tier}</span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Amount Paid</span>
+                <span className="font-black text-slate-900 text-sm">
+                  ${typeof selectedOrder.amount === 'number' && selectedOrder.amount > 500 ? (selectedOrder.amount / 100).toFixed(2) : Number(selectedOrder.amount || 0).toFixed(2)} {selectedOrder.currency || 'USD'}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Payment Status</span>
+                <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                  selectedOrder.status === 'paid' 
+                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                    : 'bg-amber-50 text-amber-600 border border-amber-100'
+                }`}>
+                  {selectedOrder.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1 text-xs">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Gateway & Notes</span>
+              <p className="text-slate-700 font-mono text-[11px] leading-relaxed whitespace-pre-wrap">
+                <strong className="text-slate-900">Gateway:</strong> {selectedOrder.gateway}<br />
+                <strong className="text-slate-900">Notes:</strong> {selectedOrder.notes || 'N/A'}
+              </p>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedOrder(null)}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Diagnostic Log Details Modal */}
+      {selectedLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center font-bold">
+                  #{selectedLog.id}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Diagnostic Event Payload</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Logged at {new Date(selectedLog.created_at).toLocaleString()}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedLog(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">API Action</span>
+                <span className="font-mono font-bold text-brand-600">{selectedLog.action}</span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Client IP Address</span>
+                <span className="font-mono font-bold text-slate-800">{selectedLog.ip_address || '-'}</span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">API Username</span>
+                <span className="font-mono text-slate-800">{selectedLog.username || '-'}</span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Execution Status</span>
+                <span className={`inline-block mt-0.5 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                  selectedLog.status === 'success' 
+                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                    : 'bg-rose-50 text-rose-600 border border-rose-100'
+                }`}>
+                  {selectedLog.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1.5 text-xs">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Log Message & Payload</span>
+              <div className="bg-slate-900 text-slate-100 p-3 rounded-xl font-mono text-[11px] max-h-48 overflow-y-auto whitespace-pre-wrap break-all border border-slate-800">
+                {selectedLog.message || 'No detailed message payload attached.'}
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedLog(null)}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm"
+              >
+                Close Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
