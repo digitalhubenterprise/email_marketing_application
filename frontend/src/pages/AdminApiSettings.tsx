@@ -175,9 +175,14 @@ export default function AdminApiSettings() {
     if (!token) return;
     setOrdersLoading(true);
     try {
-      const res = await fetch('/api/admin/payments?gateway=DhruFusionAPI&limit=100', {
+      let res = await fetch('/api/admin/settings/dhru-orders', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
+      if (!res.ok) {
+        res = await fetch('/api/admin/payments?gateway=DhruFusionAPI&limit=100', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+      }
       if (res.ok) {
         const data = await res.json();
         setOrders(data);
@@ -186,6 +191,44 @@ export default function AdminApiSettings() {
       console.error('Failed to fetch API orders:', err);
     } finally {
       setOrdersLoading(false);
+    }
+  };
+
+  const handleCreateSampleOrder = async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return;
+    setOrdersLoading(true);
+    try {
+      const res = await fetch('/api/admin/settings/dhru-orders/sample', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        await fetchOrders();
+      }
+    } catch (err) {
+      console.error('Failed to create sample order:', err);
+    } finally {
+      setOrdersLoading(false);
+    }
+  };
+
+  const handleCreateSampleLog = async () => {
+    const token = localStorage.getItem('admin_token');
+    if (!token) return;
+    setLogsLoading(true);
+    try {
+      const res = await fetch('/api/admin/settings/dhru-logs/sample', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      if (res.ok) {
+        await fetchLogs();
+      }
+    } catch (err) {
+      console.error('Failed to create sample log:', err);
+    } finally {
+      setLogsLoading(false);
     }
   };
 
@@ -230,10 +273,13 @@ export default function AdminApiSettings() {
 
   useEffect(() => {
     fetchConfig();
-    fetchLogs();
     fetchPlans();
-    fetchOrders();
-  }, []);
+    if (activeSubTab === 'orders') {
+      fetchOrders();
+    } else if (activeSubTab === 'logs') {
+      fetchLogs();
+    }
+  }, [activeSubTab]);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -773,18 +819,34 @@ export default function AdminApiSettings() {
       {/* Order History Tab */}
       {activeSubTab === 'orders' && (
         <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-              🛒 Reseller API Order History
-            </h3>
-            <button
-              onClick={fetchOrders}
-              disabled={ordersLoading}
-              className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
-            >
-              <RefreshCw size={12} className={ordersLoading ? 'animate-spin text-brand-500' : ''} />
-              Refresh Orders
-            </button>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                🛒 Reseller API Order History
+              </h3>
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                Real-time transaction log of subscription plans purchased via Dhru Fusion or external HTTP GET/POST API clients.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCreateSampleOrder}
+                disabled={ordersLoading}
+                className="flex items-center gap-1 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
+              >
+                + Generate Test Order
+              </button>
+              <button
+                type="button"
+                onClick={fetchOrders}
+                disabled={ordersLoading}
+                className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
+              >
+                <RefreshCw size={12} className={ordersLoading ? 'animate-spin text-brand-500' : ''} />
+                Refresh Orders
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -794,8 +856,23 @@ export default function AdminApiSettings() {
                 <span className="text-xs font-semibold text-slate-400">Fetching API orders...</span>
               </div>
             ) : orders.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 font-semibold text-xs">
-                No reseller API orders recorded yet.
+              <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shadow-sm">
+                  <History size={20} />
+                </div>
+                <div className="max-w-xs space-y-1">
+                  <h4 className="text-xs font-black text-slate-800">No Reseller API Orders Yet</h4>
+                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                    When external clients place orders via Dhru Fusion or HTTP API endpoints, orders will appear here automatically.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateSampleOrder}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
+                >
+                  Create Sample Test Order
+                </button>
               </div>
             ) : (
               <table className="w-full text-left border-collapse text-xs">
@@ -828,7 +905,7 @@ export default function AdminApiSettings() {
                         </span>
                       </td>
                       <td className="p-3 text-right font-bold text-slate-900">
-                        ${(order.amount / 100).toFixed(2)}
+                        ${typeof order.amount === 'number' && order.amount > 500 ? (order.amount / 100).toFixed(2) : Number(order.amount || 0).toFixed(2)}
                       </td>
                       <td className="p-3 text-center">
                         <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
@@ -854,18 +931,34 @@ export default function AdminApiSettings() {
       {/* Diagnostics Logs Tab */}
       {activeSubTab === 'logs' && (
         <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-              📋 Webhook & Integration Logs
-            </h3>
-            <button
-              onClick={fetchLogs}
-              disabled={logsLoading}
-              className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
-            >
-              <RefreshCw size={12} className={logsLoading ? 'animate-spin text-brand-500' : ''} />
-              Refresh Logs
-            </button>
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div>
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                📋 Webhook & Integration Diagnostic Logs
+              </h3>
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                Audit trail of incoming HTTP GET/POST API listener requests, credentials authentication & IP validation checks.
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleCreateSampleLog}
+                disabled={logsLoading}
+                className="flex items-center gap-1 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
+              >
+                + Generate Test Event
+              </button>
+              <button
+                type="button"
+                onClick={fetchLogs}
+                disabled={logsLoading}
+                className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
+              >
+                <RefreshCw size={12} className={logsLoading ? 'animate-spin text-brand-500' : ''} />
+                Refresh Logs
+              </button>
+            </div>
           </div>
 
           <div className="overflow-x-auto">
@@ -875,8 +968,23 @@ export default function AdminApiSettings() {
                 <span className="text-xs font-semibold text-slate-400">Fetching diagnostic events...</span>
               </div>
             ) : logs.length === 0 ? (
-              <div className="py-12 text-center text-slate-400 font-semibold text-xs">
-                No API requests recorded yet. Initiate requests from your billing client to see diagnostics here.
+              <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-sm">
+                  <Terminal size={20} />
+                </div>
+                <div className="max-w-xs space-y-1">
+                  <h4 className="text-xs font-black text-slate-800">No Integration Logs Recorded</h4>
+                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                    API listener request logs and diagnostic event callbacks will be recorded here automatically when client requests are processed.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleCreateSampleLog}
+                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
+                >
+                  Generate Diagnostic Test Event
+                </button>
               </div>
             ) : (
               <table className="w-full text-left border-collapse text-xs">

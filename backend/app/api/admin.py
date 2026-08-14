@@ -758,7 +758,17 @@ async def get_payments_list(
     q = select(PaymentLog)
 
     if gateway:
-        q = q.where(PaymentLog.gateway == gateway)
+        if gateway.lower() in ("dhrufusionapi", "dhrufusion", "dhru", "api"):
+            q = q.where(
+                or_(
+                    PaymentLog.gateway.ilike("%dhru%"),
+                    PaymentLog.gateway.ilike("%api%"),
+                    PaymentLog.notes.ilike("%dhru%"),
+                    PaymentLog.notes.ilike("%api%")
+                )
+            )
+        else:
+            q = q.where(PaymentLog.gateway.ilike(f"%{gateway}%"))
     if status:
         q = q.where(PaymentLog.status == status.lower())
 
@@ -1167,9 +1177,72 @@ async def get_dhru_api_logs(
     admin: AdminUser = Depends(get_current_admin)
 ):
     """Retrieves recent Dhru API listener logs."""
-    res = await db.execute(select(DhruApiLog).order_by(DhruApiLog.created_at.desc()).limit(50))
+    res = await db.execute(select(DhruApiLog).order_by(DhruApiLog.created_at.desc()).limit(100))
     logs = res.scalars().all()
     return logs
+
+
+@router.post("/settings/dhru-logs/sample", response_model=DhruApiLogResponse)
+async def create_sample_dhru_log(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Creates a sample diagnostic log entry for API integration testing."""
+    sample_log = DhruApiLog(
+        action="accountinfo",
+        username=admin.email,
+        ip_address="127.0.0.1",
+        status="success",
+        message="Diagnostic test event generated from Admin Control Panel."
+    )
+    db.add(sample_log)
+    await db.commit()
+    await db.refresh(sample_log)
+    return sample_log
+
+
+@router.get("/settings/dhru-orders", response_model=List[PaymentLogResponse])
+async def get_dhru_api_orders(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Retrieves recent Dhru API reseller orders."""
+    res = await db.execute(
+        select(PaymentLog)
+        .where(
+            or_(
+                PaymentLog.gateway.ilike("%dhru%"),
+                PaymentLog.gateway.ilike("%api%"),
+                PaymentLog.notes.ilike("%dhru%"),
+                PaymentLog.notes.ilike("%api%")
+            )
+        )
+        .order_by(PaymentLog.created_at.desc())
+        .limit(100)
+    )
+    orders = res.scalars().all()
+    return orders
+
+
+@router.post("/settings/dhru-orders/sample", response_model=PaymentLogResponse)
+async def create_sample_dhru_order(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Creates a sample reseller API order entry for testing."""
+    sample_order = PaymentLog(
+        user_email=admin.email,
+        amount=29.00,
+        currency="USD",
+        plan_tier="pro",
+        gateway="DhruFusionAPI",
+        status="paid",
+        notes="Sample reseller API test order generated from Admin Control Panel."
+    )
+    db.add(sample_order)
+    await db.commit()
+    await db.refresh(sample_order)
+    return sample_order
 
 
 
