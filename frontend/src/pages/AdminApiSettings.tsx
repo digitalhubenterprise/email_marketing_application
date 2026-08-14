@@ -274,11 +274,21 @@ export default function AdminApiSettings() {
   useEffect(() => {
     fetchConfig();
     fetchPlans();
+  }, []);
+
+  useEffect(() => {
+    let interval: any = null;
     if (activeSubTab === 'orders') {
       fetchOrders();
     } else if (activeSubTab === 'logs') {
       fetchLogs();
+      interval = setInterval(() => {
+        fetchLogs();
+      }, 5000);
     }
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [activeSubTab]);
 
   const handleSaveSettings = async (e: React.FormEvent) => {
