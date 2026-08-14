@@ -102,12 +102,13 @@ export default function AdminApiSettings() {
   
   const apiEndpointUrl = `${window.location.origin}/api/dhru`;
 
+  const getToken = () => localStorage.getItem('admin_token') || localStorage.getItem('token');
+
   const fetchConfig = async () => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
+    const token = getToken();
     try {
       const res = await fetch('/api/admin/settings', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
         const data = await res.json();
@@ -122,16 +123,15 @@ export default function AdminApiSettings() {
   };
 
   const fetchLogs = async () => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
+    const token = getToken();
     setLogsLoading(true);
     try {
       const res = await fetch('/api/admin/settings/dhru-logs', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
         const data = await res.json();
-        setLogs(data);
+        setLogs(Array.isArray(data) ? data : []);
       }
     } catch (err) {
       console.error('Failed to fetch API integration logs:', err);
@@ -141,24 +141,30 @@ export default function AdminApiSettings() {
   };
 
   const fetchPlans = async () => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
+    const token = getToken();
     setPlansLoading(true);
     try {
-      const res = await fetch('/api/admin/plans', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      let res = await fetch('/api/admin/plans', {
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
+      if (!res.ok) {
+        res = await fetch('/api/plans', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+        });
+      }
       if (res.ok) {
         const data = await res.json();
-        setPlans(data);
+        setPlans(Array.isArray(data) ? data : []);
         const initialPrices: {[key: string]: string} = {};
         const initialPublicPrices: {[key: string]: string} = {};
         const initialDiscounts: {[key: string]: string} = {};
-        data.forEach((p: SubscriptionPlan) => {
-          initialPrices[p.tier] = (p.price / 100).toFixed(2);
-          initialPublicPrices[p.tier] = (p.public_price / 100).toFixed(2);
-          initialDiscounts[p.tier] = (p.discount / 100).toFixed(2);
-        });
+        if (Array.isArray(data)) {
+          data.forEach((p: SubscriptionPlan) => {
+            initialPrices[p.tier] = (p.price / 100).toFixed(2);
+            initialPublicPrices[p.tier] = (p.public_price / 100).toFixed(2);
+            initialDiscounts[p.tier] = (p.discount / 100).toFixed(2);
+          });
+        }
         setPlanPrices(prev => ({ ...initialPrices, ...prev }));
         setPlanPublicPrices(prev => ({ ...initialPublicPrices, ...prev }));
         setPlanDiscounts(prev => ({ ...initialDiscounts, ...prev }));
@@ -171,22 +177,22 @@ export default function AdminApiSettings() {
   };
 
   const fetchOrders = async () => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
+    const token = getToken();
     setOrdersLoading(true);
     try {
       let res = await fetch('/api/admin/settings/dhru-orders', {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
-      if (!res.ok) {
-        res = await fetch('/api/admin/payments?gateway=DhruFusionAPI&limit=100', {
-          headers: { 'Authorization': `Bearer ${token}` }
+      let data = res.ok ? await res.json() : [];
+      if (!Array.isArray(data) || data.length === 0) {
+        const fallbackRes = await fetch('/api/admin/payments?limit=1000', {
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {}
         });
+        if (fallbackRes.ok) {
+          data = await fallbackRes.json();
+        }
       }
-      if (res.ok) {
-        const data = await res.json();
-        setOrders(data);
-      }
+      setOrders(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to fetch API orders:', err);
     } finally {
@@ -195,13 +201,12 @@ export default function AdminApiSettings() {
   };
 
   const handleCreateSampleOrder = async () => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
+    const token = getToken();
     setOrdersLoading(true);
     try {
       const res = await fetch('/api/admin/settings/dhru-orders/sample', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
         await fetchOrders();
@@ -214,13 +219,12 @@ export default function AdminApiSettings() {
   };
 
   const handleCreateSampleLog = async () => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
+    const token = getToken();
     setLogsLoading(true);
     try {
       const res = await fetch('/api/admin/settings/dhru-logs/sample', {
         method: 'POST',
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       if (res.ok) {
         await fetchLogs();
@@ -238,8 +242,7 @@ export default function AdminApiSettings() {
     publicPriceInCents: number,
     discountInCents: number
   ) => {
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
+    const token = getToken();
     setUpdatingPlanTier(tier);
     setSaveSuccess(null);
     setSaveError(null);
@@ -248,7 +251,7 @@ export default function AdminApiSettings() {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
         },
         body: JSON.stringify({
           price: priceInCents,
@@ -274,6 +277,8 @@ export default function AdminApiSettings() {
   useEffect(() => {
     fetchConfig();
     fetchPlans();
+    fetchOrders();
+    fetchLogs();
   }, []);
 
   useEffect(() => {
