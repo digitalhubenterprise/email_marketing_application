@@ -1237,6 +1237,22 @@ async def create_sample_dhru_order(
     return sample_order
 
 
+@router.post("/settings/dhru-reset-ip")
+async def reset_dhru_connected_ip(
+    db: AsyncSession = Depends(get_db),
+    admin: AdminUser = Depends(get_current_admin)
+):
+    """Resets the bound reseller API client IP so the next authentic request can auto-bind."""
+    res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
+    config = res.scalars().first()
+    if config:
+        config.api_listener_connected_ip = ""
+        db.add(config)
+        await db.commit()
+        await db.refresh(config)
+    return {"message": "Reseller API connected IP reset successfully.", "api_listener_connected_ip": ""}
+
+
 
 @router.post("/settings/maintenance")
 async def toggle_maintenance_mode(

@@ -108,11 +108,13 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
     requestformat = request.query_params.get("requestformat") or request.query_params.get("requestFormat") or request.query_params.get("format")
 
     # Extract client IP supporting reverse proxies (Cloudflare, Nginx, etc.)
-    client_ip = request.headers.get("x-real-ip")
+    client_ip = request.headers.get("cf-connecting-ip")
     if not client_ip:
         x_forwarded_for = request.headers.get("x-forwarded-for")
         if x_forwarded_for:
             client_ip = x_forwarded_for.split(",")[0].strip()
+    if not client_ip:
+        client_ip = request.headers.get("x-real-ip")
     if not client_ip:
         client_ip = request.client.host if request.client else "unknown"
 
@@ -204,23 +206,32 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                 }
             ]
         }
-    # 3b. Validate Connected IP restriction if configured
-    if config.api_listener_connected_ip:
-        allowed_ips = [ip.strip() for ip in config.api_listener_connected_ip.split(",") if ip.strip()]
+
+    # 3b. Validate or Auto-bind Connected IP
+    bound_ip_str = (config.api_listener_connected_ip or "").strip()
+    if not bound_ip_str:
+        # Unbound state: auto-assign and auto-bind client IP on first authentic request
+        config.api_listener_connected_ip = client_ip
+        db.add(config)
+        await db.commit()
+        await db.refresh(config)
+        logger.info("Auto-bound client IP '%s' to api_listener_connected_ip", client_ip)
+    else:
+        allowed_ips = [ip.strip() for ip in bound_ip_str.split(",") if ip.strip()]
         if allowed_ips and client_ip not in allowed_ips:
             log = DhruApiLog(
                 action=action or "unknown",
                 username=username,
                 ip_address=client_ip,
                 status="failed",
-                message=f"Access denied. IP '{client_ip}' is not authorized. Allowed IPs: {config.api_listener_connected_ip}."
+                message=f"Access denied. Client IP '{client_ip}' is not authorized. Allowed IP(s): {bound_ip_str}."
             )
             db.add(log)
             await db.commit()
             return {
                 "ERROR": [
                     {
-                        "MESSAGE": f"Access denied. Unauthorized IP: {client_ip}."
+                        "MESSAGE": f"Access denied. Client IP [{client_ip}] is not authorized."
                     }
                 ]
             }

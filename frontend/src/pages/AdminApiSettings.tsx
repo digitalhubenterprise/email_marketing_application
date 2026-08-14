@@ -336,6 +336,30 @@ export default function AdminApiSettings() {
     }
   };
 
+  const handleResetIp = async () => {
+    const token = getToken();
+    setSaving(true);
+    setSaveSuccess(null);
+    setSaveError(null);
+    try {
+      const res = await fetch('/api/admin/settings/dhru-reset-ip', {
+        method: 'POST',
+        headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+      });
+      if (res.ok) {
+        setConnectedIp('');
+        setSaveSuccess('Allowed Client IP reset! The next authentic client request (e.g., accountinfo) will auto-bind the caller\'s IP.');
+      } else {
+        setSaveError('Failed to reset connected IP.');
+      }
+    } catch (err) {
+      console.error('Failed to reset IP:', err);
+      setSaveError('Network error resetting IP.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const copyToClipboard = () => {
     navigator.clipboard.writeText(apiEndpointUrl);
     setCopied(true);
@@ -628,15 +652,44 @@ export default function AdminApiSettings() {
             </div>
           </div>
 
-          <div className="space-y-1.5">
-            <label className="text-xs font-bold text-slate-700">Allowed Client IPs (Optional Firewall Restriction)</label>
-            <input
-              type="text"
-              value={connectedIp}
-              onChange={(e) => setConnectedIp(e.target.value)}
-              placeholder="e.g. 192.168.1.1, 10.0.0.1 (Leave empty to allow all authorized client IPs)"
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
-            />
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-slate-700">
+                Allowed Client IPs (Auto-Bound Firewall Restriction)
+              </label>
+              {connectedIp ? (
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border border-emerald-100 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  Bound IP: {connectedIp}
+                </span>
+              ) : (
+                <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-amber-50 text-amber-600 border border-amber-100 flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse"></span>
+                  Unbound (Auto-binds Next Request)
+                </span>
+              )}
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={connectedIp}
+                onChange={(e) => setConnectedIp(e.target.value)}
+                placeholder="Unbound (Will automatically bind caller's IP e.g. 103.160.106.218 on next API request)"
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              />
+              <button
+                type="button"
+                onClick={handleResetIp}
+                disabled={saving}
+                className="px-4 py-2.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl text-xs font-bold transition-all shadow-sm shrink-0 flex items-center gap-1.5"
+              >
+                <RefreshCw size={14} className={saving ? 'animate-spin' : ''} />
+                Reset Bound IP
+              </button>
+            </div>
+            <p className="text-[10px] text-slate-400 font-medium">
+              💡 When bound, only requests matching this IP will be accepted. Click <strong>Reset Bound IP</strong> to clear it and allow the next authentic request (e.g., <code className="bg-slate-100 px-1 py-0.5 rounded text-slate-600 font-bold">accountinfo</code>) to auto-bind its IP!
+            </p>
           </div>
 
           <div className="space-y-1.5">
