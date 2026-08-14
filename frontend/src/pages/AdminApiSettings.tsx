@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo, useCallback } from 'react'
 import {
   Key,
   Globe,
@@ -18,7 +18,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Eye,
-  X
+  X,
+  Search,
+  Download,
+  Filter,
+  ShieldCheck,
+  TrendingUp,
+  Activity
 } from 'lucide-react'
 
 interface DhruLog {
@@ -64,7 +70,7 @@ export default function AdminApiSettings() {
   const [enabled, setEnabled] = useState(true);
   const [connectedIp, setConnectedIp] = useState('');
 
-  const generateStrongKey = () => {
+  const generateStrongKey = useCallback(() => {
     const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
     const lowercase = 'abcdefghijklmnopqrstuvwxyz';
     const numbers = '0123456789';
@@ -83,7 +89,7 @@ export default function AdminApiSettings() {
     
     const shuffledKey = key.split('').sort(() => 0.5 - Math.random()).join('');
     setAccessKey(shuffledKey);
-  };
+  }, []);
   
   const [logs, setLogs] = useState<DhruLog[]>([]);
   const [logsLoading, setLogsLoading] = useState(false);
@@ -104,6 +110,13 @@ export default function AdminApiSettings() {
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
 
+  // Search & Filter states
+  const [orderSearchTerm, setOrderSearchTerm] = useState('');
+  const [orderStatusFilter, setOrderStatusFilter] = useState<'all' | 'paid' | 'pending'>('all');
+  
+  const [logSearchTerm, setLogSearchTerm] = useState('');
+  const [logStatusFilter, setLogStatusFilter] = useState<'all' | 'success' | 'failed'>('all');
+
   // Pagination states (15 items per page)
   const itemsPerPage = 15;
   const [ordersPage, setOrdersPage] = useState(1);
@@ -115,9 +128,9 @@ export default function AdminApiSettings() {
   
   const apiEndpointUrl = `${window.location.origin}/api/dhru`;
 
-  const getToken = () => localStorage.getItem('admin_token') || localStorage.getItem('token');
+  const getToken = useCallback(() => localStorage.getItem('admin_token') || localStorage.getItem('token'), []);
 
-  const fetchConfig = async () => {
+  const fetchConfig = useCallback(async () => {
     const token = getToken();
     try {
       const res = await fetch('/api/admin/settings', {
@@ -133,9 +146,9 @@ export default function AdminApiSettings() {
     } catch (err) {
       console.error('Failed to fetch API configurations:', err);
     }
-  };
+  }, [getToken]);
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     const token = getToken();
     setLogsLoading(true);
     try {
@@ -151,9 +164,9 @@ export default function AdminApiSettings() {
     } finally {
       setLogsLoading(false);
     }
-  };
+  }, [getToken]);
 
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
     const token = getToken();
     setPlansLoading(true);
     try {
@@ -187,9 +200,9 @@ export default function AdminApiSettings() {
     } finally {
       setPlansLoading(false);
     }
-  };
+  }, [getToken]);
 
-  const fetchOrders = async () => {
+  const fetchOrders = useCallback(async () => {
     const token = getToken();
     setOrdersLoading(true);
     try {
@@ -211,7 +224,7 @@ export default function AdminApiSettings() {
     } finally {
       setOrdersLoading(false);
     }
-  };
+  }, [getToken]);
 
   const handleCreateSampleOrder = async () => {
     const token = getToken();
@@ -287,13 +300,57 @@ export default function AdminApiSettings() {
     }
   };
 
+  const handleSaveSettings = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const token = getToken();
+    setSaving(true);
+    setSaveSuccess(null);
+    setSaveError(null);
+
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        },
+        body: JSON.stringify({
+          api_listener_username: username,
+          api_listener_access_key: accessKey,
+          api_listener_enabled: enabled,
+          api_listener_connected_ip: connectedIp
+        })
+      });
+
+      if (res.ok) {
+        setSaveSuccess('API Listener configurations updated successfully.');
+      } else {
+        const data = await res.json();
+        setSaveError(data.detail || 'Failed to update settings.');
+      }
+    } catch (err) {
+      setSaveError('Network communication error.');
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(apiEndpointUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  // Pre-load on mount
   useEffect(() => {
     fetchConfig();
     fetchPlans();
     fetchOrders();
     fetchLogs();
-  }, []);
+  }, [fetchConfig, fetchPlans, fetchOrders, fetchLogs]);
 
+  // Subtab switch effect with auto-refresh timer for logs
   useEffect(() => {
     let interval: any = null;
     if (activeSubTab === 'services') {
@@ -309,52 +366,122 @@ export default function AdminApiSettings() {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [activeSubTab]);
+  }, [activeSubTab, fetchPlans, fetchOrders, fetchLogs]);
 
-  const handleSaveSettings = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const token = localStorage.getItem('admin_token');
-    if (!token) return;
+  // Memoized Filtered Orders
+  const filteredOrders = useMemo(() => {
+    return orders.filter(order => {
+      const matchesSearch = 
+        !orderSearchTerm ||
+        order.id.toString().includes(orderSearchTerm) ||
+        (order.user_email && order.user_email.toLowerCase().includes(orderSearchTerm.toLowerCase())) ||
+        (order.plan_tier && order.plan_tier.toLowerCase().includes(orderSearchTerm.toLowerCase())) ||
+        (order.notes && order.notes.toLowerCase().includes(orderSearchTerm.toLowerCase())) ||
+        (order.gateway && order.gateway.toLowerCase().includes(orderSearchTerm.toLowerCase()));
 
-    setSaving(true);
-    setSaveSuccess(null);
-    setSaveError(null);
+      const matchesStatus = 
+        orderStatusFilter === 'all' || 
+        order.status.toLowerCase() === orderStatusFilter.toLowerCase();
 
-    try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          api_listener_username: username,
-          api_listener_access_key: accessKey,
-          api_listener_enabled: enabled,
-          api_listener_connected_ip: connectedIp
-        })
-      });
+      return matchesSearch && matchesStatus;
+    });
+  }, [orders, orderSearchTerm, orderStatusFilter]);
 
-      if (res.ok) {
-        setSaveSuccess('API connection credentials updated successfully.');
-        fetchConfig();
-      } else {
-        const errData = await res.json();
-        setSaveError(errData.detail || 'Failed to update credentials.');
-      }
-    } catch (err) {
-      setSaveError('Network communication error.');
-      console.error(err);
-    } finally {
-      setSaving(false);
-    }
-  };
+  // Memoized Filtered Logs
+  const filteredLogs = useMemo(() => {
+    return logs.filter(log => {
+      const matchesSearch = 
+        !logSearchTerm ||
+        log.id.toString().includes(logSearchTerm) ||
+        (log.action && log.action.toLowerCase().includes(logSearchTerm.toLowerCase())) ||
+        (log.username && log.username.toLowerCase().includes(logSearchTerm.toLowerCase())) ||
+        (log.ip_address && log.ip_address.toLowerCase().includes(logSearchTerm.toLowerCase())) ||
+        (log.message && log.message.toLowerCase().includes(logSearchTerm.toLowerCase()));
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(apiEndpointUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
+      const matchesStatus = 
+        logStatusFilter === 'all' || 
+        log.status.toLowerCase() === logStatusFilter.toLowerCase();
+
+      return matchesSearch && matchesStatus;
+    });
+  }, [logs, logSearchTerm, logStatusFilter]);
+
+  // KPI Metrics Calculation
+  const orderMetrics = useMemo(() => {
+    const totalAmount = orders.reduce((sum, o) => {
+      const val = typeof o.amount === 'number' && o.amount > 500 ? o.amount / 100 : Number(o.amount || 0);
+      return sum + (isNaN(val) ? 0 : val);
+    }, 0);
+    const paidCount = orders.filter(o => o.status === 'paid').length;
+    const apiOrdersCount = orders.filter(o => o.gateway.toLowerCase().includes('dhru') || o.gateway.toLowerCase().includes('api')).length;
+    return {
+      totalCount: orders.length,
+      totalRevenue: totalAmount.toFixed(2),
+      paidCount,
+      apiOrdersCount
+    };
+  }, [orders]);
+
+  const logMetrics = useMemo(() => {
+    const successCount = logs.filter(l => l.status === 'success').length;
+    const failedCount = logs.filter(l => l.status === 'failed').length;
+    const successRate = logs.length > 0 ? Math.round((successCount / logs.length) * 100) : 100;
+    return {
+      totalLogs: logs.length,
+      successCount,
+      failedCount,
+      successRate
+    };
+  }, [logs]);
+
+  // Export to CSV handlers
+  const exportOrdersToCSV = useCallback(() => {
+    if (orders.length === 0) return;
+    const headers = ['Order ID', 'Timestamp', 'User Email', 'Plan Tier', 'Amount (USD)', 'Currency', 'Gateway', 'Status', 'Notes'];
+    const rows = filteredOrders.map(o => [
+      o.id,
+      `"${new Date(o.created_at).toLocaleString()}"`,
+      `"${o.user_email}"`,
+      `"${o.plan_tier}"`,
+      typeof o.amount === 'number' && o.amount > 500 ? (o.amount / 100).toFixed(2) : Number(o.amount || 0).toFixed(2),
+      `"${o.currency || 'USD'}"`,
+      `"${o.gateway}"`,
+      `"${o.status}"`,
+      `"${(o.notes || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `reseller_api_orders_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [filteredOrders, orders.length]);
+
+  const exportLogsToCSV = useCallback(() => {
+    if (logs.length === 0) return;
+    const headers = ['Log ID', 'Timestamp', 'Action', 'API User', 'Client IP', 'Status', 'Message'];
+    const rows = filteredLogs.map(l => [
+      l.id,
+      `"${new Date(l.created_at).toLocaleString()}"`,
+      `"${l.action}"`,
+      `"${l.username || ''}"`,
+      `"${l.ip_address || ''}"`,
+      `"${l.status}"`,
+      `"${(l.message || '').replace(/"/g, '""')}"`
+    ]);
+
+    const csvContent = 'data:text/csv;charset=utf-8,' + [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', `dhru_api_diagnostic_logs_${new Date().toISOString().slice(0,10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [filteredLogs, logs.length]);
 
   return (
     <div className="space-y-6">
@@ -377,7 +504,7 @@ export default function AdminApiSettings() {
       )}
 
       {/* Sub tabs navigation */}
-      <div className="flex border-b border-slate-200/80 gap-2">
+      <div className="flex flex-wrap border-b border-slate-200/80 gap-2">
         <button
           onClick={() => setActiveSubTab('credentials')}
           className={`flex items-center gap-2 px-5 py-3 text-xs font-bold transition-all border-b-2 ${
@@ -410,6 +537,9 @@ export default function AdminApiSettings() {
         >
           <Layers size={14} />
           Services
+          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-slate-100 text-slate-600 border border-slate-200">
+            {plans.length}
+          </span>
         </button>
         <button
           onClick={() => setActiveSubTab('orders')}
@@ -421,6 +551,9 @@ export default function AdminApiSettings() {
         >
           <History size={14} />
           Order History
+          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-brand-50 text-brand-600 border border-brand-100">
+            {orders.length}
+          </span>
         </button>
         <button
           onClick={() => setActiveSubTab('logs')}
@@ -432,380 +565,241 @@ export default function AdminApiSettings() {
         >
           <Terminal size={14} />
           Diagnostic Logs
+          <span className="px-2 py-0.5 rounded-full text-[9px] font-black bg-indigo-50 text-indigo-600 border border-indigo-100">
+            {logs.length}
+          </span>
         </button>
       </div>
 
-      {/* Contents based on tab */}
+      {/* API Credentials Tab */}
       {activeSubTab === 'credentials' && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 animate-fadeIn">
-          {/* Main Credentials Config */}
-          <div className="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] space-y-6">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+        <form onSubmit={handleSaveSettings} className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-6">
+          <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+            <div>
               <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                ⚙️ Listener Credentials
+                🔒 Listener Configuration
               </h3>
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                Set credentials and network firewall rules for processing reseller API orders.
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-slate-600">Listener Active</span>
               <button
                 type="button"
                 onClick={() => setEnabled(!enabled)}
-                className="flex items-center gap-1.5 focus:outline-none"
+                className="text-brand-500 hover:text-brand-600 transition-colors"
               >
-                {enabled ? (
-                  <ToggleRight size={32} className="text-brand-500 transition-colors" />
-                ) : (
-                  <ToggleLeft size={32} className="text-slate-300 transition-colors" />
-                )}
-                <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
-                  {enabled ? 'Active' : 'Disabled'}
-                </span>
+                {enabled ? <ToggleRight size={32} className="text-brand-500" /> : <ToggleLeft size={32} className="text-slate-300" />}
               </button>
             </div>
+          </div>
 
-            <form onSubmit={handleSaveSettings} className="space-y-5">
-              {/* Endpoint URL display */}
-              <div className="space-y-2">
-                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                  Dhru API Endpoint URL
-                </label>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    readOnly
-                    value={apiEndpointUrl}
-                    className="flex-1 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-500 text-xs font-mono font-semibold"
-                  />
-                  <button
-                    type="button"
-                    onClick={copyToClipboard}
-                    className="p-2.5 bg-slate-100 border border-slate-200 hover:bg-slate-200/70 text-slate-600 rounded-xl transition-all"
-                    title="Copy to clipboard"
-                  >
-                    {copied ? <Check size={16} className="text-emerald-500" /> : <Copy size={16} />}
-                  </button>
-                </div>
-                <p className="text-[9px] text-slate-400 font-medium">
-                  Provide this callback URL when configuring the API provider in your Dhru Fusion administration panel.
-                </p>
-              </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-700">API Username</label>
+              <input
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              />
+            </div>
 
-              {/* Username, Key & Connected IP fields */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                    API Username
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold"
-                    placeholder="Enter API username"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                    API Access Key
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      required
-                      value={accessKey}
-                      onChange={(e) => setAccessKey(e.target.value)}
-                      className="flex-1 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold font-mono"
-                      placeholder="Enter API key"
-                    />
-                    <button
-                      type="button"
-                      onClick={generateStrongKey}
-                      className="px-3 py-2.5 bg-slate-900 text-white hover:bg-slate-800 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center shrink-0"
-                      title="Generate a 25-character strong key"
-                    >
-                      Generate
-                    </button>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <label className="block text-[10px] font-black text-slate-400 uppercase tracking-wider">
-                    Connected IP (Optional lock)
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={connectedIp}
-                      onChange={(e) => setConnectedIp(e.target.value)}
-                      className="flex-1 px-3 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-800 text-xs focus:outline-none focus:border-brand-500 font-semibold font-mono"
-                      placeholder="e.g. 192.168.1.1"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => setConnectedIp('')}
-                      className="px-3 py-2.5 bg-rose-600 text-white hover:bg-rose-500 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all flex items-center justify-center shrink-0"
-                      title="Clear / Reset Connected IP lock"
-                    >
-                      Reset IP
-                    </button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-2">
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-bold text-slate-700">API Access Key</label>
                 <button
-                  type="submit"
-                  disabled={saving}
-                  className="w-full py-2.5 brand-gradient-bg hover:opacity-95 text-white rounded-xl text-xs font-bold shadow-lg shadow-brand-500/10 flex items-center justify-center gap-2 transition-all disabled:opacity-50"
+                  type="button"
+                  onClick={generateStrongKey}
+                  className="text-[10px] text-brand-600 hover:text-brand-700 font-bold hover:underline"
                 >
-                  {saving ? (
-                    <>
-                      <RefreshCw size={14} className="animate-spin" />
-                      Saving changes...
-                    </>
-                  ) : (
-                    'Save API Settings'
-                  )}
+                  Generate Strong Key
                 </button>
               </div>
-            </form>
-          </div>
-
-          {/* Quick Stats / Info side card */}
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] space-y-5">
-            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-3">
-              💡 Integration Basics
-            </h3>
-            <div className="space-y-4 text-xs leading-relaxed text-slate-600">
-              <div className="flex gap-2">
-                <Globe size={18} className="text-brand-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-slate-800 text-[11px]">Dhru Fusion Compatible</h4>
-                  <p className="text-[10.5px] mt-0.5 text-slate-500">
-                    Conforms strictly to standard HTTP callback listener protocols for IMEI and Server reseller actions.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <Layers size={18} className="text-brand-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-slate-800 text-[11px]">Automated Account Creation</h4>
-                  <p className="text-[10.5px] mt-0.5 text-slate-500">
-                    If an email address ordered does not exist, an account is auto-generated and login credentials are automatically dispatched to the customer.
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-2">
-                <HelpCircle size={18} className="text-brand-500 flex-shrink-0 mt-0.5" />
-                <div>
-                  <h4 className="font-bold text-slate-800 text-[11px]">Instant Upgrades</h4>
-                  <p className="text-[10.5px] mt-0.5 text-slate-500">
-                    Existing users get upgraded in real-time, receiving quota expansions instantly on payment clearance.
-                  </p>
-                </div>
-              </div>
+              <input
+                type="text"
+                value={accessKey}
+                onChange={(e) => setAccessKey(e.target.value)}
+                required
+                className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+              />
             </div>
           </div>
-        </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700">Allowed Client IPs (Optional Firewall Restriction)</label>
+            <input
+              type="text"
+              value={connectedIp}
+              onChange={(e) => setConnectedIp(e.target.value)}
+              placeholder="e.g. 192.168.1.1, 10.0.0.1 (Leave empty to allow all authorized client IPs)"
+              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500"
+            />
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-700">Live Webhook / Endpoint URL</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                readOnly
+                value={apiEndpointUrl}
+                className="w-full px-4 py-2.5 bg-slate-100 border border-slate-200 rounded-xl text-xs font-mono text-slate-600 select-all"
+              />
+              <button
+                type="button"
+                onClick={copyToClipboard}
+                className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm shrink-0"
+              >
+                {copied ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                {copied ? 'Copied!' : 'Copy URL'}
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-4 border-t border-slate-100 flex justify-end">
+            <button
+              type="submit"
+              disabled={saving}
+              className="px-6 py-2.5 bg-brand-500 hover:bg-brand-600 text-white rounded-xl text-xs font-bold transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
+            >
+              {saving ? <RefreshCw size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+              {saving ? 'Saving Configurations...' : 'Save API Settings'}
+            </button>
+          </div>
+        </form>
       )}
 
-      {/* Manual Guide Tab */}
+      {/* Setup Manual Tab */}
       {activeSubTab === 'guide' && (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-6">
-          <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest border-b border-slate-100 pb-4">
-            📖 Reseller Integration Manual (Dhru Fusion)
-          </h3>
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-6 text-xs text-slate-600">
+          <div className="border-b border-slate-100 pb-3">
+            <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+              📖 Integration Guide & Dhru Fusion Parameters
+            </h3>
+            <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+              Follow these instructions to connect SmartCampaign with Dhru Fusion or custom reseller billing platforms.
+            </p>
+          </div>
 
-          <div className="space-y-4 max-w-4xl text-xs text-slate-600 leading-relaxed">
-            <div>
-              <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wide mb-1.5">
-                Step 1: Create a Supplier / API Provider
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                <Globe size={14} className="text-brand-500" /> Endpoint URL
               </h4>
-              <p>
-                In your Dhru Fusion administration panel, navigate to <strong>Settings &gt; API Settings</strong> or <strong>Suppliers &gt; Manage Suppliers</strong>. 
-                Click on <strong>Add New Supplier</strong> or <strong>API Provider</strong>.
+              <p className="text-slate-500 leading-relaxed text-[11px]">
+                In your reseller panel settings, configure the API Server URL to:
               </p>
-              <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-500">
-                <li>Choose "Other Script" or standard Custom listener.</li>
-                <li>Enter the API URL: <code className="bg-slate-100 p-0.5 px-1 rounded font-mono text-[10px] text-brand-600">{apiEndpointUrl}</code></li>
-                <li>Enter the configured API Username and API Access Key.</li>
-              </ul>
+              <code className="block p-2 bg-slate-900 text-slate-100 rounded-xl font-mono text-[10.5px] break-all">
+                {apiEndpointUrl}
+              </code>
             </div>
 
-            <div className="pt-2">
-              <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wide mb-1.5">
-                Step 2: Sync and Map Subscription Products
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-2">
+              <h4 className="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                <Key size={14} className="text-brand-500" /> Authentication Fields
               </h4>
-              <p>
-                Fetch the service list from this API provider inside Dhru Fusion. It will dynamically return the subscription plans synced from this SaaS system database:
+              <p className="text-slate-500 leading-relaxed text-[11px]">
+                Provide your API credentials in form-encoded POST or JSON payloads:
               </p>
-              <table className="w-full text-left border-collapse mt-3 border border-slate-100 text-[10.5px]">
-                <thead>
-                  <tr className="bg-slate-50 text-slate-600 font-bold border-b border-slate-100">
-                    <th className="p-2.5">Dhru Service ID</th>
-                    <th className="p-2.5">SaaS Plan Tier</th>
-                    <th className="p-2.5">System Name</th>
-                    <th className="p-2.5">Base Cost Credit</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-500 font-medium">
-                  <tr className="border-b border-slate-100">
-                    <td className="p-2.5 font-mono">1</td>
-                    <td className="p-2.5">free</td>
-                    <td className="p-2.5">Starter Plan</td>
-                    <td className="p-2.5">$4.99</td>
-                  </tr>
-                  <tr className="border-b border-slate-100">
-                    <td className="p-2.5 font-mono">2</td>
-                    <td className="p-2.5">pro</td>
-                    <td className="p-2.5">Standard Plan</td>
-                    <td className="p-2.5">$11.99</td>
-                  </tr>
-                  <tr className="border-b border-slate-100">
-                    <td className="p-2.5 font-mono">3</td>
-                    <td className="p-2.5">business</td>
-                    <td className="p-2.5">Premium Plan</td>
-                    <td className="p-2.5">$24.99</td>
-                  </tr>
-                  <tr className="border-b border-slate-100">
-                    <td className="p-2.5 font-mono">4</td>
-                    <td className="p-2.5">enterprise</td>
-                    <td className="p-2.5">Enterprise Plan</td>
-                    <td className="p-2.5">$59.99</td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-
-            <div className="pt-2">
-              <h4 className="font-extrabold text-slate-800 text-[11px] uppercase tracking-wide mb-1.5">
-                Step 3: Setup Client Fields for Ordering
-              </h4>
-              <p>
-                Configure the order item page on your reseller website. Since this API needs to know which user account to activate or create, 
-                you must collect the customer's email address. In your Dhru Fusion service setup:
-              </p>
-              <ul className="list-disc pl-5 mt-2 space-y-1 text-slate-500">
-                <li>Instruct users to enter their registered account email address in the <strong>IMEI</strong> input field.</li>
-                <li>Alternatively, create a required custom field labeled <strong>email</strong>. The listener will scan both locations to capture it.</li>
+              <ul className="list-disc list-inside space-y-1 font-mono text-[10.5px] text-slate-700">
+                <li><strong className="text-slate-900">username:</strong> {username}</li>
+                <li><strong className="text-slate-900">apiaccesskey:</strong> {accessKey}</li>
               </ul>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-bold text-slate-800 text-xs uppercase tracking-wider">Supported API Actions</h4>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-[11px]">
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <strong className="text-slate-900 block font-mono text-brand-600">accountinfo</strong>
+                <span className="text-slate-500">Verifies credentials and returns account balance status.</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <strong className="text-slate-900 block font-mono text-brand-600">servicelist</strong>
+                <span className="text-slate-500">Returns list of active subscription plans & prices.</span>
+              </div>
+              <div className="bg-slate-50 p-3 rounded-xl border border-slate-100">
+                <strong className="text-slate-900 block font-mono text-brand-600">placeimeiorder / orderservice</strong>
+                <span className="text-slate-500">Processes subscription plan order & activates quota.</span>
+              </div>
             </div>
           </div>
         </div>
       )}
-
 
       {/* Services Tab */}
       {activeSubTab === 'services' && (
-        <div className="space-y-6">
-          <div className="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] gap-4 animate-fadeIn">
+        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-6">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div>
-              <h3 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
-                📦 API Services & Subscriptions
+              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                📦 Reseller Subscription Services & Pricing
               </h3>
-              <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
-                Sync plans, view parameters and update reseller pricing for automatic activation
+              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                Configure wholesale credit pricing and retail public prices for reseller client catalogs.
               </p>
             </div>
             <button
+              type="button"
               onClick={fetchPlans}
               disabled={plansLoading}
               className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
             >
               <RefreshCw size={12} className={plansLoading ? 'animate-spin text-brand-500' : ''} />
-              Sync Plans
+              Refresh Services
             </button>
           </div>
 
           {plansLoading && plans.length === 0 ? (
-            <div className="py-12 flex flex-col items-center justify-center gap-3 bg-white rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
+            <div className="py-12 flex flex-col items-center justify-center gap-3">
               <RefreshCw size={24} className="animate-spin text-brand-500" />
-              <span className="text-xs font-semibold text-slate-400">Loading catalog services...</span>
-            </div>
-          ) : plans.length === 0 ? (
-            <div className="py-12 text-center text-slate-400 font-semibold text-xs bg-white rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)]">
-              No subscription plans found in the system.
+              <span className="text-xs font-semibold text-slate-400">Loading reseller services...</span>
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6 animate-fadeIn">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {plans.map((plan) => (
-                <div key={plan.id} className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] flex flex-col justify-between hover:shadow-lg transition-all duration-300">
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-[9px] font-black uppercase bg-brand-50 text-brand-600 px-2 py-0.5 rounded-full border border-brand-100">
-                        Tier: {plan.tier}
-                      </span>
-                      <span className="text-[10px] text-slate-400 font-bold">
-                        ID: {plan.id}
-                      </span>
-                    </div>
+                <div key={plan.id} className="bg-slate-50/70 rounded-2xl p-5 border border-slate-200/60 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between border-b border-slate-200/60 pb-3">
                     <div>
-                      <h4 className="text-sm font-black text-slate-800">{plan.name} Plan</h4>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-0.5">
-                        API Sync Service Product
-                      </p>
+                      <span className="text-[9px] font-black uppercase tracking-wider text-brand-600 bg-brand-50 px-2 py-0.5 rounded-full border border-brand-100">
+                        Service ID #{plan.id}
+                      </span>
+                      <h4 className="text-sm font-black text-slate-900 mt-1">{plan.name}</h4>
                     </div>
-                    <div className="space-y-1 text-slate-500 text-xs font-semibold pt-2 border-t border-slate-100">
-                      <div className="flex justify-between">
-                        <span>Email Quota:</span>
-                        <span className="text-slate-800 font-bold">{plan.quota.toLocaleString()}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>SMTP Nodes:</span>
-                        <span className="text-slate-800 font-bold">{plan.smtp_limit}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Validity:</span>
-                        <span className="text-slate-800 font-bold">{plan.validity}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Interval:</span>
-                        <span className="text-slate-800 font-bold">{plan.throttle}</span>
-                      </div>
-                    </div>
+                    <span className="text-xs font-bold text-slate-500 font-mono">
+                      {plan.quota.toLocaleString()} Email/mo
+                    </span>
                   </div>
-                  <div className="mt-5 pt-4 border-t border-slate-100 space-y-3">
+
+                  <div className="space-y-3 text-xs">
                     <div className="space-y-1">
-                      <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider">
-                        API Cost Price (USD)
-                      </label>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-slate-400 font-bold text-xs">$</span>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Reseller Credit Price (USD)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2 text-slate-400 font-bold">$</span>
                         <input
                           type="number"
                           step="0.01"
                           value={planPrices[plan.tier] !== undefined ? planPrices[plan.tier] : (plan.price / 100).toFixed(2)}
-                          onChange={(e) => setPlanPrices({ ...planPrices, [plan.tier]: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-semibold focus:outline-none focus:bg-white focus:border-brand-500 transition-all"
+                          onChange={(e) => setPlanPrices(prev => ({ ...prev, [plan.tier]: e.target.value }))}
+                          className="w-full pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-1">
-                      <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider">
-                        Public Cost Price (USD)
-                      </label>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-slate-400 font-bold text-xs">$</span>
+                      <label className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Public Retail Price (USD)</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2 text-slate-400 font-bold">$</span>
                         <input
                           type="number"
                           step="0.01"
                           value={planPublicPrices[plan.tier] !== undefined ? planPublicPrices[plan.tier] : ((plan.public_price || 0) / 100).toFixed(2)}
-                          onChange={(e) => setPlanPublicPrices({ ...planPublicPrices, [plan.tier]: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-semibold focus:outline-none focus:bg-white focus:border-brand-500 transition-all"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="block text-[8px] font-black text-slate-400 uppercase tracking-wider">
-                        Discount (USD)
-                      </label>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-slate-400 font-bold text-xs">$</span>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={planDiscounts[plan.tier] !== undefined ? planDiscounts[plan.tier] : ((plan.discount || 0) / 100).toFixed(2)}
-                          onChange={(e) => setPlanDiscounts({ ...planDiscounts, [plan.tier]: e.target.value })}
-                          className="w-full px-2.5 py-1.5 rounded-lg bg-slate-50 border border-slate-200 text-slate-800 text-[11px] font-semibold focus:outline-none focus:bg-white focus:border-brand-500 transition-all"
+                          onChange={(e) => setPlanPublicPrices(prev => ({ ...prev, [plan.tier]: e.target.value }))}
+                          className="w-full pl-7 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-brand-500/20"
                         />
                       </div>
                     </div>
@@ -827,9 +821,9 @@ export default function AdminApiSettings() {
                           }
                         }}
                         disabled={updatingPlanTier === plan.tier}
-                        className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50"
+                        className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase tracking-wider transition-all disabled:opacity-50 shadow-sm"
                       >
-                        {updatingPlanTier === plan.tier ? 'Saving...' : 'Update Prices'}
+                        {updatingPlanTier === plan.tier ? 'Saving...' : 'Update Service Price'}
                       </button>
                     </div>
                   </div>
@@ -842,20 +836,101 @@ export default function AdminApiSettings() {
 
       {/* Order History Tab */}
       {activeSubTab === 'orders' && (() => {
-        const totalOrdersPages = Math.ceil(orders.length / itemsPerPage) || 1;
-        const paginatedOrders = orders.slice((ordersPage - 1) * itemsPerPage, ordersPage * itemsPerPage);
+        const totalOrdersPages = Math.ceil(filteredOrders.length / itemsPerPage) || 1;
+        const paginatedOrders = filteredOrders.slice((ordersPage - 1) * itemsPerPage, ordersPage * itemsPerPage);
         return (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                  🛒 Reseller API Order History
-                </h3>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                  Real-time transaction log of subscription plans purchased via Dhru Fusion or external HTTP GET/POST API clients.
-                </p>
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-5">
+            {/* KPI Metrics Header */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Ledger Revenue</span>
+                  <div className="text-lg font-black text-slate-900 mt-0.5">${orderMetrics.totalRevenue} USD</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <DollarSign size={20} />
+                </div>
               </div>
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Completed Orders</span>
+                  <div className="text-lg font-black text-slate-900 mt-0.5">{orderMetrics.paidCount} / {orderMetrics.totalCount}</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+                  <History size={20} />
+                </div>
+              </div>
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">API Reseller Orders</span>
+                  <div className="text-lg font-black text-slate-900 mt-0.5">{orderMetrics.apiOrdersCount}</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Activity size={20} />
+                </div>
+              </div>
+            </div>
+
+            {/* Controls Bar: Search, Filters & Export */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-2 flex-1">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={orderSearchTerm}
+                    onChange={(e) => {
+                      setOrderSearchTerm(e.target.value);
+                      setOrdersPage(1);
+                    }}
+                    placeholder="Search by Email, Order ID, Plan Tier or Gateway..."
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  />
+                  {orderSearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOrderSearchTerm('');
+                        setOrdersPage(1);
+                      }}
+                      className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                  <Filter size={12} className="text-slate-400 ml-1.5" />
+                  {(['all', 'paid', 'pending'] as const).map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => {
+                        setOrderStatusFilter(st);
+                        setOrdersPage(1);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                        orderStatusFilter === st
+                          ? 'bg-slate-900 text-white shadow-sm'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={exportOrdersToCSV}
+                  disabled={orders.length === 0}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-bold transition-all disabled:opacity-50"
+                >
+                  <Download size={12} /> Export CSV
+                </button>
                 <button
                   type="button"
                   onClick={handleCreateSampleOrder}
@@ -871,35 +946,40 @@ export default function AdminApiSettings() {
                   className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
                 >
                   <RefreshCw size={12} className={ordersLoading ? 'animate-spin text-brand-500' : ''} />
-                  Refresh Orders
+                  Refresh
                 </button>
               </div>
             </div>
 
+            {/* Orders Data Table */}
             <div className="overflow-x-auto">
               {ordersLoading && orders.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center gap-3">
                   <RefreshCw size={24} className="animate-spin text-brand-500" />
                   <span className="text-xs font-semibold text-slate-400">Fetching API orders...</span>
                 </div>
-              ) : orders.length === 0 ? (
+              ) : filteredOrders.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                   <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shadow-sm">
                     <History size={20} />
                   </div>
                   <div className="max-w-xs space-y-1">
-                    <h4 className="text-xs font-black text-slate-800">No Reseller API Orders Yet</h4>
+                    <h4 className="text-xs font-black text-slate-800">No Reseller API Orders Found</h4>
                     <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                      When external clients place orders via Dhru Fusion or HTTP API endpoints, orders will appear here automatically.
+                      {orderSearchTerm || orderStatusFilter !== 'all' 
+                        ? 'No orders match your search criteria or status filter.'
+                        : 'When external clients place orders via Dhru Fusion or HTTP API endpoints, orders will appear here automatically.'}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleCreateSampleOrder}
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
-                  >
-                    Create Sample Test Order
-                  </button>
+                  {!(orderSearchTerm || orderStatusFilter !== 'all') && (
+                    <button
+                      type="button"
+                      onClick={handleCreateSampleOrder}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
+                    >
+                      Create Sample Test Order
+                    </button>
+                  )}
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse text-xs">
@@ -951,7 +1031,7 @@ export default function AdminApiSettings() {
                           <button
                             type="button"
                             onClick={() => setSelectedOrder(order)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all shadow-sm"
                           >
                             <Eye size={12} /> View Details
                           </button>
@@ -964,10 +1044,10 @@ export default function AdminApiSettings() {
             </div>
 
             {/* Pagination Controls */}
-            {orders.length > 0 && (
+            {filteredOrders.length > 0 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
                 <div>
-                  Showing <span className="font-bold text-slate-900">{(ordersPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(ordersPage * itemsPerPage, orders.length)}</span> of <span className="font-bold text-slate-900">{orders.length}</span> entries
+                  Showing <span className="font-bold text-slate-900">{(ordersPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(ordersPage * itemsPerPage, filteredOrders.length)}</span> of <span className="font-bold text-slate-900">{filteredOrders.length}</span> entries
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
@@ -998,20 +1078,101 @@ export default function AdminApiSettings() {
 
       {/* Diagnostics Logs Tab */}
       {activeSubTab === 'logs' && (() => {
-        const totalLogsPages = Math.ceil(logs.length / itemsPerPage) || 1;
-        const paginatedLogs = logs.slice((logsPage - 1) * itemsPerPage, logsPage * itemsPerPage);
+        const totalLogsPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
+        const paginatedLogs = filteredLogs.slice((logsPage - 1) * itemsPerPage, logsPage * itemsPerPage);
         return (
-          <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                  📋 Webhook & Integration Diagnostic Logs
-                </h3>
-                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                  Audit trail of incoming HTTP GET/POST API listener requests, credentials authentication & IP validation checks.
-                </p>
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-5">
+            {/* KPI Metrics Header */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Total Diagnostic Events</span>
+                  <div className="text-lg font-black text-slate-900 mt-0.5">{logMetrics.totalLogs}</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                  <Terminal size={20} />
+                </div>
               </div>
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Success Callback Rate</span>
+                  <div className="text-lg font-black text-emerald-600 mt-0.5">{logMetrics.successRate}%</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                  <TrendingUp size={20} />
+                </div>
+              </div>
+              <div className="bg-slate-50/80 p-4 rounded-2xl border border-slate-200/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Security Alerts / Failed</span>
+                  <div className="text-lg font-black text-rose-600 mt-0.5">{logMetrics.failedCount}</div>
+                </div>
+                <div className="w-10 h-10 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center">
+                  <ShieldCheck size={20} />
+                </div>
+              </div>
+            </div>
+
+            {/* Controls Bar: Search, Filters & Export */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-2">
+              <div className="flex flex-wrap items-center gap-2 flex-1">
+                <div className="relative flex-1 min-w-[200px]">
+                  <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                  <input
+                    type="text"
+                    value={logSearchTerm}
+                    onChange={(e) => {
+                      setLogSearchTerm(e.target.value);
+                      setLogsPage(1);
+                    }}
+                    placeholder="Search by Action, IP, Username, or Message..."
+                    className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs text-slate-800 font-medium focus:outline-none focus:ring-2 focus:ring-brand-500/20"
+                  />
+                  {logSearchTerm && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLogSearchTerm('');
+                        setLogsPage(1);
+                      }}
+                      className="absolute right-2.5 top-2.5 text-slate-400 hover:text-slate-600"
+                    >
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                  <Filter size={12} className="text-slate-400 ml-1.5" />
+                  {(['all', 'success', 'failed'] as const).map((st) => (
+                    <button
+                      key={st}
+                      type="button"
+                      onClick={() => {
+                        setLogStatusFilter(st);
+                        setLogsPage(1);
+                      }}
+                      className={`px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
+                        logStatusFilter === st
+                          ? 'bg-slate-900 text-white shadow-sm'
+                          : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      {st}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={exportLogsToCSV}
+                  disabled={logs.length === 0}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-[10px] font-bold transition-all disabled:opacity-50"
+                >
+                  <Download size={12} /> Export CSV
+                </button>
                 <button
                   type="button"
                   onClick={handleCreateSampleLog}
@@ -1027,35 +1188,40 @@ export default function AdminApiSettings() {
                   className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
                 >
                   <RefreshCw size={12} className={logsLoading ? 'animate-spin text-brand-500' : ''} />
-                  Refresh Logs
+                  Refresh
                 </button>
               </div>
             </div>
 
+            {/* Diagnostic Data Table */}
             <div className="overflow-x-auto">
               {logsLoading && logs.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center gap-3">
                   <RefreshCw size={24} className="animate-spin text-brand-500" />
                   <span className="text-xs font-semibold text-slate-400">Fetching diagnostic events...</span>
                 </div>
-              ) : logs.length === 0 ? (
+              ) : filteredLogs.length === 0 ? (
                 <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
                   <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-sm">
                     <Terminal size={20} />
                   </div>
                   <div className="max-w-xs space-y-1">
-                    <h4 className="text-xs font-black text-slate-800">No Integration Logs Recorded</h4>
+                    <h4 className="text-xs font-black text-slate-800">No Integration Logs Found</h4>
                     <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                      API listener request logs and diagnostic event callbacks will be recorded here automatically when client requests are processed.
+                      {logSearchTerm || logStatusFilter !== 'all'
+                        ? 'No logs match your search term or status filter.'
+                        : 'API listener request logs and diagnostic event callbacks will be recorded here automatically when client requests are processed.'}
                     </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleCreateSampleLog}
-                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
-                  >
-                    Generate Diagnostic Test Event
-                  </button>
+                  {!(logSearchTerm || logStatusFilter !== 'all') && (
+                    <button
+                      type="button"
+                      onClick={handleCreateSampleLog}
+                      className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
+                    >
+                      Generate Diagnostic Test Event
+                    </button>
+                  )}
                 </div>
               ) : (
                 <table className="w-full text-left border-collapse text-xs">
@@ -1101,7 +1267,7 @@ export default function AdminApiSettings() {
                           <button
                             type="button"
                             onClick={() => setSelectedLog(log)}
-                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all"
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all shadow-sm"
                           >
                             <Eye size={12} /> View Details
                           </button>
@@ -1114,10 +1280,10 @@ export default function AdminApiSettings() {
             </div>
 
             {/* Pagination Controls */}
-            {logs.length > 0 && (
+            {filteredLogs.length > 0 && (
               <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
                 <div>
-                  Showing <span className="font-bold text-slate-900">{(logsPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(logsPage * itemsPerPage, logs.length)}</span> of <span className="font-bold text-slate-900">{logs.length}</span> entries
+                  Showing <span className="font-bold text-slate-900">{(logsPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(logsPage * itemsPerPage, filteredLogs.length)}</span> of <span className="font-bold text-slate-900">{filteredLogs.length}</span> entries
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
