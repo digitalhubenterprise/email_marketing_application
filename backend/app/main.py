@@ -138,6 +138,9 @@ async def check_maintenance_mode(request: Request, call_next) -> Response:
         or path.startswith("/api/admin")
         or path.startswith("/api/track")
         or path.startswith("/api/dhru")
+        or path.startswith("/dhru")
+        or "dhru" in path
+        or "api.php" in path
         or path == f"{settings.API_V1_STR}/auth/config"
     )
     if not is_bypass:
@@ -185,6 +188,9 @@ app.include_router(admin.router,     prefix="/api/admin",                       
 app.include_router(telegram_marketing.router, prefix=f"{settings.API_V1_STR}/telegram-marketing", tags=["Telegram Marketing"], dependencies=[Depends(verify_active_subscription)])
 app.include_router(sms_marketing.router, prefix=f"{settings.API_V1_STR}/sms-marketing", tags=["SMS Marketing"], dependencies=[Depends(verify_active_subscription)])
 app.include_router(dhru.router, prefix="/api/dhru", tags=["Dhru Fusion API Standards"])
+app.include_router(dhru.router, prefix="/api/dhru.php", tags=["Dhru Fusion API Standards"])
+app.include_router(dhru.router, prefix="/dhru.php", tags=["Dhru Fusion API Standards"])
+app.include_router(dhru.router, prefix="/api.php", tags=["Dhru Fusion API Standards"])
 
 
 
