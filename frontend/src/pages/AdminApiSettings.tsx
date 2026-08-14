@@ -278,7 +278,9 @@ export default function AdminApiSettings() {
 
   useEffect(() => {
     let interval: any = null;
-    if (activeSubTab === 'orders') {
+    if (activeSubTab === 'services') {
+      fetchPlans();
+    } else if (activeSubTab === 'orders') {
       fetchOrders();
     } else if (activeSubTab === 'logs') {
       fetchLogs();

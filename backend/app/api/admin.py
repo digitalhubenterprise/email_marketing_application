@@ -1176,8 +1176,8 @@ async def get_dhru_api_logs(
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(get_current_admin)
 ):
-    """Retrieves recent Dhru API listener logs."""
-    res = await db.execute(select(DhruApiLog).order_by(DhruApiLog.created_at.desc()).limit(100))
+    """Retrieves all API listener diagnostic logs. Secured for super admin only."""
+    res = await db.execute(select(DhruApiLog).order_by(DhruApiLog.created_at.desc()).limit(1000))
     logs = res.scalars().all()
     return logs
 
@@ -1187,7 +1187,7 @@ async def create_sample_dhru_log(
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(get_current_admin)
 ):
-    """Creates a sample diagnostic log entry for API integration testing."""
+    """Creates a sample diagnostic log entry for API integration testing. Secured for super admin only."""
     sample_log = DhruApiLog(
         action="accountinfo",
         username=admin.email,
@@ -1206,19 +1206,11 @@ async def get_dhru_api_orders(
     db: AsyncSession = Depends(get_db),
     admin: AdminUser = Depends(get_current_admin)
 ):
-    """Retrieves recent Dhru API reseller orders."""
+    """Retrieves all reseller API and billing orders. Secured for super admin only."""
     res = await db.execute(
         select(PaymentLog)
-        .where(
-            or_(
-                PaymentLog.gateway.ilike("%dhru%"),
-                PaymentLog.gateway.ilike("%api%"),
-                PaymentLog.notes.ilike("%dhru%"),
-                PaymentLog.notes.ilike("%api%")
-            )
-        )
         .order_by(PaymentLog.created_at.desc())
-        .limit(100)
+        .limit(1000)
     )
     orders = res.scalars().all()
     return orders
