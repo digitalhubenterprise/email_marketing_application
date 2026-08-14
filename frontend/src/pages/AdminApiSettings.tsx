@@ -14,7 +14,9 @@ import {
   ToggleLeft,
   ToggleRight,
   History,
-  DollarSign
+  DollarSign,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react'
 
 interface DhruLog {
@@ -99,6 +101,11 @@ export default function AdminApiSettings() {
 
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(false);
+
+  // Pagination states (15 items per page)
+  const itemsPerPage = 15;
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [logsPage, setLogsPage] = useState(1);
   
   const apiEndpointUrl = `${window.location.origin}/api/dhru`;
 
@@ -828,222 +835,290 @@ export default function AdminApiSettings() {
       )}
 
       {/* Order History Tab */}
-      {activeSubTab === 'orders' && (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                🛒 Reseller API Order History
-              </h3>
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                Real-time transaction log of subscription plans purchased via Dhru Fusion or external HTTP GET/POST API clients.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleCreateSampleOrder}
-                disabled={ordersLoading}
-                className="flex items-center gap-1 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
-              >
-                + Generate Test Order
-              </button>
-              <button
-                type="button"
-                onClick={fetchOrders}
-                disabled={ordersLoading}
-                className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
-              >
-                <RefreshCw size={12} className={ordersLoading ? 'animate-spin text-brand-500' : ''} />
-                Refresh Orders
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            {ordersLoading && orders.length === 0 ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3">
-                <RefreshCw size={24} className="animate-spin text-brand-500" />
-                <span className="text-xs font-semibold text-slate-400">Fetching API orders...</span>
+      {activeSubTab === 'orders' && (() => {
+        const totalOrdersPages = Math.ceil(orders.length / itemsPerPage) || 1;
+        const paginatedOrders = orders.slice((ordersPage - 1) * itemsPerPage, ordersPage * itemsPerPage);
+        return (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                  🛒 Reseller API Order History
+                </h3>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                  Real-time transaction log of subscription plans purchased via Dhru Fusion or external HTTP GET/POST API clients.
+                </p>
               </div>
-            ) : orders.length === 0 ? (
-              <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shadow-sm">
-                  <History size={20} />
-                </div>
-                <div className="max-w-xs space-y-1">
-                  <h4 className="text-xs font-black text-slate-800">No Reseller API Orders Yet</h4>
-                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                    When external clients place orders via Dhru Fusion or HTTP API endpoints, orders will appear here automatically.
-                  </p>
-                </div>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleCreateSampleOrder}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
+                  disabled={ordersLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
                 >
-                  Create Sample Test Order
+                  + Generate Test Order
+                </button>
+                <button
+                  type="button"
+                  onClick={fetchOrders}
+                  disabled={ordersLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
+                >
+                  <RefreshCw size={12} className={ordersLoading ? 'animate-spin text-brand-500' : ''} />
+                  Refresh Orders
                 </button>
               </div>
-            ) : (
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
-                    <th className="p-3">Order ID</th>
-                    <th className="p-3">Timestamp</th>
-                    <th className="p-3">Customer Email</th>
-                    <th className="p-3">Plan Tier</th>
-                    <th className="p-3 text-right">Amount (USD)</th>
-                    <th className="p-3 text-center">Status</th>
-                    <th className="p-3">Details / Notes</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-600 font-medium">
-                  {orders.map((order) => (
-                    <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                      <td className="p-3 font-mono font-bold text-slate-900">
-                        #{order.id}
-                      </td>
-                      <td className="p-3 text-[10.5px] whitespace-nowrap text-slate-400">
-                        {new Date(order.created_at).toLocaleString()}
-                      </td>
-                      <td className="p-3 text-slate-800 font-bold">
-                        {order.user_email}
-                      </td>
-                      <td className="p-3">
-                        <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
-                          {order.plan_tier}
-                        </span>
-                      </td>
-                      <td className="p-3 text-right font-bold text-slate-900">
-                        ${typeof order.amount === 'number' && order.amount > 500 ? (order.amount / 100).toFixed(2) : Number(order.amount || 0).toFixed(2)}
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                          order.status === 'paid' 
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                            : 'bg-amber-50 text-amber-600 border border-amber-100'
-                        }`}>
-                          {order.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-[11px] text-slate-500 max-w-sm truncate" title={order.notes || ''}>
-                        {order.notes || '-'}
-                      </td>
+            </div>
+
+            <div className="overflow-x-auto">
+              {ordersLoading && orders.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-3">
+                  <RefreshCw size={24} className="animate-spin text-brand-500" />
+                  <span className="text-xs font-semibold text-slate-400">Fetching API orders...</span>
+                </div>
+              ) : orders.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="w-12 h-12 rounded-2xl bg-brand-50 text-brand-500 flex items-center justify-center shadow-sm">
+                    <History size={20} />
+                  </div>
+                  <div className="max-w-xs space-y-1">
+                    <h4 className="text-xs font-black text-slate-800">No Reseller API Orders Yet</h4>
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                      When external clients place orders via Dhru Fusion or HTTP API endpoints, orders will appear here automatically.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateSampleOrder}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
+                  >
+                    Create Sample Test Order
+                  </button>
+                </div>
+              ) : (
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
+                      <th className="p-3">Order ID</th>
+                      <th className="p-3">Timestamp</th>
+                      <th className="p-3">Customer Email</th>
+                      <th className="p-3">Plan Tier</th>
+                      <th className="p-3 text-right">Amount (USD)</th>
+                      <th className="p-3 text-center">Status</th>
+                      <th className="p-3">Details / Notes</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="text-slate-600 font-medium">
+                    {paginatedOrders.map((order) => (
+                      <tr key={order.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                        <td className="p-3 font-mono font-bold text-slate-900">
+                          #{order.id}
+                        </td>
+                        <td className="p-3 text-[10.5px] whitespace-nowrap text-slate-400">
+                          {new Date(order.created_at).toLocaleString()}
+                        </td>
+                        <td className="p-3 text-slate-800 font-bold">
+                          {order.user_email}
+                        </td>
+                        <td className="p-3">
+                          <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-slate-100 text-slate-600 border border-slate-200">
+                            {order.plan_tier}
+                          </span>
+                        </td>
+                        <td className="p-3 text-right font-bold text-slate-900">
+                          ${typeof order.amount === 'number' && order.amount > 500 ? (order.amount / 100).toFixed(2) : Number(order.amount || 0).toFixed(2)}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                            order.status === 'paid' 
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                              : 'bg-amber-50 text-amber-600 border border-amber-100'
+                          }`}>
+                            {order.status}
+                          </span>
+                        </td>
+                        <td className="p-3 text-[11px] text-slate-500 max-w-sm truncate" title={order.notes || ''}>
+                          {order.notes || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            {orders.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
+                <div>
+                  Showing <span className="font-bold text-slate-900">{(ordersPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(ordersPage * itemsPerPage, orders.length)}</span> of <span className="font-bold text-slate-900">{orders.length}</span> entries
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setOrdersPage(prev => Math.max(prev - 1, 1))}
+                    disabled={ordersPage === 1}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-40 font-bold transition-all text-[11px]"
+                  >
+                    <ChevronLeft size={14} /> Previous
+                  </button>
+                  <span className="px-3 py-1 bg-slate-100 rounded-xl font-mono text-[11px] font-bold text-slate-700">
+                    Page {ordersPage} of {totalOrdersPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setOrdersPage(prev => Math.min(prev + 1, totalOrdersPages))}
+                    disabled={ordersPage >= totalOrdersPages}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-40 font-bold transition-all text-[11px]"
+                  >
+                    Next <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Diagnostics Logs Tab */}
-      {activeSubTab === 'logs' && (
-        <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-            <div>
-              <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                📋 Webhook & Integration Diagnostic Logs
-              </h3>
-              <p className="text-[10px] text-slate-400 font-medium mt-0.5">
-                Audit trail of incoming HTTP GET/POST API listener requests, credentials authentication & IP validation checks.
-              </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={handleCreateSampleLog}
-                disabled={logsLoading}
-                className="flex items-center gap-1 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
-              >
-                + Generate Test Event
-              </button>
-              <button
-                type="button"
-                onClick={fetchLogs}
-                disabled={logsLoading}
-                className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
-              >
-                <RefreshCw size={12} className={logsLoading ? 'animate-spin text-brand-500' : ''} />
-                Refresh Logs
-              </button>
-            </div>
-          </div>
-
-          <div className="overflow-x-auto">
-            {logsLoading && logs.length === 0 ? (
-              <div className="py-12 flex flex-col items-center justify-center gap-3">
-                <RefreshCw size={24} className="animate-spin text-brand-500" />
-                <span className="text-xs font-semibold text-slate-400">Fetching diagnostic events...</span>
+      {activeSubTab === 'logs' && (() => {
+        const totalLogsPages = Math.ceil(logs.length / itemsPerPage) || 1;
+        const paginatedLogs = logs.slice((logsPage - 1) * itemsPerPage, logsPage * itemsPerPage);
+        return (
+          <div className="bg-white rounded-2xl p-6 border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] animate-fadeIn space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+              <div>
+                <h3 className="text-xs font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
+                  📋 Webhook & Integration Diagnostic Logs
+                </h3>
+                <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                  Audit trail of incoming HTTP GET/POST API listener requests, credentials authentication & IP validation checks.
+                </p>
               </div>
-            ) : logs.length === 0 ? (
-              <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
-                <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-sm">
-                  <Terminal size={20} />
-                </div>
-                <div className="max-w-xs space-y-1">
-                  <h4 className="text-xs font-black text-slate-800">No Integration Logs Recorded</h4>
-                  <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
-                    API listener request logs and diagnostic event callbacks will be recorded here automatically when client requests are processed.
-                  </p>
-                </div>
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={handleCreateSampleLog}
-                  className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
+                  disabled={logsLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-brand-50 hover:bg-brand-100 text-brand-700 border border-brand-200 rounded-xl text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
                 >
-                  Generate Diagnostic Test Event
+                  + Generate Test Event
+                </button>
+                <button
+                  type="button"
+                  onClick={fetchLogs}
+                  disabled={logsLoading}
+                  className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-50 text-[10px] font-bold tracking-wide transition-all disabled:opacity-50"
+                >
+                  <RefreshCw size={12} className={logsLoading ? 'animate-spin text-brand-500' : ''} />
+                  Refresh Logs
                 </button>
               </div>
-            ) : (
-              <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
-                    <th className="p-3">Timestamp</th>
-                    <th className="p-3">Action</th>
-                    <th className="p-3">API User</th>
-                    <th className="p-3">Client IP</th>
-                    <th className="p-3 text-center">Status</th>
-                    <th className="p-3">Details / Message</th>
-                  </tr>
-                </thead>
-                <tbody className="text-slate-600 font-medium">
-                  {logs.map((log) => (
-                    <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
-                      <td className="p-3 text-[10.5px] whitespace-nowrap text-slate-400">
-                        {new Date(log.created_at).toLocaleString()}
-                      </td>
-                      <td className="p-3 font-mono font-bold text-brand-600">
-                        {log.action}
-                      </td>
-                      <td className="p-3 text-slate-500 font-mono">
-                        {log.username || '-'}
-                      </td>
-                      <td className="p-3 text-slate-400 font-mono">
-                        {log.ip_address || '-'}
-                      </td>
-                      <td className="p-3 text-center">
-                        <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
-                          log.status === 'success' 
-                            ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
-                            : 'bg-rose-50 text-rose-600 border border-rose-100'
-                        }`}>
-                          {log.status}
-                        </span>
-                      </td>
-                      <td className="p-3 text-[11px] text-slate-500 max-w-sm truncate" title={log.message || ''}>
-                        {log.message || '-'}
-                      </td>
+            </div>
+
+            <div className="overflow-x-auto">
+              {logsLoading && logs.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center gap-3">
+                  <RefreshCw size={24} className="animate-spin text-brand-500" />
+                  <span className="text-xs font-semibold text-slate-400">Fetching diagnostic events...</span>
+                </div>
+              ) : logs.length === 0 ? (
+                <div className="py-12 flex flex-col items-center justify-center text-center space-y-3 bg-slate-50/50 rounded-2xl border border-dashed border-slate-200">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-500 flex items-center justify-center shadow-sm">
+                    <Terminal size={20} />
+                  </div>
+                  <div className="max-w-xs space-y-1">
+                    <h4 className="text-xs font-black text-slate-800">No Integration Logs Recorded</h4>
+                    <p className="text-[11px] text-slate-500 font-medium leading-relaxed">
+                      API listener request logs and diagnostic event callbacks will be recorded here automatically when client requests are processed.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleCreateSampleLog}
+                    className="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-extrabold tracking-wide transition-all shadow-sm"
+                  >
+                    Generate Diagnostic Test Event
+                  </button>
+                </div>
+              ) : (
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-100 text-slate-500 font-bold uppercase tracking-wider text-[9px]">
+                      <th className="p-3">Timestamp</th>
+                      <th className="p-3">Action</th>
+                      <th className="p-3">API User</th>
+                      <th className="p-3">Client IP</th>
+                      <th className="p-3 text-center">Status</th>
+                      <th className="p-3">Details / Message</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody className="text-slate-600 font-medium">
+                    {paginatedLogs.map((log) => (
+                      <tr key={log.id} className="border-b border-slate-100 hover:bg-slate-50/50 transition-colors">
+                        <td className="p-3 text-[10.5px] whitespace-nowrap text-slate-400">
+                          {new Date(log.created_at).toLocaleString()}
+                        </td>
+                        <td className="p-3 font-mono font-bold text-brand-600">
+                          {log.action}
+                        </td>
+                        <td className="p-3 text-slate-500 font-mono">
+                          {log.username || '-'}
+                        </td>
+                        <td className="p-3 text-slate-400 font-mono">
+                          {log.ip_address || '-'}
+                        </td>
+                        <td className="p-3 text-center">
+                          <span className={`inline-block px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                            log.status === 'success' 
+                              ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                              : 'bg-rose-50 text-rose-600 border border-rose-100'
+                          }`}>
+                            {log.status}
+                          </span>
+                        </td>
+                        <td className="p-3 text-[11px] text-slate-500 max-w-sm truncate" title={log.message || ''}>
+                          {log.message || '-'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Pagination Controls */}
+            {logs.length > 0 && (
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500 font-medium">
+                <div>
+                  Showing <span className="font-bold text-slate-900">{(logsPage - 1) * itemsPerPage + 1}</span> to <span className="font-bold text-slate-900">{Math.min(logsPage * itemsPerPage, logs.length)}</span> of <span className="font-bold text-slate-900">{logs.length}</span> entries
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setLogsPage(prev => Math.max(prev - 1, 1))}
+                    disabled={logsPage === 1}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-40 font-bold transition-all text-[11px]"
+                  >
+                    <ChevronLeft size={14} /> Previous
+                  </button>
+                  <span className="px-3 py-1 bg-slate-100 rounded-xl font-mono text-[11px] font-bold text-slate-700">
+                    Page {logsPage} of {totalLogsPages}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setLogsPage(prev => Math.min(prev + 1, totalLogsPages))}
+                    disabled={logsPage >= totalLogsPages}
+                    className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-xl text-slate-600 hover:bg-slate-50 disabled:opacity-40 font-bold transition-all text-[11px]"
+                  >
+                    Next <ChevronRight size={14} />
+                  </button>
+                </div>
+              </div>
             )}
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   )
 }
