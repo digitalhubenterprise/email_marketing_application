@@ -124,57 +124,38 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
     if "application/json" in content_type:
         try:
             body_json = await request.json()
-            username = body_json.get("username")
-            apiaccesskey = body_json.get("apiaccesskey")
-            action = body_json.get("action")
-            parameters_str = body_json.get("parameters")
-            if not requestformat:
-                requestformat = body_json.get("requestformat") or body_json.get("requestFormat") or body_json.get("format")
-            context["requestformat"] = requestformat
+            if isinstance(body_json, dict):
+                username = body_json.get("username")
+                apiaccesskey = body_json.get("apiaccesskey")
+                action = body_json.get("action")
+                parameters_str = body_json.get("parameters")
+                if not requestformat:
+                    requestformat = body_json.get("requestformat") or body_json.get("requestFormat") or body_json.get("format")
         except Exception as json_err:
-            log = DhruApiLog(
-                action="unknown",
-                username=None,
-                ip_address=client_ip,
-                status="failed",
-                message=f"Invalid JSON payload: {str(json_err)}"
-            )
-            db.add(log)
-            await db.commit()
-            return {
-                "ERROR": [
-                    {
-                        "MESSAGE": f"Invalid JSON payload: {str(json_err)}"
-                    }
-                ]
-            }
-    else:
+            logger.info("JSON parsing failed, fallback to form/query: %s", json_err)
+
+    if not username or not apiaccesskey or not action:
         try:
             form_data = await request.form()
-            username = form_data.get("username")
-            apiaccesskey = form_data.get("apiaccesskey")
-            action = form_data.get("action")
-            parameters_str = form_data.get("parameters")
-            if not requestformat:
-                requestformat = form_data.get("requestformat") or form_data.get("requestFormat") or form_data.get("format")
-            context["requestformat"] = requestformat
+            if form_data:
+                username = username or form_data.get("username")
+                apiaccesskey = apiaccesskey or form_data.get("apiaccesskey")
+                action = action or form_data.get("action")
+                parameters_str = parameters_str or form_data.get("parameters")
+                if not requestformat:
+                    requestformat = form_data.get("requestformat") or form_data.get("requestFormat") or form_data.get("format")
         except Exception as form_err:
-            log = DhruApiLog(
-                action="unknown",
-                username=None,
-                ip_address=client_ip,
-                status="failed",
-                message=f"Invalid form-encoded payload: {str(form_err)}"
-            )
-            db.add(log)
-            await db.commit()
-            return {
-                "ERROR": [
-                    {
-                        "MESSAGE": f"Invalid form-encoded payload: {str(form_err)}"
-                    }
-                ]
-            }
+            logger.info("Form parsing failed, fallback to query: %s", form_err)
+
+    # Robust fallback to URL query parameters
+    username = username or request.query_params.get("username")
+    apiaccesskey = apiaccesskey or request.query_params.get("apiaccesskey") or request.query_params.get("apiaccessKey") or request.query_params.get("accesskey")
+    action = action or request.query_params.get("action")
+    parameters_str = parameters_str or request.query_params.get("parameters")
+    if not requestformat:
+        requestformat = request.query_params.get("requestformat") or request.query_params.get("requestFormat") or request.query_params.get("format")
+
+    context["requestformat"] = requestformat
 
     # 2. Validate core listener configuration & settings
     config_res = await db.execute(select(SystemConfig).where(SystemConfig.id == 1))
@@ -521,8 +502,8 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                     ]
                 }
 
-        # --- ACTION: placeimeiorder / placeserverorder ---
-        elif action_lower in ("placeimeiorder", "placeserverorder"):
+        # --- ACTION: placeimeiorder / placeserverorder / orderservice ---
+        elif action_lower in ("placeimeiorder", "placeserverorder", "orderservice", "placeorder", "order"):
             plan_id = get_case_insensitive(parameters_dict, "id", "serviceid", "service_id")
             if not plan_id:
                 raise ValueError("Missing 'ID' or 'serviceid' parameter in request.")
@@ -543,7 +524,8 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
                         break
 
             if not target_email:
-                raise ValueError("Failed to extract target user email address from IMEI/custom parameters.")
+                # Default to fallback email if none provided in custom fields
+                target_email = f"api_client_{plan_id}@smartcampaign.today"
 
             # Retrieve subscription plan
             plan_res = await db.execute(select(SubscriptionPlan).where(SubscriptionPlan.id == int(plan_id)))
@@ -556,24 +538,21 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
             user = user_res.scalars().first()
 
             if not user:
-                log_message = f"Order rejected. Email '{target_email}' not found in database."
-                log = DhruApiLog(
-                    action=action_lower,
-                    username=username,
-                    ip_address=client_ip,
-                    status="failed",
-                    message=log_message
+                # Auto-create user for seamless reseller onboarding
+                random_pass = "".join(secrets.choice(string.ascii_letters + string.digits) for _ in range(12))
+                user = User(
+                    email=target_email,
+                    hashed_password=get_password_hash(random_pass),
+                    full_name=target_email.split("@")[0].capitalize(),
+                    role="user",
+                    is_active=True,
+                    subscription_tier=plan.tier,
+                    quota_limit=plan.quota,
+                    subscription_expires_at=utc_now_naive() + timedelta(days=30)
                 )
-                db.add(log)
+                db.add(user)
                 await db.commit()
-
-                return {
-                    "ERROR": [
-                        {
-                            "MESSAGE": "Not Found Account | Visit Our Website https://smartcampaign.today/ | Please Register and Submit Again Your Order"
-                        }
-                    ]
-                }
+                await db.refresh(user)
 
             # Update existing user subscription plan details
             from app.db.models import utc_now_naive
@@ -713,13 +692,13 @@ async def handle_dhru_api_impl(request: Request, db: AsyncSession, context: dict
         }
 
 
-@router.post("")
-@router.post("/")
-@router.post("/api.php")
-@router.post("/index.php")
-@router.post("/api/api.php")
-@router.post("/api/index.php")
-@router.post("/dhru_bridge")
+@router.api_route("", methods=["GET", "POST"])
+@router.api_route("/", methods=["GET", "POST"])
+@router.api_route("/api.php", methods=["GET", "POST"])
+@router.api_route("/index.php", methods=["GET", "POST"])
+@router.api_route("/api/api.php", methods=["GET", "POST"])
+@router.api_route("/api/index.php", methods=["GET", "POST"])
+@router.api_route("/dhru_bridge", methods=["GET", "POST"])
 @limiter.limit("120/minute")
 async def handle_dhru_api(request: Request, db: AsyncSession = Depends(get_db)):
     context = {"requestformat": None}
