@@ -338,29 +338,23 @@ export default function AdminApiSettings() {
 
   return (
     <div className="space-y-6">
-      {/* Title Header Panel */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between bg-white p-6 rounded-2xl border border-slate-200/60 shadow-[0_8px_30px_rgb(0,0,0,0.01)] gap-4 animate-fadeIn">
-        <div>
-          <h2 className="text-base font-black tracking-tight text-slate-900 flex items-center gap-2">
-            🔑 Reseller API Integration & Settings
-          </h2>
-          <p className="text-[10px] text-slate-400 font-bold mt-1 uppercase tracking-wider">
-            Configure credentials and monitor order webhooks for Dhru Fusion compatibility
-          </p>
+      {/* Notifications */}
+      {(saveSuccess || saveError) && (
+        <div className="space-y-2 animate-fadeIn">
+          {saveSuccess && (
+            <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <CheckCircle2 size={16} className="text-emerald-500" />
+              {saveSuccess}
+            </div>
+          )}
+          {saveError && (
+            <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-3 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm">
+              <AlertCircle size={16} className="text-rose-500" />
+              {saveError}
+            </div>
+          )}
         </div>
-        {saveSuccess && (
-          <div className="bg-emerald-50 border border-emerald-100 text-emerald-700 px-4 py-2 rounded-xl text-[10px] font-bold flex items-center gap-1.5 self-start md:self-auto">
-            <CheckCircle2 size={14} className="text-emerald-500" />
-            {saveSuccess}
-          </div>
-        )}
-        {saveError && (
-          <div className="bg-rose-50 border border-rose-100 text-rose-700 px-4 py-2 rounded-xl text-[10px] font-bold flex items-center gap-1.5 self-start md:self-auto">
-            <AlertCircle size={14} className="text-rose-500" />
-            {saveError}
-          </div>
-        )}
-      </div>
+      )}
 
       {/* Sub tabs navigation */}
       <div className="flex border-b border-slate-200/80 gap-2">
