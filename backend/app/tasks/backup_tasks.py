@@ -34,6 +34,7 @@ def parse_database_url():
     host = "localhost"
     port = 5432
     database = "smartcampaign"
+    sslmode = None
     
     # Split userinfo and hostinfo using the right-most '@'
     if "@" in db_url:
@@ -81,12 +82,27 @@ def parse_database_url():
             else:
                 user = db_url
 
+    # Strip query parameters (e.g. ?sslmode=require) from database name
+    if "?" in database:
+        db_name, query_str = database.split("?", 1)
+        database = db_name
+        from urllib.parse import parse_qs
+        qs = parse_qs(query_str)
+        if "sslmode" in qs and qs["sslmode"]:
+            sslmode = qs["sslmode"][0]
+
+    # Unquote URL-encoded characters in user and password
+    from urllib.parse import unquote
+    user = unquote(user)
+    password = unquote(password)
+
     return {
         "host": host,
         "port": port,
         "user": user,
         "password": password,
-        "database": database
+        "database": database,
+        "sslmode": sslmode
     }
 
 async def execute_remote_backup(config_id: int = 1, full_site: bool = False) -> str:
@@ -128,11 +144,16 @@ async def execute_remote_backup(config_id: int = 1, full_site: bool = False) -> 
                 "-f", sql_path
             ]
             
+            pg_env = os.environ.copy()
+            pg_env["PGPASSWORD"] = db_details["password"]
+            if db_details.get("sslmode"):
+                pg_env["PGSSLMODE"] = db_details["sslmode"]
+            
             try:
                 # Execute subprocess dump
                 result = subprocess.run(
                     pg_cmd,
-                    env={"PGPASSWORD": db_details["password"]},
+                    env=pg_env,
                     capture_output=True,
                     text=True,
                     check=True
@@ -520,10 +541,15 @@ async def execute_remote_restore(filename: str, config_id: int = 1) -> str:
                 "-f", sql_path
             ]
             
+            psql_env = os.environ.copy()
+            psql_env["PGPASSWORD"] = db_details["password"]
+            if db_details.get("sslmode"):
+                psql_env["PGSSLMODE"] = db_details["sslmode"]
+
             # Execute restore command
             result = subprocess.run(
                 psql_cmd,
-                env={"PGPASSWORD": db_details["password"]},
+                env=psql_env,
                 capture_output=True,
                 text=True,
                 check=True
