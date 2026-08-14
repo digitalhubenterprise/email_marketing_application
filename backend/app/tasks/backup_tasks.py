@@ -138,7 +138,15 @@ async def execute_remote_backup(config_id: int = 1, full_site: bool = False) -> 
                     check=True
                 )
             except subprocess.CalledProcessError as err:
-                error_msg = f"Database dump execution failed (pg_dump): {err.stderr}"
+                error_msg = f"Database dump execution failed (pg_dump): {err.stderr or str(err)}"
+                await log_backup_run(zip_filename, "failed", 0, error_msg)
+                raise RuntimeError(error_msg)
+            except FileNotFoundError:
+                error_msg = "Database dump execution failed: 'pg_dump' utility executable is not installed or not in system PATH."
+                await log_backup_run(zip_filename, "failed", 0, error_msg)
+                raise RuntimeError(error_msg)
+            except Exception as err:
+                error_msg = f"Database dump failed: {str(err)}"
                 await log_backup_run(zip_filename, "failed", 0, error_msg)
                 raise RuntimeError(error_msg)
 
@@ -215,6 +223,9 @@ async def execute_remote_backup(config_id: int = 1, full_site: bool = False) -> 
 
 async def upload_s3(config: RemoteBackupConfig, zip_path: str, zip_filename: str):
     """Handles file uploads to S3-compatible cloud storage."""
+    if not config.s3_endpoint or not config.s3_bucket or not config.s3_access_key:
+        raise ValueError("S3 configuration is incomplete. Please set Endpoint API URL, Bucket, and Access Key in storage settings.")
+    
     s3_secret = decrypt_smtp_password(config.s3_secret_key) if config.s3_secret_key else ""
     s3 = boto3.client(
         "s3",
@@ -230,6 +241,9 @@ async def upload_s3(config: RemoteBackupConfig, zip_path: str, zip_filename: str
 
 async def upload_ftp(config: RemoteBackupConfig, zip_path: str, zip_filename: str):
     """Handles file uploads to FTP/FTPS servers."""
+    if not config.ftp_host or not config.ftp_username:
+        raise ValueError("FTP configuration is incomplete. Please set FTP Host IP and FTP Username in storage settings.")
+        
     ftp_pass = decrypt_smtp_password(config.ftp_password) if config.ftp_password else ""
     ftp_class = ftplib.FTP_TLS if config.ftp_secure else ftplib.FTP
     

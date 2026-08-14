@@ -81,6 +81,7 @@ export default function AdminBackups() {
   const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [filesError, setFilesError] = useState<string | null>(null);
+  const [selectedLog, setSelectedLog] = useState<BackupLog | null>(null);
   
   // Form states
   const [provider, setProvider] = useState('ftp');
@@ -1218,6 +1219,8 @@ export default function AdminBackups() {
                         <th className="py-2.5 px-4">Status</th>
                         <th className="py-2.5 px-4">Size</th>
                         <th className="py-2.5 px-4">Execution Date</th>
+                        <th className="py-2.5 px-4">Details / Message</th>
+                        <th className="py-2.5 px-4 text-center">Action</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 text-[10px] text-slate-650 font-semibold">
@@ -1239,6 +1242,18 @@ export default function AdminBackups() {
                             {log.filename.startsWith("[RESTORE] ") ? '—' : formatBytes(log.size_bytes)}
                           </td>
                           <td className="py-2.5 px-4 font-mono text-slate-500">{formatDate(log.created_at)}</td>
+                          <td className="py-2.5 px-4 text-slate-500 max-w-xs truncate" title={log.message || ''}>
+                            {log.message || '-'}
+                          </td>
+                          <td className="py-2.5 px-4 text-center">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedLog(log)}
+                              className="inline-flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px] font-bold transition-all shadow-sm"
+                            >
+                              <Eye size={12} /> View
+                            </button>
+                          </td>
                         </tr>
                       ))}
                     </tbody>
@@ -1425,6 +1440,74 @@ export default function AdminBackups() {
                 className="px-6 py-2.5 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 disabled:opacity-30 disabled:hover:bg-slate-900 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-md"
               >
                 Close Console
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Backup Execution Log Details Modal */}
+      {selectedLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 space-y-5">
+            <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-brand-50 text-brand-600 flex items-center justify-center font-bold">
+                  #{selectedLog.id}
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Backup Execution Log Details</h3>
+                  <p className="text-[10px] text-slate-400 font-medium">Logged at {formatDate(selectedLog.created_at)}</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedLog(null)}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center transition-all"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-xs">
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Target File</span>
+                <span className="font-mono font-bold text-slate-900 break-all">{selectedLog.filename}</span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Execution Status</span>
+                <span className={`inline-block mt-1 px-2.5 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider ${
+                  selectedLog.status === 'success' 
+                    ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' 
+                    : 'bg-rose-50 text-rose-600 border border-rose-100'
+                }`}>
+                  {selectedLog.status}
+                </span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Archive File Size</span>
+                <span className="font-mono font-bold text-slate-800">{formatBytes(selectedLog.size_bytes)}</span>
+              </div>
+              <div className="bg-slate-50 p-3.5 rounded-2xl border border-slate-100">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Log ID</span>
+                <span className="font-mono font-bold text-slate-800">#{selectedLog.id}</span>
+              </div>
+            </div>
+
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100 space-y-1.5 text-xs">
+              <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Full Error / Execution Message</span>
+              <div className="bg-slate-900 text-slate-100 p-3 rounded-xl font-mono text-[11px] max-h-48 overflow-y-auto whitespace-pre-wrap break-all border border-slate-800">
+                {selectedLog.message || 'No detailed message returned.'}
+              </div>
+            </div>
+
+            <div className="pt-2">
+              <button
+                type="button"
+                onClick={() => setSelectedLog(null)}
+                className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black uppercase tracking-wider transition-all shadow-sm"
+              >
+                Close Window
               </button>
             </div>
           </div>
