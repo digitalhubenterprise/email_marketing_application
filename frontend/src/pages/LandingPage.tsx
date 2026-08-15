@@ -1354,7 +1354,7 @@ export default function LandingPage() {
         theme === 'dark' ? 'border-slate-800/80 bg-[#0d0e1a] text-slate-400' : 'border-slate-200 bg-slate-100 text-slate-600'
       }`}>
         <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
-          <div className="col-span-2 md:col-span-1 space-y-4">
+          <div className="col-span-2 md:col-span-1 space-y-4 flex flex-col items-center md:items-start">
             <div className="flex items-center gap-2">
               {activeFooterLogo ? (
                 <img src={activeFooterLogo} alt={siteName} loading="lazy" decoding="async" className="h-8 object-contain" />
@@ -1367,7 +1367,7 @@ export default function LandingPage() {
                 </div>
               )}
             </div>
-            <p className="text-xs leading-relaxed">
+            <p className="text-xs leading-relaxed text-center md:text-left">
               {appConfig?.seo_meta_description || "Modern SaaS email marketing, multi-node SMTP load balancer, bulk SMS gateway & Telegram automation suite."}
             </p>
           </div>
@@ -1405,10 +1405,10 @@ export default function LandingPage() {
         <div className={`max-w-7xl mx-auto pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4 text-xs ${
           theme === 'dark' ? 'border-slate-800/60 text-slate-500' : 'border-slate-200 text-slate-500'
         }`}>
-          <div>
+          <div className="text-center sm:text-left">
             Copyright &copy; 2026 {siteName} / {companyName}. All rights reserved.
           </div>
-          <div className="flex gap-6">
+          <div className="flex justify-center sm:justify-start gap-6">
             <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-400 transition-colors">Privacy Policy</a>
             <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-400 transition-colors">Terms of Service</a>
           </div>
