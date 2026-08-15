@@ -1411,7 +1411,6 @@ export default function LandingPage() {
           <div className="flex gap-6">
             <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-400 transition-colors">Privacy Policy</a>
             <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-slate-400 transition-colors">Terms of Service</a>
-            <Link to="/master_adm/login" className="hover:text-brand-500 transition-colors">Admin Portal</Link>
           </div>
         </div>
       </footer>
