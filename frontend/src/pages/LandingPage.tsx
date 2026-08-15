@@ -586,109 +586,109 @@ export default function LandingPage() {
             </button>
           </div>
         </div>
+      </header>
  
-        {/* Mobile Drawer */}
-        {mobileMenuOpen && (
-          <>
-            {/* Backdrop overlay */}
-            <div 
-              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-fadeIn" 
-              onClick={() => setMobileMenuOpen(false)}
-            />
-            {/* Drawer Panel */}
-            <div className={`fixed top-0 right-0 h-full w-[290px] max-w-[85vw] z-50 shadow-2xl p-6 flex flex-col justify-between animate-slideInRight border-l transition-all lg:hidden ${
-              theme === 'dark' ? 'bg-[#0d0e1a]/98 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
-            }`}>
-              <div>
-                {/* Header of Drawer */}
-                <div className="flex items-center justify-between pb-4 border-b border-slate-800/40 mb-5">
-                  <div className="flex items-center gap-2">
-                    <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white font-black text-sm">
-                      {siteName.substring(0, 1) || "S"}
-                    </div>
-                    <span className="font-extrabold text-sm tracking-tight">{siteName}</span>
+      {/* Mobile Drawer (placed outside header to avoid stacking context & filter rendering bugs) */}
+      {mobileMenuOpen && (
+        <>
+          {/* Backdrop overlay */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-fadeIn" 
+            onClick={() => setMobileMenuOpen(false)}
+          />
+          {/* Drawer Panel */}
+          <div className={`fixed top-0 right-0 h-full w-[290px] max-w-[85vw] z-50 shadow-2xl p-6 flex flex-col justify-between animate-slideInRight border-l transition-all lg:hidden ${
+            theme === 'dark' ? 'bg-[#0d0e1a] border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+          }`}>
+            <div>
+              {/* Header of Drawer */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800/40 mb-5">
+                <div className="flex items-center gap-2">
+                  <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white font-black text-sm">
+                    {siteName.substring(0, 1) || "S"}
                   </div>
-                  <button
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`p-2 rounded-lg border transition-all ${
-                      theme === 'dark' ? 'bg-[#1a1c2e] border-slate-700/80 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'
-                    }`}
-                    aria-label="Close Mobile Menu"
-                  >
-                    <XIcon className="w-4 h-4" />
-                  </button>
+                  <span className="font-extrabold text-sm tracking-tight">{siteName}</span>
                 </div>
- 
-                <nav className="flex flex-col space-y-3 text-xs font-bold">
-                  <a 
-                    href="#features" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
-                  >
-                    Features
-                  </a>
-                  <a 
-                    href="#demo" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
-                  >
-                    Live Console Demo
-                  </a>
-                  <a 
-                    href="#pricing" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
-                  >
-                    Pricing Plans
-                  </a>
-                  <a 
-                    href="#faq" 
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
-                  >
-                    FAQ
-                  </a>
-                </nav>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`p-2 rounded-lg border transition-all ${
+                    theme === 'dark' ? 'bg-[#1a1c2e] border-slate-700/80 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'
+                  }`}
+                  aria-label="Close Mobile Menu"
+                >
+                  <XIcon className="w-4 h-4" />
+                </button>
               </div>
  
-              <div className="space-y-4">
-                <div className={`pt-3.5 flex items-center justify-between border-t ${theme === 'dark' ? 'border-slate-800/80' : 'border-slate-200'}`}>
-                  <span className={`text-xs font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Appearance Theme</span>
-                  <button
-                    type="button"
-                    onClick={toggleTheme}
-                    className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
-                      theme === 'dark'
-                        ? 'bg-[#1a1c2e] border-slate-700/80 text-amber-400'
-                        : 'bg-slate-100 border-slate-300 text-indigo-600'
-                    }`}
-                  >
-                    {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                    <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-                  </button>
-                </div>
+              <nav className="flex flex-col space-y-3 text-xs font-bold">
+                <a 
+                  href="#features" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
+                >
+                  Features
+                </a>
+                <a 
+                  href="#demo" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
+                >
+                  Live Console Demo
+                </a>
+                <a 
+                  href="#pricing" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
+                >
+                  Pricing Plans
+                </a>
+                <a 
+                  href="#faq" 
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
+                >
+                  FAQ
+                </a>
+              </nav>
+            </div>
  
-                <div className="flex flex-col gap-2.5">
-                  <button
-                    onClick={() => { setMobileMenuOpen(false); openLoginModal(); }}
-                    className={`w-full py-3 rounded-xl text-xs font-bold text-center border ${
-                      theme === 'dark' ? 'bg-[#1a1c2e] border-slate-700/80 text-white hover:bg-slate-800' : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
-                    }`}
-                  >
-                    Sign In
-                  </button>
-                  <button
-                    onClick={() => { setMobileMenuOpen(false); openRegisterModal('free'); }}
-                    className="w-full py-3 rounded-xl brand-gradient-bg text-xs font-extrabold text-white text-center shadow-lg shadow-brand-500/20"
-                  >
-                    Get Started Free
-                  </button>
-                </div>
+            <div className="space-y-4">
+              <div className={`pt-3.5 flex items-center justify-between border-t ${theme === 'dark' ? 'border-slate-800/80' : 'border-slate-200'}`}>
+                <span className={`text-xs font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Appearance Theme</span>
+                <button
+                  type="button"
+                  onClick={toggleTheme}
+                  className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
+                    theme === 'dark'
+                      ? 'bg-[#1a1c2e] border-slate-700/80 text-amber-400'
+                      : 'bg-slate-100 border-slate-300 text-indigo-600'
+                  }`}
+                >
+                  {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                  <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                </button>
+              </div>
+ 
+              <div className="flex flex-col gap-2.5">
+                <button
+                  onClick={() => { setMobileMenuOpen(false); openLoginModal(); }}
+                  className={`w-full py-3 rounded-xl text-xs font-bold text-center border ${
+                    theme === 'dark' ? 'bg-[#1a1c2e] border-slate-700/80 text-white hover:bg-slate-800' : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  onClick={() => { setMobileMenuOpen(false); openRegisterModal('free'); }}
+                  className="w-full py-3 rounded-xl brand-gradient-bg text-xs font-extrabold text-white text-center shadow-lg shadow-brand-500/20"
+                >
+                  Get Started Free
+                </button>
               </div>
             </div>
-          </>
-        )}
-      </header>
+          </div>
+        </>
+      )}
 
       {/* ─── Hero Section ─────────────────────────────────────────────────── */}
       <section className="relative pt-8 pb-12 sm:pt-14 sm:pb-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
