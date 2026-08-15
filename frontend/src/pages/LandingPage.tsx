@@ -566,12 +566,12 @@ export default function LandingPage() {
             </button>
             <button
               onClick={() => openRegisterModal('free')}
-              className="px-5 py-2.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 active:scale-[0.98] transition-all flex items-center gap-2"
+              className="px-5 py-2.5 rounded-xl brand-gradient-bg text-xs font-extrabold text-white shadow-lg shadow-brand-500/30 hover:shadow-brand-500/50 active:scale-[0.98] transition-all hidden sm:inline-flex items-center gap-2"
             >
               <span>Get Started Free</span>
               <ArrowRight className="w-3.5 h-3.5" />
             </button>
-
+ 
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -586,68 +586,107 @@ export default function LandingPage() {
             </button>
           </div>
         </div>
-
+ 
         {/* Mobile Drawer */}
         {mobileMenuOpen && (
-          <div className={`lg:hidden backdrop-blur-2xl border-b px-4 pt-4 pb-6 space-y-4 animate-slideDown ${
-            theme === 'dark' ? 'bg-[#0d0e1a]/95 border-slate-800/80 text-slate-200' : 'bg-white/95 border-slate-200 text-slate-800'
-          }`}>
-            <nav className="flex flex-col space-y-3 text-xs font-bold">
-              <a 
-                href="#features" 
-                onClick={() => setMobileMenuOpen(false)}
-                className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
-              >
-                Features
-              </a>
-              <a 
-                href="#demo" 
-                onClick={() => setMobileMenuOpen(false)}
-                className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
-              >
-                Live Console Demo
-              </a>
-              <a 
-                href="#pricing" 
-                onClick={() => setMobileMenuOpen(false)}
-                className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
-              >
-                Pricing Plans
-              </a>
-              <a 
-                href="#faq" 
-                onClick={() => setMobileMenuOpen(false)}
-                className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
-              >
-                FAQ
-              </a>
-            </nav>
-
-            <div className={`pt-2 flex items-center justify-between border-t ${theme === 'dark' ? 'border-slate-800/80' : 'border-slate-200'}`}>
-              <span className={`text-xs font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Appearance Theme</span>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
-                  theme === 'dark'
-                    ? 'bg-[#1a1c2e] border-slate-700/80 text-amber-400'
-                    : 'bg-slate-100 border-slate-300 text-indigo-600'
-                }`}
-              >
-                {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
-                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-              </button>
+          <>
+            {/* Backdrop overlay */}
+            <div 
+              className="fixed inset-0 z-40 bg-black/60 backdrop-blur-sm lg:hidden animate-fadeIn" 
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            {/* Drawer Panel */}
+            <div className={`fixed top-0 right-0 h-full w-[290px] max-w-[85vw] z-50 shadow-2xl p-6 flex flex-col justify-between animate-slideInRight border-l transition-all lg:hidden ${
+              theme === 'dark' ? 'bg-[#0d0e1a]/98 border-slate-800 text-slate-200' : 'bg-white border-slate-200 text-slate-800'
+            }`}>
+              <div>
+                {/* Header of Drawer */}
+                <div className="flex items-center justify-between pb-4 border-b border-slate-800/40 mb-5">
+                  <div className="flex items-center gap-2">
+                    <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white font-black text-sm">
+                      {siteName.substring(0, 1) || "S"}
+                    </div>
+                    <span className="font-extrabold text-sm tracking-tight">{siteName}</span>
+                  </div>
+                  <button
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`p-2 rounded-lg border transition-all ${
+                      theme === 'dark' ? 'bg-[#1a1c2e] border-slate-700/80 text-slate-300' : 'bg-slate-100 border-slate-300 text-slate-700'
+                    }`}
+                    aria-label="Close Mobile Menu"
+                  >
+                    <XIcon className="w-4 h-4" />
+                  </button>
+                </div>
+ 
+                <nav className="flex flex-col space-y-3 text-xs font-bold">
+                  <a 
+                    href="#features" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
+                  >
+                    Features
+                  </a>
+                  <a 
+                    href="#demo" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
+                  >
+                    Live Console Demo
+                  </a>
+                  <a 
+                    href="#pricing" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
+                  >
+                    Pricing Plans
+                  </a>
+                  <a 
+                    href="#faq" 
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`p-2.5 rounded-xl transition-colors ${theme === 'dark' ? 'hover:bg-[#1a1c2e]' : 'hover:bg-slate-100'}`}
+                  >
+                    FAQ
+                  </a>
+                </nav>
+              </div>
+ 
+              <div className="space-y-4">
+                <div className={`pt-3.5 flex items-center justify-between border-t ${theme === 'dark' ? 'border-slate-800/80' : 'border-slate-200'}`}>
+                  <span className={`text-xs font-bold ${theme === 'dark' ? 'text-slate-400' : 'text-slate-600'}`}>Appearance Theme</span>
+                  <button
+                    type="button"
+                    onClick={toggleTheme}
+                    className={`px-3 py-1.5 rounded-xl border text-xs font-bold flex items-center gap-2 transition-all ${
+                      theme === 'dark'
+                        ? 'bg-[#1a1c2e] border-slate-700/80 text-amber-400'
+                        : 'bg-slate-100 border-slate-300 text-indigo-600'
+                    }`}
+                  >
+                    {theme === 'dark' ? <Sun className="w-3.5 h-3.5" /> : <Moon className="w-3.5 h-3.5" />}
+                    <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+                  </button>
+                </div>
+ 
+                <div className="flex flex-col gap-2.5">
+                  <button
+                    onClick={() => { setMobileMenuOpen(false); openLoginModal(); }}
+                    className={`w-full py-3 rounded-xl text-xs font-bold text-center border ${
+                      theme === 'dark' ? 'bg-[#1a1c2e] border-slate-700/80 text-white hover:bg-slate-800' : 'bg-slate-100 border-slate-300 text-slate-700 hover:bg-slate-200'
+                    }`}
+                  >
+                    Sign In
+                  </button>
+                  <button
+                    onClick={() => { setMobileMenuOpen(false); openRegisterModal('free'); }}
+                    className="w-full py-3 rounded-xl brand-gradient-bg text-xs font-extrabold text-white text-center shadow-lg shadow-brand-500/20"
+                  >
+                    Get Started Free
+                  </button>
+                </div>
+              </div>
             </div>
-
-            <div className="pt-2 flex flex-col gap-2.5">
-              <button
-                onClick={() => { setMobileMenuOpen(false); openLoginModal(); }}
-                className="w-full py-3 rounded-xl bg-[#1a1c2e] border border-slate-700/80 text-xs font-bold text-white text-center"
-              >
-                Sign In
-              </button>
-            </div>
-          </div>
+          </>
         )}
       </header>
 
@@ -1314,8 +1353,8 @@ export default function LandingPage() {
       <footer className={`border-t pt-10 pb-8 px-4 sm:px-6 lg:px-8 text-left transition-colors duration-300 ${
         theme === 'dark' ? 'border-slate-800/80 bg-[#0d0e1a] text-slate-400' : 'border-slate-200 bg-slate-100 text-slate-600'
       }`}>
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
-          <div className="space-y-4">
+        <div className="max-w-7xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8 mb-8">
+          <div className="col-span-2 md:col-span-1 space-y-4">
             <div className="flex items-center gap-2">
               {activeFooterLogo ? (
                 <img src={activeFooterLogo} alt={siteName} loading="lazy" decoding="async" className="h-8 object-contain" />
@@ -1333,7 +1372,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div>
+          <div className="col-span-1">
             <h4 className={`text-xs font-extrabold uppercase tracking-wider mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Platform Modules</h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li><a href="#features" className={theme === 'dark' ? 'hover:text-white transition-colors' : 'hover:text-slate-900 transition-colors'}>SMTP Load Balancer</a></li>
@@ -1343,7 +1382,7 @@ export default function LandingPage() {
             </ul>
           </div>
 
-          <div>
+          <div className="col-span-1">
             <h4 className={`text-xs font-extrabold uppercase tracking-wider mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Quick Links</h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li><button onClick={openLoginModal} className={`text-left transition-colors ${theme === 'dark' ? 'hover:text-white' : 'hover:text-slate-900'}`}>Sign In</button></li>
@@ -1353,7 +1392,7 @@ export default function LandingPage() {
             </ul>
           </div>
 
-          <div>
+          <div className="col-span-2 md:col-span-1">
             <h4 className={`text-xs font-extrabold uppercase tracking-wider mb-4 ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>Contact & Support</h4>
             <ul className="space-y-2.5 text-xs font-medium">
               <li>Email: <span className={`font-semibold ${theme === 'dark' ? 'text-white' : 'text-slate-900'}`}>{supportEmail}</span></li>
