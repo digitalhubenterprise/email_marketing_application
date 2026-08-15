@@ -206,7 +206,7 @@ export default function AdminApiSettings() {
     const token = getToken();
     setOrdersLoading(true);
     try {
-      let res = await fetch('/api/admin/settings/dhru-orders', {
+      const res = await fetch('/api/admin/settings/dhru-orders', {
         headers: token ? { 'Authorization': `Bearer ${token}` } : {}
       });
       let data = res.ok ? await res.json() : [];
