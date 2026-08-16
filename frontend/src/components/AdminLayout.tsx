@@ -26,6 +26,8 @@ export default function AdminLayout() {
   const [adminEmail, setAdminEmail] = useState<string | null>(null);
   const [adminRole, setAdminRole] = useState<string | null>(null);
   const { appConfig } = useAuth();
+  const siteName = appConfig?.site_name || 'SmartCampaign';
+  const currentYear = new Date().getFullYear();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('theme') || 'light';
@@ -296,7 +298,7 @@ export default function AdminLayout() {
           <footer className="mt-8">
             <div className="px-5 py-4 bg-white/60 dark:bg-dark-900/40 backdrop-blur-md border-t border-x border-slate-200 dark:border-dark-800/80 rounded-t-2xl sm:rounded-t-3xl rounded-b-none flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] sm:text-[11px] text-slate-500 dark:text-dark-300 font-semibold shadow-[0_2px_12px_rgba(0,0,0,0.015)]">
               <div>
-                Copyright &copy; 2025 ASTRA IT, Inc. All Rights Reserved.
+                Copyright &copy; {currentYear} {siteName}. All Rights Reserved.
               </div>
               <div className="flex gap-4 sm:gap-6">
                 <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-brand-600 dark:hover:text-brand-400 transition-colors">Privacy Policy</a>

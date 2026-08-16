@@ -1062,7 +1062,7 @@ export default function AdminSettings() {
                               required
                               value={companyName}
                               onChange={(e) => setCompanyName(e.target.value)}
-                              placeholder="e.g. ASTRA IT, Inc."
+                              placeholder="e.g. SmartCampaign, Inc."
                               className="w-full px-3.5 py-2.5 bg-white border border-slate-300 rounded-xl text-slate-900 text-xs font-bold focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 shadow-sm transition-all"
                             />
                             <span className="text-[9px] text-slate-400 block mt-1.5 font-medium">

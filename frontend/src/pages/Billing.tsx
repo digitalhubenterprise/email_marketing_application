@@ -4,7 +4,7 @@ import { useAuth } from '../App'
 import { CreditCard, Check, ShieldCheck, Mail, ArrowUpRight, Zap, Sparkles, Award, Wallet, ArrowRight, Users, Send, Server, Layers } from 'lucide-react'
 
 export default function Billing() {
-  const { token, user, refreshUser } = useAuth();
+  const { token, user, refreshUser, appConfig } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [showSimModal, setShowSimModal] = useState<string | null>(null);
@@ -911,7 +911,7 @@ export default function Billing() {
             <div className="flex justify-between items-center border-b border-dark-800 pb-3 mb-4">
               <div className="flex items-center gap-2">
                 <CreditCard className="text-brand-400" size={18} />
-                <h4 className="text-xs font-black uppercase tracking-wider">ASTRA IT Stripe Customer Portal</h4>
+                <h4 className="text-xs font-black uppercase tracking-wider">{appConfig?.site_name || 'SmartCampaign'} Stripe Customer Portal</h4>
               </div>
               <button
                 type="button"

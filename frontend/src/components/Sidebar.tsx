@@ -18,9 +18,10 @@ import { useAuth } from '../App'
 interface SidebarProps {
   isOpen?: boolean;
   onClose?: () => void;
+  theme?: string;
 }
 
-export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarProps) {
+export default function Sidebar({ isOpen = false, onClose = () => {}, theme = 'light' }: SidebarProps) {
   const { logout, user, appConfig } = useAuth();
   const isExpired = user?.subscription_tier === 'expired';
 
@@ -48,18 +49,27 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
       {/* Platform Title Logo */}
       <div className="py-3.5 px-4 border-b border-dark-700 flex items-center justify-between gap-2.5">
         <div className="flex items-center gap-2.5">
-          {appConfig?.logo_url ? (
-            <img src={appConfig.logo_url} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
+          {theme === 'dark' ? (
+            appConfig?.dark_logo_url || appConfig?.logo_url ? (
+              <img src={appConfig.dark_logo_url || appConfig.logo_url || ""} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
+            ) : (
+              <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
+                {appConfig?.site_name?.substring(0, 1) || "S"}
+              </div>
+            )
           ) : (
-            <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
-              {appConfig?.site_name?.substring(0, 1) || "S"}
-            </div>
+            appConfig?.logo_url || appConfig?.dark_logo_url ? (
+              <img src={appConfig.logo_url || appConfig.dark_logo_url || ""} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
+            ) : (
+              <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
+                {appConfig?.site_name?.substring(0, 1) || "S"}
+              </div>
+            )
           )}
           <div>
-            <h1 className="font-bold text-sm text-white font-sans tracking-wide truncate max-w-[120px]">
+            <h1 className="font-bold text-sm text-dark-100 dark:text-white font-sans tracking-wide truncate max-w-[120px]">
                {appConfig?.site_name || "SmartCampaign"}
             </h1>
-            <span className="text-[10px] text-brand-400 font-bold tracking-wider uppercase">SaaS V1.0</span>
           </div>
         </div>
         <button 
@@ -111,7 +121,7 @@ export default function Sidebar({ isOpen = false, onClose = () => {} }: SidebarP
             {user?.email?.substring(0, 2)}
           </div>
           <div className="truncate max-w-[140px]">
-            <p className="text-xs font-bold text-white truncate">{user?.email}</p>
+            <p className="text-xs font-bold text-dark-100 dark:text-white truncate">{user?.email}</p>
             <span className="text-[9px] text-brand-400 uppercase tracking-wider font-extrabold">
               {user?.subscription_tier} Plan
             </span>

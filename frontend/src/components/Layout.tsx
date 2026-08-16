@@ -46,7 +46,7 @@ export default function Layout() {
       <div className="hidden dark:block absolute top-[40%] left-[30%] w-[35vw] h-[35vw] rounded-full bg-emerald-500/3 blur-[120px] pointer-events-none -z-10" />
 
       {/* Side bar */}
-      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} theme={theme} />
 
       {/* Dim overlay backdrop */}
       {sidebarOpen && (
@@ -99,7 +99,7 @@ export default function Layout() {
               <Menu size={18} />
             </button>
             <span className="text-xs font-medium text-dark-400 hidden sm:inline">Current Scope:</span>
-            <span className="text-xs font-semibold text-white px-2 py-0.5 bg-dark-800 rounded-md border border-dark-700/50 hidden sm:inline-block">
+            <span className="text-xs font-semibold text-dark-100 dark:text-white px-2 py-0.5 bg-dark-800 rounded-md border border-dark-700/50 hidden sm:inline-block">
               beta.smartcampaign.today
             </span>
           </div>
@@ -120,7 +120,7 @@ export default function Layout() {
               <div className="flex items-center gap-1.5 text-[10px] text-dark-400">
                 <Mail size={10} className="text-brand-400 shrink-0" />
                 <span className="hidden md:inline">Monthly Email Quota:</span>
-                <span className="font-semibold text-white">{quotaUsed} / {quotaLimit}</span>
+                <span className="font-semibold text-dark-100 dark:text-white">{quotaUsed} / {quotaLimit}</span>
               </div>
               <div className="w-40 h-1 bg-dark-800 rounded-full overflow-hidden border border-dark-700/30 hidden sm:block">
                 <div 
@@ -155,7 +155,7 @@ export default function Layout() {
           <footer className="mt-8">
             <div className="px-5 py-4 bg-dark-900/40 backdrop-blur-md border-t border-x border-dark-700/50 dark:border-dark-800/80 rounded-t-2xl sm:rounded-t-3xl rounded-b-none flex flex-col sm:flex-row items-center justify-between gap-3 text-[10px] sm:text-[11px] text-dark-450 dark:text-dark-300 font-semibold shadow-md">
               <div>
-                © {currentYear} {siteName} / ASTRA IT, Inc. All rights reserved.
+                © {currentYear} {siteName}. All rights reserved.
               </div>
               <div className="flex gap-4 sm:gap-6">
                 <a href="#" onClick={(e) => e.preventDefault()} className="hover:text-brand-500 dark:hover:text-brand-400 transition-colors">Privacy Policy</a>

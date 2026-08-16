@@ -208,7 +208,7 @@ export default function Dashboard() {
                   {c.title}
                 </span>
                 <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                  <span className="text-xs sm:text-sm font-black text-white tracking-tight select-none">
+                  <span className="text-xs sm:text-sm font-black text-slate-800 dark:text-white tracking-tight select-none">
                     {c.value}
                   </span>
                   <span className={`w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full shrink-0 ${c.indicatorColor}`} />
@@ -239,7 +239,7 @@ export default function Dashboard() {
         <div className="lg:col-span-2 glass-panel p-5 rounded-2xl border border-dark-700/30 hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.005] transition-all duration-300">
           <div className="flex justify-between items-center mb-4">
             <div>
-              <h3 className="text-base font-bold text-white">Campaign Performance Trend</h3>
+              <h3 className="text-base font-bold text-slate-800 dark:text-white">Campaign Performance Trend</h3>
               <p className="text-[10px] text-dark-400 mt-0.5">Sends, unique opens and clicks ratio</p>
             </div>
           </div>
@@ -279,18 +279,18 @@ export default function Dashboard() {
         <div className="glass-panel p-5 rounded-2xl border border-dark-700/30 flex flex-col justify-between gap-4">
           <div>
             <div className="flex justify-between items-center mb-4">
-              <h3 className="text-base font-bold text-white">Database Assets</h3>
+              <h3 className="text-base font-bold text-slate-800 dark:text-white">Database Assets</h3>
               <Users size={16} className="text-brand-400" />
             </div>
             
             <div className="space-y-3.5">
-              <div className="flex items-center justify-between p-3.5 bg-dark-900/60 rounded-xl border border-dark-700/30">
-                <span className="text-xs text-dark-300">Total Contact Lists</span>
-                <span className="text-base font-extrabold text-white">{stats?.total_lists ?? 0}</span>
+              <div className="flex items-center justify-between p-3.5 bg-dark-800/20 dark:bg-dark-900/60 rounded-xl border border-dark-700/30">
+                <span className="text-xs text-slate-500 dark:text-dark-300">Total Contact Lists</span>
+                <span className="text-base font-extrabold text-slate-800 dark:text-white">{stats?.total_lists ?? 0}</span>
               </div>
-              <div className="flex items-center justify-between p-3.5 bg-dark-900/60 rounded-xl border border-dark-700/30">
-                <span className="text-xs text-dark-300">Active Email Contacts</span>
-                <span className="text-base font-extrabold text-white">{stats?.total_contacts ?? 0}</span>
+              <div className="flex items-center justify-between p-3.5 bg-dark-800/20 dark:bg-dark-900/60 rounded-xl border border-dark-700/30">
+                <span className="text-xs text-slate-500 dark:text-dark-300">Active Email Contacts</span>
+                <span className="text-base font-extrabold text-slate-800 dark:text-white">{stats?.total_contacts ?? 0}</span>
               </div>
             </div>
 
@@ -304,7 +304,7 @@ export default function Dashboard() {
 
           <Link
             to="/lists"
-            className="w-full py-3 bg-dark-900 hover:bg-dark-800 rounded-xl text-xs font-bold text-white border border-dark-700 text-center flex items-center justify-center gap-1.5 transition-colors"
+            className="w-full py-3 bg-dark-800 hover:bg-dark-750 dark:bg-dark-900 dark:hover:bg-dark-800 rounded-xl text-xs font-bold text-slate-700 dark:text-white border border-dark-700 text-center flex items-center justify-center gap-1.5 transition-colors"
           >
             Manage Contact Assets
             <ArrowUpRight size={12} />
@@ -317,12 +317,12 @@ export default function Dashboard() {
         className="glass-panel p-5 rounded-2xl border border-dark-700/30 opacity-0 animate-fadeIn hover:border-brand-500/20 dark:hover:border-dark-600/50 hover:scale-[1.005] transition-all duration-300"
         style={{ animationDelay: '250ms' }}
       >
-        <h3 className="text-base font-bold text-white mb-4">Recent Campaigns</h3>
+        <h3 className="text-base font-bold text-slate-800 dark:text-white mb-4">Recent Campaigns</h3>
         {stats?.recent_campaigns && stats.recent_campaigns.length > 0 ? (
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse min-w-[600px]">
               <thead>
-                <tr className="border-b border-dark-700/50 pb-2 text-[10px] font-bold text-dark-400 uppercase tracking-wider">
+                <tr className="border-b border-dark-700/50 pb-2 text-[10px] font-bold text-slate-500 dark:text-dark-400 uppercase tracking-wider">
                   <th className="pb-2.5">Campaign Details</th>
                   <th className="pb-2.5">Recipients</th>
                   <th className="pb-2.5">Delivered</th>
@@ -333,10 +333,10 @@ export default function Dashboard() {
               </thead>
               <tbody className="divide-y divide-dark-700/10">
                 {stats.recent_campaigns.map((c) => (
-                  <tr key={c.id} className="text-xs text-dark-200 hover:bg-dark-700/10 transition-colors">
-                    <td className="py-2.5 font-semibold text-white">
+                  <tr key={c.id} className="text-xs text-slate-600 dark:text-dark-200 hover:bg-dark-700/10 transition-colors">
+                    <td className="py-2.5 font-semibold text-slate-800 dark:text-white">
                       <div>{c.name}</div>
-                      <span className="text-[10px] text-dark-400 font-medium">{c.subject}</span>
+                      <span className="text-[10px] text-slate-400 dark:text-dark-400 font-medium">{c.subject}</span>
                     </td>
                     <td className="py-2.5">{c.total_recipients}</td>
                     <td className="py-2.5 text-brand-400 font-semibold">{c.sent_count}</td>
@@ -358,8 +358,8 @@ export default function Dashboard() {
             </table>
           </div>
         ) : (
-          <div className="text-center py-8 border border-dashed border-dark-700/50 rounded-xl bg-dark-900/30">
-            <p className="text-xs text-dark-400">No campaigns launched yet. Start sending by clicking "New Campaign".</p>
+          <div className="text-center py-8 border border-dashed border-dark-700/50 rounded-xl bg-dark-800/20 dark:bg-dark-900/30">
+            <p className="text-xs text-slate-400 dark:text-dark-400">No campaigns launched yet. Start sending by clicking "New Campaign".</p>
           </div>
         )}
       </div>

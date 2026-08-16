@@ -90,7 +90,7 @@ export default function LandingPage() {
   const [mfaCode, setMfaCode] = useState('');
 
   const siteName = appConfig?.site_name || "SmartCampaign";
-  const companyName = appConfig?.company_name || "ASTRA IT, Inc.";
+  const companyName = appConfig?.company_name || "SmartCampaign, Inc.";
   const siteLogo = appConfig?.logo_url;
   const siteDarkLogo = appConfig?.dark_logo_url;
   const activeHeaderLogo = theme === 'dark' ? (siteDarkLogo || siteLogo) : (siteLogo || siteDarkLogo);
