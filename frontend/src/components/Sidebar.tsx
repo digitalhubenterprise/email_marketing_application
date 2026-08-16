@@ -53,24 +53,33 @@ export default function Sidebar({ isOpen = false, onClose = () => {}, theme = 'l
             appConfig?.dark_logo_url || appConfig?.logo_url ? (
               <img src={appConfig.dark_logo_url || appConfig.logo_url || ""} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
             ) : (
-              <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
-                {appConfig?.site_name?.substring(0, 1) || "S"}
-              </div>
+              <>
+                <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
+                  {appConfig?.site_name?.substring(0, 1) || "S"}
+                </div>
+                <div>
+                  <h1 className="font-bold text-sm text-dark-100 dark:text-white font-sans tracking-wide truncate max-w-[120px]">
+                     {appConfig?.site_name || "SmartCampaign"}
+                  </h1>
+                </div>
+              </>
             )
           ) : (
             appConfig?.logo_url || appConfig?.dark_logo_url ? (
               <img src={appConfig.logo_url || appConfig.dark_logo_url || ""} alt={appConfig.site_name} className="h-8 object-contain rounded-lg" />
             ) : (
-              <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
-                {appConfig?.site_name?.substring(0, 1) || "S"}
-              </div>
+              <>
+                <div className="h-8 w-8 brand-gradient-bg rounded-lg flex items-center justify-center text-white shadow-md shadow-brand-500/20 font-bold text-base">
+                  {appConfig?.site_name?.substring(0, 1) || "S"}
+                </div>
+                <div>
+                  <h1 className="font-bold text-sm text-dark-100 dark:text-white font-sans tracking-wide truncate max-w-[120px]">
+                     {appConfig?.site_name || "SmartCampaign"}
+                  </h1>
+                </div>
+              </>
             )
           )}
-          <div>
-            <h1 className="font-bold text-sm text-dark-100 dark:text-white font-sans tracking-wide truncate max-w-[120px]">
-               {appConfig?.site_name || "SmartCampaign"}
-            </h1>
-          </div>
         </div>
         <button 
           onClick={onClose}

@@ -100,7 +100,9 @@ export default function Layout() {
             </button>
             <span className="text-xs font-medium text-dark-400 hidden sm:inline">Current Scope:</span>
             <span className="text-xs font-semibold text-dark-100 dark:text-white px-2 py-0.5 bg-dark-800 rounded-md border border-dark-700/50 hidden sm:inline-block">
-              beta.smartcampaign.today
+              {window.location.hostname && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1' 
+                ? window.location.hostname.replace(/^beta\./i, '') 
+                : 'smartcampaign.today'}
             </span>
           </div>
 
