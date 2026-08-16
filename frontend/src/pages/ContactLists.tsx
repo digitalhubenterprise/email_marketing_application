@@ -289,25 +289,25 @@ export default function ContactLists() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-dark-700/20 gap-2">
         <div className="flex items-center gap-2">
           {selectedList && (
-            <button
-              onClick={() => setSelectedList(null)}
-              className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
-              title="Back to segments list"
-            >
-              <ArrowLeft size={14} />
-            </button>
+            <>
+              <button
+                onClick={() => setSelectedList(null)}
+                className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
+                title="Back to segments list"
+              >
+                <ArrowLeft size={14} />
+              </button>
+              <div>
+                <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                  <Users size={18} className="text-brand-400 shrink-0" />
+                  <span>{selectedList.name}</span>
+                </h2>
+                <p className="text-[10px] text-dark-400 mt-0.5">
+                  Manage leads inside this segment (Showing: {filteredContacts.length} / Total: {contacts.length})
+                </p>
+              </div>
+            </>
           )}
-          <div>
-            <h2 className="text-lg sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <Users size={18} className="text-brand-400 shrink-0" />
-              <span>{selectedList ? `${selectedList.name}` : "Subscriber Lists"}</span>
-            </h2>
-            <p className="text-[10px] text-dark-400 mt-0.5">
-              {selectedList 
-                ? `Manage leads inside this segment (Showing: ${filteredContacts.length} / Total: ${contacts.length})` 
-                : "Create custom subscriber groups and manage segmented contact data"}
-            </p>
-          </div>
         </div>
 
         {selectedList ? (
@@ -356,73 +356,81 @@ export default function ContactLists() {
 
       {!selectedList ? (
         /* ================== LIST OVERVIEW ================== */
-        <div className="space-y-4">
+        <div className="space-y-4 animate-fadeIn">
           {loadingLists ? (
             <div className="flex justify-center py-20">
               <RefreshCw className="animate-spin text-brand-500" size={20} />
             </div>
           ) : lists.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {lists.map((l, idx) => {
-                const formattedDate = l.created_at 
-                  ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                  : 'Recent';
+            <div className="w-full glass-panel p-3.5 md:p-4 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/20 flex flex-col gap-3">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-dark-750/50 text-[9.5px] font-extrabold text-slate-500 dark:text-dark-400 uppercase tracking-widest bg-dark-950/15">
+                      <th className="py-3 px-3 pl-4">List Name</th>
+                      <th className="py-3 px-3">Description</th>
+                      <th className="py-3 px-3 text-center w-36">Total Leads</th>
+                      <th className="py-3 px-3 text-center w-40">Created On</th>
+                      <th className="py-3 px-3 text-right w-24">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-750/30">
+                    {lists.map((l, idx) => {
+                      const formattedDate = l.created_at 
+                        ? new Date(l.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                        : 'Recent';
 
-                // Dynamic color styling depending on index
-                const colorThemes = [
-                  { bg: "bg-brand-500/10 border-brand-500/20 text-brand-450 dark:text-brand-400", border: "hover:border-brand-500/40 hover:shadow-brand-500/5" },
-                  { bg: "bg-sky-500/10 border-sky-500/20 text-sky-500 dark:text-sky-400", border: "hover:border-sky-500/40 hover:shadow-sky-500/5" },
-                  { bg: "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400", border: "hover:border-emerald-500/40 hover:shadow-emerald-500/5" },
-                  { bg: "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400", border: "hover:border-amber-500/40 hover:shadow-amber-500/5" }
-                ];
-                const theme = colorThemes[idx % colorThemes.length];
+                      const colorThemes = [
+                        "bg-brand-500/10 border-brand-500/20 text-brand-450 dark:text-brand-400",
+                        "bg-sky-500/10 border-sky-500/20 text-sky-500 dark:text-sky-400",
+                        "bg-emerald-500/10 border-emerald-500/20 text-emerald-600 dark:text-emerald-400",
+                        "bg-amber-500/10 border-amber-500/20 text-amber-600 dark:text-amber-400"
+                      ];
+                      const avatarTheme = colorThemes[idx % colorThemes.length];
 
-                return (
-                  <div
-                    key={l.id}
-                    onClick={() => selectListDetails(l)}
-                    className={`relative overflow-hidden glass-panel p-4 rounded-2xl border border-dark-750/30 cursor-pointer transition-all duration-300 hover:scale-[1.02] hover:-translate-y-0.5 shadow-md hover:shadow-lg group flex flex-col justify-between min-h-[140px] bg-dark-900/60 ${theme.border}`}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-br from-white/[0.02] to-transparent pointer-events-none" />
-
-                    <div className="flex justify-between items-center mb-2 relative z-10 gap-3">
-                      <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                        <div className={`p-2 rounded-xl border flex items-center justify-center shrink-0 ${theme.bg}`}>
-                          <Users size={14} className="stroke-[2.5]" />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="font-extrabold text-white text-xs truncate uppercase tracking-wider leading-none">{l.name}</h4>
-                        </div>
-                      </div>
-                      <button
-                        onClick={(e) => handleDeleteList(l.id, e)}
-                        className="p-1.5 bg-dark-950/80 hover:bg-rose-500/10 text-dark-400 hover:text-rose-500 border border-dark-700/60 hover:border-rose-500/20 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-300 hover:scale-105 shadow-sm shrink-0"
-                        title="Delete list"
-                      >
-                        <Trash2 size={11} />
-                      </button>
-                    </div>
-
-                    <div className="relative z-10 flex-1 min-w-0 mt-1">
-                      <p className="text-[10px] text-dark-400 font-medium line-clamp-2 leading-relaxed">{l.description || "No description provided."}</p>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2.5 border-t border-dark-700/25 relative z-10 mt-3.5">
-                      <div className="flex flex-col gap-0.5">
-                        <span className="text-[8px] text-dark-500 font-extrabold uppercase tracking-widest">Total Assets</span>
-                        <span className="text-[9.5px] font-extrabold text-brand-500 dark:text-brand-455 bg-brand-500/5 px-2.5 py-0.5 rounded-full border border-brand-500/15 flex items-center gap-1">
-                          <Sparkles size={8.5} className="animate-pulse" />
-                          {l.contacts_count} Leads
-                        </span>
-                      </div>
-                      <div className="flex flex-col items-end gap-0.5">
-                        <span className="text-[8px] text-dark-500 font-extrabold uppercase tracking-widest">Created On</span>
-                        <span className="text-[9px] font-bold text-dark-400 font-mono">{formattedDate}</span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                      return (
+                        <tr 
+                          key={l.id}
+                          onClick={() => selectListDetails(l)}
+                          className="text-xs text-slate-600 dark:text-dark-200 hover:bg-dark-700/10 transition-colors cursor-pointer"
+                        >
+                          <td className="py-3.5 px-3 pl-4 font-semibold text-slate-800 dark:text-white">
+                            <div className="flex items-center gap-2.5">
+                              <div className={`p-2 rounded-xl border flex items-center justify-center shrink-0 ${avatarTheme}`}>
+                                <Users size={14} className="stroke-[2.5]" />
+                              </div>
+                              <span className="uppercase tracking-wider text-xs font-extrabold">{l.name}</span>
+                            </div>
+                          </td>
+                          <td className="py-3.5 px-3">
+                            <span className="text-[10px] text-slate-400 dark:text-dark-400 font-medium line-clamp-1 leading-relaxed">
+                              {l.description || "No description provided."}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-3 text-center">
+                            <span className="inline-flex items-center gap-1 text-[9.5px] font-extrabold text-brand-500 dark:text-brand-455 bg-brand-500/5 px-2.5 py-0.5 rounded-full border border-brand-500/15">
+                              <Sparkles size={8.5} className="animate-pulse" />
+                              {l.contacts_count} Leads
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-3 text-center font-mono text-[10px] text-slate-400 dark:text-dark-400">
+                            {formattedDate}
+                          </td>
+                          <td className="py-3.5 px-3 text-right">
+                            <button
+                              onClick={(e) => handleDeleteList(l.id, e)}
+                              className="p-1.5 bg-dark-950/80 hover:bg-rose-500/10 text-dark-400 hover:text-rose-500 border border-dark-700/60 hover:border-rose-500/20 rounded-lg transition-all duration-300 hover:scale-105 shadow-sm"
+                              title="Delete list"
+                            >
+                              <Trash2 size={11} />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             <div className="text-center py-20 border border-dashed border-dark-700/50 rounded-2xl bg-dark-900/15 flex flex-col items-center justify-center gap-2.5">
@@ -430,8 +438,8 @@ export default function ContactLists() {
                 <Users size={18} />
               </div>
               <div>
-                <p className="text-xs font-black text-white uppercase tracking-wider">No lists configured</p>
-                <p className="text-[10px] text-dark-500 mt-1 max-w-[200px] mx-auto leading-normal">Create an audience segment to start importing lead folders.</p>
+                <p className="text-xs font-black text-slate-800 dark:text-white uppercase tracking-wider">No lists configured</p>
+                <p className="text-[10px] text-slate-450 dark:text-dark-500 mt-1 max-w-[200px] mx-auto leading-normal">Create an audience segment to start importing lead folders.</p>
               </div>
             </div>
           )}
