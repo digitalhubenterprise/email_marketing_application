@@ -158,25 +158,12 @@ export default function SMTPServers() {
 
   return (
     <div className="space-y-3.5 animate-fadeIn">
-      {/* Title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-dark-700/20">
-        <div>
-          <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <Server size={18} className="text-brand-400 shrink-0" />
-            <span>SMTP Server Management</span>
-          </h2>
-          <p className="text-[10px] text-dark-400 mt-0.5">Configure, authenticate, and manage external SMTP clusters for your campaigns</p>
-        </div>
-        <div className="flex items-center self-start sm:self-center gap-1.5 px-2 py-0.5 bg-dark-900/60 border border-dark-700/30 rounded-md">
-          <span className="h-1.5 w-1.5 rounded-full bg-brand-500 shadow-[0_0_6px_rgba(76,110,245,0.6)] animate-pulse" />
-          <span className="text-[9px] font-bold text-dark-300 uppercase tracking-wider">Rotation Enabled</span>
-        </div>
-      </div>
+
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 items-start">
         {/* Creation Form Panel */}
         <div className="lg:col-span-2 glass-panel p-3.5 md:p-4 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/20">
-          <h3 className="text-sm font-bold text-white mb-3.5 flex items-center gap-2">
+          <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-3.5 flex items-center gap-2">
             <Plus size={14} className="text-brand-400 shrink-0" />
             <span>Add SMTP Server</span>
           </h3>
@@ -200,7 +187,7 @@ export default function SMTPServers() {
                   <input
                     type="text" required value={name} onChange={e => setName(e.target.value)}
                     placeholder="e.g. My SMTP #1"
-                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white placeholder:text-dark-600 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -214,7 +201,7 @@ export default function SMTPServers() {
                   <input
                     type="number" required min="1" value={dailySendLimit} onChange={e => setDailySendLimit(Number(e.target.value))}
                     placeholder="500"
-                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white transition-all duration-200"
+                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white transition-all duration-200"
                   />
                 </div>
               </div>
@@ -231,7 +218,7 @@ export default function SMTPServers() {
                   <input
                     type="text" required value={host} onChange={e => setHost(e.target.value)}
                     placeholder="smtp.gmail.com"
-                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white placeholder:text-dark-600 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -245,7 +232,7 @@ export default function SMTPServers() {
                   <input
                     type="number" required value={port} onChange={e => setPort(Number(e.target.value))}
                     placeholder="587"
-                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white transition-all duration-200"
+                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white transition-all duration-200"
                   />
                 </div>
               </div>
@@ -261,7 +248,7 @@ export default function SMTPServers() {
                   </div>
                   <select
                     value={security} onChange={e => setSecurity(e.target.value)}
-                    className="w-full pl-9 pr-8 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white appearance-none cursor-pointer transition-all duration-200"
+                    className="w-full pl-9 pr-8 py-2 bg-dark-950 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white appearance-none cursor-pointer transition-all duration-200"
                   >
                     <option value="TLS">TLS</option>
                     <option value="SSL">SSL</option>
@@ -282,7 +269,7 @@ export default function SMTPServers() {
                   <input
                     type="text" required value={username} onChange={e => setUsername(e.target.value)}
                     placeholder="you@smtpdomain.com"
-                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white placeholder:text-dark-600 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -299,7 +286,7 @@ export default function SMTPServers() {
                   <input
                     type={showPassword ? "text" : "password"} required value={password} onChange={e => setPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full pl-9 pr-10 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    className="w-full pl-9 pr-10 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white placeholder:text-dark-600 transition-all duration-200"
                   />
                   <button
                     type="button"
@@ -320,7 +307,7 @@ export default function SMTPServers() {
                   <input
                     type="text" required value={fromName} onChange={e => setFromName(e.target.value)}
                     placeholder="John from SmartCampaign"
-                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white placeholder:text-dark-600 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -336,7 +323,7 @@ export default function SMTPServers() {
                 <input
                   type="email" required value={fromEmail} onChange={e => setFromEmail(e.target.value)}
                   placeholder="you@domain.com"
-                  className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                  className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white placeholder:text-dark-600 transition-all duration-200"
                 />
               </div>
             </div>
@@ -375,7 +362,7 @@ export default function SMTPServers() {
                 type="button"
                 disabled={testing || submitting || !host || !username || !password}
                 onClick={handleTestConnection}
-                className="px-4 py-2 bg-dark-950/60 hover:bg-dark-900 text-xs font-bold text-white rounded-lg border border-dark-700/60 flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed group w-full large-android:w-auto"
+                className="px-4 py-2 bg-dark-950/20 dark:bg-dark-950/60 hover:bg-dark-900/10 dark:hover:bg-dark-900 text-xs font-bold text-slate-700 dark:text-white rounded-lg border border-dark-700/60 flex items-center justify-center gap-1.5 transition-all duration-200 active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed group w-full large-android:w-auto"
               >
                 {testing ? (
                   <>
@@ -413,10 +400,16 @@ export default function SMTPServers() {
 
         {/* Saved Profiles Side Panel */}
         <div className="glass-panel p-3.5 md:p-4 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/20 w-full">
-          <h3 className="text-sm font-bold text-white mb-3.5 flex items-center gap-2">
-            <Server size={14} className="text-brand-400 shrink-0" />
-            <span>Configured Nodes ({servers.length})</span>
-          </h3>
+          <div className="flex justify-between items-center mb-3.5 pb-2 border-b border-dark-700/20">
+            <h3 className="text-sm font-bold text-slate-800 dark:text-white flex items-center gap-2">
+              <Server size={14} className="text-brand-400 shrink-0" />
+              <span>Configured Nodes ({servers.length})</span>
+            </h3>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-dark-900/60 border border-dark-700/30 rounded-md shrink-0">
+              <span className="h-1.5 w-1.5 rounded-full bg-brand-500 shadow-[0_0_6px_rgba(76,110,245,0.6)] animate-pulse" />
+              <span className="text-[9px] font-bold text-dark-300 uppercase tracking-wider">Rotation Enabled</span>
+            </div>
+          </div>
 
           {loading ? (
             <div className="flex justify-center py-6">
@@ -438,14 +431,14 @@ export default function SMTPServers() {
                         <Server size={13} />
                       </div>
                       <div>
-                        <h4 className="font-bold text-white text-xs tracking-tight">{s.name}</h4>
+                        <h4 className="font-bold text-slate-800 dark:text-white text-xs tracking-tight">{s.name}</h4>
                         <p className="text-[10px] text-dark-400 font-medium mt-0.5">{s.host}:{s.port}</p>
                       </div>
                     </div>
 
                     <button
                       onClick={() => handleDelete(s.id)}
-                      className="p-1.5 bg-dark-950 text-dark-400 hover:text-rose-400 border border-dark-700/50 rounded-lg hover:bg-rose-500/10 transition-all hover:scale-105"
+                      className="p-1.5 bg-dark-950 text-dark-400 hover:text-rose-455 border border-dark-700/50 rounded-lg hover:bg-rose-500/10 transition-all hover:scale-105"
                       title="Delete SMTP node"
                     >
                       <Trash2 size={11} />
@@ -455,7 +448,7 @@ export default function SMTPServers() {
                   <div className="flex flex-wrap items-center gap-1.5 text-[9px] font-bold uppercase tracking-wider relative z-10 pt-1.5 border-t border-dark-700/20">
                     <div className={`flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${
                       s.is_active 
-                        ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' 
+                        ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20' 
                         : 'bg-dark-800 text-dark-400 border-dark-700'
                     }`}>
                       <span className={`h-1.5 w-1.5 rounded-full ${s.is_active ? 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)] animate-pulse' : 'bg-dark-500'}`} />
@@ -472,7 +465,7 @@ export default function SMTPServers() {
                       {s.security}
                     </div>
                     
-                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-dark-850 text-dark-300 rounded-md border border-dark-700 max-w-[100px] truncate" title={s.from_email}>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-dark-950/45 dark:bg-dark-850 text-slate-500 dark:text-dark-300 rounded-md border border-dark-750/30 max-w-[100px] truncate" title={s.from_email}>
                       <Mail size={8} />
                       <span className="truncate">{s.from_email}</span>
                     </div>
@@ -486,8 +479,8 @@ export default function SMTPServers() {
                 <Server size={16} />
               </div>
               <div>
-                <p className="text-xs font-bold text-white">No SMTP nodes</p>
-                <p className="text-[10px] text-dark-500 mt-0.5 max-w-[180px] mx-auto leading-normal">Configure a server on the left to start dispatching templates.</p>
+                <p className="text-xs font-bold text-slate-800 dark:text-white">No SMTP nodes</p>
+                <p className="text-[10px] text-slate-450 dark:text-dark-500 mt-0.5 max-w-[180px] mx-auto leading-normal">Configure a server on the left to start dispatching templates.</p>
               </div>
             </div>
           )}
