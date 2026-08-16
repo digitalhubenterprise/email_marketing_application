@@ -232,6 +232,7 @@ async def test_dhru_xml_entity_injection_protection():
     mock_db = MagicMock()
     mock_db.execute = AsyncMock(return_value=MockResult())
     mock_db.commit = AsyncMock()
+    mock_db.refresh = AsyncMock()
     
     # Mock Request form parameters containing entity injection attempt
     mock_form = {
