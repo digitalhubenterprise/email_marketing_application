@@ -415,38 +415,34 @@ export default function Templates() {
       {/* Header Banner */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dark-800">
         <div className="flex items-center gap-3">
-          {(previewTemplate || showCreator) && (
-            <button
-              onClick={() => {
-                setPreviewTemplate(null);
-                setShowCreator(false);
-              }}
-              className="p-2.5 bg-dark-900 hover:bg-dark-800 text-dark-300 hover:text-white rounded-xl border border-dark-800 transition-all duration-200 hover:scale-[1.05]"
-            >
-              <ArrowLeft size={16} />
-            </button>
-          )}
-          <div>
-            <h2 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-3">
-              <div className="p-2 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400">
-                <Layout size={20} className="shrink-0" />
+          {(previewTemplate || showCreator) ? (
+            <>
+              <button
+                onClick={() => {
+                  setPreviewTemplate(null);
+                  setShowCreator(false);
+                }}
+                className="p-2.5 bg-dark-900 hover:bg-dark-800 text-dark-300 hover:text-white rounded-xl border border-dark-800 transition-all duration-200 hover:scale-[1.05]"
+              >
+                <ArrowLeft size={16} />
+              </button>
+              <div>
+                <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
+                  <div className="p-2 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400">
+                    <Layout size={20} className="shrink-0" />
+                  </div>
+                  <span className="brand-gradient-text">
+                    {showCreator ? "Visual Design Workspace" : `Review Design: ${previewTemplate?.name || ''}`}
+                  </span>
+                </h2>
+                <p className="text-[11px] text-dark-400 mt-1 font-medium">
+                  {showCreator 
+                    ? "Construct responsive layouts and personalize templates with custom CRM tags." 
+                    : "Review layout formatting across simulated browser viewport configurations."}
+                </p>
               </div>
-              <span className="brand-gradient-text">
-                {showCreator 
-                  ? "Visual Design Workspace" 
-                  : previewTemplate 
-                    ? `Review Design: ${previewTemplate.name}` 
-                    : "Email Templates Library"
-                }
-              </span>
-            </h2>
-            <p className="text-[11px] text-dark-400 mt-1 font-medium">
-              {showCreator 
-                ? "Construct responsive layouts and personalize templates with custom CRM tags." 
-                : "Manage and create modern, responsive newsletters and welcome triggers."
-              }
-            </p>
-          </div>
+            </>
+          ) : null}
         </div>
 
         {!previewTemplate && !showCreator && (
@@ -494,59 +490,69 @@ export default function Templates() {
               <RefreshCw className="animate-spin text-brand-500" size={28} />
             </div>
           ) : filteredTemplates.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredTemplates.map((t) => (
-                <div
-                  key={t.id}
-                  onClick={() => setPreviewTemplate(t)}
-                  className="group relative bg-dark-900/20 hover:bg-dark-900/50 border border-dark-800/80 hover:border-brand-500/40 rounded-2xl p-5 cursor-pointer transition-all duration-300 hover:shadow-xl hover:shadow-brand-500/5 flex flex-col justify-between min-h-[190px] overflow-hidden"
-                >
-                  {/* Subtle hover background decoration */}
-                  <div className="absolute -right-16 -top-16 w-32 h-32 bg-brand-500/5 rounded-full blur-2xl group-hover:bg-brand-500/10 transition-colors duration-300" />
-                  
-                  <div className="space-y-4 relative z-10">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-center gap-2.5">
-                        <div className="p-2 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 group-hover:scale-110 transition-transform duration-300">
-                          <Mail size={16} />
-                        </div>
-                        <h3 className="text-xs font-bold text-white group-hover:text-brand-400 transition-colors line-clamp-1">
-                          {t.name}
-                        </h3>
-                      </div>
-                      
-                      <div className="flex items-center gap-1.5 shrink-0" onClick={(e) => e.stopPropagation()}>
-                        <button
-                          onClick={() => setPreviewTemplate(t)}
-                          className="p-2 bg-dark-950/80 hover:bg-dark-800 text-dark-400 hover:text-white border border-dark-800 hover:border-dark-750 rounded-xl transition-all duration-200"
-                          title="Preview Template"
-                        >
-                          <Eye size={13} />
-                        </button>
-                        <button
-                          onClick={(e) => handleDelete(t.id, e)}
-                          className="p-2 bg-dark-950/80 hover:bg-rose-500/10 text-dark-500 hover:text-rose-400 border border-dark-800 hover:border-rose-500/20 rounded-xl transition-all duration-200"
-                          title="Delete Template"
-                        >
-                          <Trash2 size={13} />
-                        </button>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-dark-950/40 p-3 rounded-xl border border-dark-850 hover:border-dark-800 transition-colors">
-                      <span className="text-dark-500 font-semibold block text-[8px] uppercase tracking-wider mb-1">Subject Line</span>
-                      <p className="text-[11px] text-dark-300 font-medium font-mono line-clamp-2 leading-relaxed">
-                        {t.subject}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between border-t border-dark-800/40 pt-3.5 mt-5 text-[9px] text-dark-500 font-medium">
-                    <span className="bg-dark-950 px-2 py-0.5 rounded border border-dark-800 font-mono text-[8px]">ID: #{t.id}</span>
-                    <span>Created: {new Date(t.created_at).toLocaleDateString()}</span>
-                  </div>
-                </div>
-              ))}
+            <div className="w-full glass-panel p-3.5 md:p-4 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/20 flex flex-col gap-3">
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse min-w-[600px]">
+                  <thead>
+                    <tr className="border-b border-dark-750/50 text-[9.5px] font-extrabold text-slate-500 dark:text-dark-400 uppercase tracking-widest bg-dark-950/15">
+                      <th className="py-3 px-3 pl-4">Template Name</th>
+                      <th className="py-3 px-3">Subject Line</th>
+                      <th className="py-3 px-3 text-center w-24">Template ID</th>
+                      <th className="py-3 px-3 text-center w-40">Created Date</th>
+                      <th className="py-3 px-3 text-right w-32">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-dark-750/30">
+                    {filteredTemplates.map((t) => (
+                      <tr 
+                        key={t.id}
+                        onClick={() => setPreviewTemplate(t)}
+                        className="text-xs text-slate-600 dark:text-dark-200 hover:bg-dark-700/10 transition-colors cursor-pointer"
+                      >
+                        <td className="py-3.5 px-3 pl-4 font-semibold text-slate-800 dark:text-white">
+                          <div className="flex items-center gap-2.5">
+                            <div className="p-2 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 shrink-0">
+                              <Mail size={14} />
+                            </div>
+                            <span className="truncate max-w-[200px]">{t.name}</span>
+                          </div>
+                        </td>
+                        <td className="py-3.5 px-3">
+                          <span className="text-[10px] text-slate-400 dark:text-dark-400 font-medium font-mono line-clamp-1 leading-relaxed max-w-sm">
+                            {t.subject}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-center">
+                          <span className="bg-dark-800/60 dark:bg-dark-950 px-2 py-0.5 rounded border border-dark-700/60 text-slate-500 dark:text-dark-400 font-mono text-[8px]">
+                            #{t.id}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-3 text-center font-mono text-[10px] text-slate-400 dark:text-dark-400">
+                          {new Date(t.created_at).toLocaleDateString()}
+                        </td>
+                        <td className="py-3.5 px-3 text-right" onClick={(e) => e.stopPropagation()}>
+                          <div className="flex items-center justify-end gap-1.5">
+                            <button
+                              onClick={() => setPreviewTemplate(t)}
+                              className="p-1.5 bg-dark-950/80 hover:bg-dark-800 text-dark-400 hover:text-white border border-dark-800 hover:border-dark-750 rounded-lg transition-all duration-200"
+                              title="Preview Template"
+                            >
+                              <Eye size={12} />
+                            </button>
+                            <button
+                              onClick={(e) => handleDelete(t.id, e)}
+                              className="p-1.5 bg-dark-950/80 hover:bg-rose-500/10 text-dark-50 hover:text-rose-455 border border-dark-800 hover:border-rose-500/20 rounded-lg transition-all duration-200"
+                              title="Delete Template"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </div>
           ) : (
             <div className="text-center py-20 border border-dashed border-dark-800 rounded-2xl bg-dark-900/10 flex flex-col items-center justify-center gap-4">
@@ -554,8 +560,8 @@ export default function Templates() {
                 <FileText size={32} />
               </div>
               <div className="space-y-1">
-                <p className="text-sm font-bold text-white">No Saved Templates</p>
-                <p className="text-[10px] text-dark-500 max-w-[280px] mx-auto leading-normal">
+                <p className="text-sm font-bold text-slate-800 dark:text-white">No Saved Templates</p>
+                <p className="text-[10px] text-slate-400 dark:text-dark-500 max-w-[280px] mx-auto leading-normal">
                   Launch the visual builder workspace to create responsive marketing emails.
                 </p>
               </div>
@@ -570,7 +576,7 @@ export default function Templates() {
                   setSelectedBlockId("b1");
                   setActiveBuilderTab("canvas");
                 }}
-                className="mt-2 flex items-center gap-2 px-4 py-2 bg-dark-900 hover:bg-dark-800 text-white border border-dark-850 hover:border-brand-500/20 text-[10px] font-bold rounded-lg transition-all duration-200"
+                className="mt-2 flex items-center gap-2 px-4 py-2 bg-dark-800 hover:bg-dark-750 dark:bg-dark-900 dark:hover:bg-dark-800 text-slate-700 dark:text-white border border-dark-700 hover:border-brand-500/20 text-[10px] font-bold rounded-lg transition-all duration-200"
               >
                 <Plus size={13} />
                 <span>Create One Now</span>
