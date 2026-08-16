@@ -412,62 +412,65 @@ export default function Templates() {
 
   return (
     <div className="space-y-6 animate-fadeIn pb-12">
-      {/* Header Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dark-800">
-        <div className="flex items-center gap-3">
-          {(previewTemplate || showCreator) ? (
-            <>
-              <button
-                onClick={() => {
-                  setPreviewTemplate(null);
-                  setShowCreator(false);
-                }}
-                className="p-2.5 bg-dark-900 hover:bg-dark-800 text-dark-300 hover:text-white rounded-xl border border-dark-800 transition-all duration-200 hover:scale-[1.05]"
-              >
-                <ArrowLeft size={16} />
-              </button>
-              <div>
-                <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
-                  <div className="p-2 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400">
-                    <Layout size={20} className="shrink-0" />
-                  </div>
-                  <span className="brand-gradient-text">
-                    {showCreator ? "Visual Design Workspace" : `Review Design: ${previewTemplate?.name || ''}`}
-                  </span>
-                </h2>
-                <p className="text-[11px] text-dark-400 mt-1 font-medium">
-                  {showCreator 
-                    ? "Construct responsive layouts and personalize templates with custom CRM tags." 
-                    : "Review layout formatting across simulated browser viewport configurations."}
-                </p>
-              </div>
-            </>
-          ) : null}
+      {/* Header Banner - only renders when previewing or editing */}
+      {(previewTemplate || showCreator) && (
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dark-800">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                setPreviewTemplate(null);
+                setShowCreator(false);
+              }}
+              className="p-2.5 bg-dark-900 hover:bg-dark-800 text-dark-300 hover:text-white rounded-xl border border-dark-800 transition-all duration-200 hover:scale-[1.05]"
+            >
+              <ArrowLeft size={16} />
+            </button>
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400">
+                  <Layout size={20} className="shrink-0" />
+                </div>
+                <span className="brand-gradient-text">
+                  {showCreator ? "Visual Design Workspace" : `Review Design: ${previewTemplate?.name || ''}`}
+                </span>
+              </h2>
+              <p className="text-[11px] text-dark-400 mt-1 font-medium">
+                {showCreator 
+                  ? "Construct responsive layouts and personalize templates with custom CRM tags." 
+                  : "Review layout formatting across simulated browser viewport configurations."}
+              </p>
+            </div>
+          </div>
         </div>
-
-        {!previewTemplate && !showCreator && (
-          <button
-            onClick={() => {
-              setShowCreator(true);
-              setName("");
-              setSubject("");
-              setBlocks([
-                { id: "b1", type: "text", content: "<h2>Hi {{first_name | 'Friend'}},</h2><p>Enter your content blocks here. Custom fields like {{company}} are auto-mapped.</p>" }
-              ]);
-              setSelectedBlockId("b1");
-              setActiveBuilderTab("canvas");
-            }}
-            className="flex items-center gap-2 px-5 py-2.5 brand-gradient-bg text-white text-xs font-extrabold rounded-xl shadow-lg shadow-brand-500/10 hover:shadow-brand-500/20 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 glow-btn"
-          >
-            <Plus size={16} />
-            <span>Create New Template</span>
-          </button>
-        )}
-      </div>
+      )}
 
       {!showCreator && !previewTemplate ? (
         /* ================== DISPLAY SAVED LIST ================== */
-        <div className="space-y-6">
+        <div className="space-y-6 animate-fadeIn">
+          {/* Table Header toolbar when viewing all templates */}
+          <div className="flex justify-between items-center gap-3">
+            <div>
+              <span className="text-[10px] font-bold text-dark-350 uppercase tracking-wider block">Templates Library</span>
+              <span className="text-[8px] font-bold text-brand-400 bg-brand-500/5 px-2 py-0.5 rounded-full border border-brand-500/10">Manage customized email newsletters</span>
+            </div>
+            <button
+              onClick={() => {
+                setShowCreator(true);
+                setName("");
+                setSubject("");
+                setBlocks([
+                  { id: "b1", type: "text", content: "<h2>Hi {{first_name | 'Friend'}},</h2><p>Enter your content blocks here. Custom fields like {{company}} are auto-mapped.</p>" }
+                ]);
+                setSelectedBlockId("b1");
+                setActiveBuilderTab("canvas");
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-md shadow-brand-500/15 hover:scale-[1.015] active:scale-[0.985] transition-all shrink-0"
+            >
+              <Plus size={12} className="stroke-[3]" />
+              <span>Create New Template</span>
+            </button>
+          </div>
+
           {/* Filters & search panel */}
           <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-dark-900/30 p-3 rounded-xl border border-dark-850">
             <div className="relative w-full sm:max-w-md">
@@ -477,7 +480,7 @@ export default function Templates() {
                 placeholder="Search templates by name or subject..."
                 value={searchQuery}
                 onChange={e => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-dark-950/80 hover:bg-dark-950 focus:bg-dark-950 border border-dark-800 hover:border-dark-700 focus:border-brand-500 rounded-xl text-xs text-white placeholder:text-dark-600 focus:outline-none transition-all duration-200"
+                className="w-full pl-9 pr-4 py-2 bg-dark-950/80 hover:bg-dark-950 focus:bg-dark-950 border border-dark-800 hover:border-dark-700 focus:border-brand-500 rounded-xl text-xs text-slate-800 dark:text-white placeholder:text-dark-600 focus:outline-none transition-all duration-200"
               />
             </div>
             <div className="text-[10px] text-dark-400 font-semibold flex items-center gap-2">
@@ -762,7 +765,7 @@ export default function Templates() {
                     <input
                       type="text" required value={name} onChange={e => setName(e.target.value)}
                       placeholder="e.g. Welcome sequence"
-                      className="w-full px-3.5 py-2 bg-dark-950 border border-dark-850 hover:border-dark-700 focus:border-brand-500 rounded-xl text-xs text-white focus:outline-none placeholder:text-dark-600 transition-all duration-200"
+                      className="w-full px-3.5 py-2 bg-dark-950 border border-dark-850 hover:border-dark-700 focus:border-brand-500 rounded-xl text-xs text-slate-800 dark:text-white focus:outline-none placeholder:text-dark-600 transition-all duration-200"
                     />
                   </div>
                   <div className="flex flex-col gap-1.5">
@@ -770,7 +773,7 @@ export default function Templates() {
                     <input
                       type="text" required value={subject} onChange={e => setSubject(e.target.value)}
                       placeholder="e.g. Hi {{first_name}}, welcome aboard!"
-                      className="w-full px-3.5 py-2 bg-dark-950 border border-dark-850 hover:border-dark-700 focus:border-brand-500 rounded-xl text-xs text-white focus:outline-none placeholder:text-dark-600 transition-all duration-200"
+                      className="w-full px-3.5 py-2 bg-dark-950 border border-dark-850 hover:border-dark-700 focus:border-brand-500 rounded-xl text-xs text-slate-800 dark:text-white focus:outline-none placeholder:text-dark-600 transition-all duration-200"
                     />
                   </div>
                 </div>
@@ -813,7 +816,7 @@ export default function Templates() {
                   <textarea
                     value={contentHtml} onChange={e => setContentHtml(e.target.value)}
                     placeholder="Write direct responsive HTML source code..."
-                    className="w-full px-4 py-3 bg-dark-950/40 hover:bg-dark-950/65 focus:bg-dark-950/80 border border-dark-850 focus:border-brand-500 rounded-2xl text-[11px] font-mono text-white focus:outline-none leading-relaxed h-[380px] transition-all duration-200"
+                    className="w-full px-4 py-3 bg-dark-950/40 hover:bg-dark-950/65 focus:bg-dark-950/80 border border-dark-850 focus:border-brand-500 rounded-2xl text-[11px] font-mono text-slate-800 dark:text-white focus:outline-none leading-relaxed h-[380px] transition-all duration-200"
                   />
                 ) : (
                   /* Dynamic interactive blocks rendering */
