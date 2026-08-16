@@ -17,6 +17,7 @@ from sqlalchemy import select
 from app.middleware.security_headers import security_headers_middleware
 from app.api import auth, smtp, contacts, templates, campaigns, tracker, admin, telegram_marketing, dhru, sms_marketing
 from app.api.deps import verify_active_subscription
+from app.middleware.csrf import enforce_csrf_for_cookie_auth
 
 
 # ─── Environment detection ───────────────────────────────────────────
@@ -110,7 +111,7 @@ app.add_middleware(
     allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "X-Requested-With", "X-CSRF-Token"],
     expose_headers=["X-Request-ID"],
     max_age=600,
 )
@@ -174,6 +175,12 @@ async def check_maintenance_mode(request: Request, call_next) -> Response:
 async def add_security_headers(request: Request, call_next) -> Response:
     """Delegate to centralized security headers middleware."""
     return await security_headers_middleware(request, call_next)
+
+
+@app.middleware("http")
+async def enforce_csrf_for_browser_sessions(request: Request, call_next) -> Response:
+    await enforce_csrf_for_cookie_auth(request)
+    return await call_next(request)
 
 
 # ─── Routers ──────────────────────────────────────────────────────────

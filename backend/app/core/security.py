@@ -109,6 +109,38 @@ def create_access_token(
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm="HS256")
 
 
+def create_unsubscribe_token(contact_id: int, campaign_id: int) -> str:
+    """Create a short-lived, purpose-bound token for a List-Unsubscribe URL."""
+    now = datetime.now(timezone.utc)
+    return jwt.encode(
+        {
+            "sub": str(contact_id),
+            "campaign_id": campaign_id,
+            "purpose": "unsubscribe",
+            "iat": now,
+            "exp": now + timedelta(days=90),
+            "iss": "smartcampaign-api",
+        },
+        settings.JWT_SECRET,
+        algorithm="HS256",
+    )
+
+
+def verify_unsubscribe_token(token: str, contact_id: int) -> bool:
+    """Verify token purpose, issuer, expiry, and intended contact in one step."""
+    try:
+        payload = jwt.decode(
+            token,
+            settings.JWT_SECRET,
+            algorithms=["HS256"],
+            issuer="smartcampaign-api",
+            options={"require": ["exp", "iat", "sub", "purpose"]},
+        )
+        return payload.get("purpose") == "unsubscribe" and payload.get("sub") == str(contact_id)
+    except jwt.PyJWTError:
+        return False
+
+
 # Deprecated SafeHTMLParser - removed in favor of bleach for HTML sanitization.
 
 

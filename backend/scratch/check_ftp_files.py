@@ -1,9 +1,10 @@
 import ftplib
+import os
 
 def inspect_ftp():
-    host = "67.211.221.230"
-    user = "smartcampaign@st39582.ispot.cc"
-    password = "rJY2Dv9kbmedKkwfYra7"
+    host = os.environ["BACKUP_FTP_HOST"]
+    user = os.environ["BACKUP_FTP_USER"]
+    password = os.environ["BACKUP_FTP_PASSWORD"]
     
     print("Connecting to FTP...")
     ftp = ftplib.FTP()

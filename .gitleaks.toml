@@ -1,0 +1,11 @@
+title = "SmartCampaign secret scanning policy"
+
+[extend]
+useDefault = true
+
+[[allowlists]]
+description = "Test fixtures are non-production values."
+paths = [
+  '''backend/tests/''',
+  '''backend/telegram_marketing_test.py'''
+]

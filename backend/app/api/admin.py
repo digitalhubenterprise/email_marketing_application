@@ -1029,10 +1029,10 @@ async def get_system_settings(
             config.api_listener_username = "dhru_user"
             needs_commit = True
         if config.api_listener_access_key is None:
-            config.api_listener_access_key = "dhru_key_123456"
+            config.api_listener_access_key = ""
             needs_commit = True
         if config.api_listener_enabled is None:
-            config.api_listener_enabled = True
+            config.api_listener_enabled = False
             needs_commit = True
         if config.payment_gateway_trc20 is None:
             config.payment_gateway_trc20 = ""

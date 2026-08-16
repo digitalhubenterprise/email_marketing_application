@@ -37,6 +37,31 @@ async def verify_csrf(request: Request) -> None:
                 detail="CSRF token missing or invalid",
             )
 
+
+async def enforce_csrf_for_cookie_auth(request: Request) -> None:
+    """Apply CSRF protection to every unsafe request authenticated by a browser cookie.
+
+    Bearer-token API clients are not subject to CSRF, while one-click unsubscribe
+    requests remain intentionally unauthenticated as required by RFC 8058.
+    """
+    if request.method not in ("POST", "PUT", "PATCH", "DELETE"):
+        return
+    public_paths = {
+        "/api/auth/login",
+        "/api/auth/register",
+        "/api/admin/login",
+        "/api/admin/register",
+    }
+    if request.url.path.startswith("/api/track/unsubscribe/") or request.url.path in public_paths:
+        return
+    # Explicit bearer authentication is not automatically attached by browsers,
+    # so it is not susceptible to cookie-based CSRF even if an old session cookie
+    # also happens to be present.
+    if request.headers.get("Authorization", "").lower().startswith("bearer "):
+        return
+    if request.cookies.get("access_token") or request.cookies.get("admin_token"):
+        await verify_csrf(request)
+
 def csrf_dependency() -> typing.Callable:
     """Convenient dependency for FastAPI routers."""
     return verify_csrf

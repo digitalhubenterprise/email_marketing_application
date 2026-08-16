@@ -7,8 +7,8 @@ services:
     restart: always
     environment:
       POSTGRES_DB: smartcampaign
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is required}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
       TZ: Asia/Dhaka
     ports:
       - "5432:5432"
@@ -21,6 +21,7 @@ services:
     restart: always
     ports:
       - "6379:6379"
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD is required}
 
   backend:
     build:
@@ -34,12 +35,13 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
-      - REDIS_URL=redis://redis:6379/0
-      - JWT_SECRET=supersecretjwtkeyfor_smartcampaign_sass_2026
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
       - ACCESS_TOKEN_EXPIRE_MINUTES=1440
-      - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
-      - TRACKING_BASE_URL=http://localhost:8000
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      - ADMIN_REGISTRATION_SECRET=${ADMIN_REGISTRATION_SECRET:?ADMIN_REGISTRATION_SECRET is required}
+      - TRACKING_BASE_URL=${TRACKING_BASE_URL:?TRACKING_BASE_URL is required}
       - TZ=Asia/Dhaka
     depends_on:
       - db
@@ -55,10 +57,12 @@ services:
     volumes:
       - ./backend:/code
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
-      - REDIS_URL=redis://redis:6379/0
-      - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
-      - TRACKING_BASE_URL=http://localhost:8000
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      - ADMIN_REGISTRATION_SECRET=${ADMIN_REGISTRATION_SECRET:?ADMIN_REGISTRATION_SECRET is required}
+      - TRACKING_BASE_URL=${TRACKING_BASE_URL:?TRACKING_BASE_URL is required}
       - TZ=Asia/Dhaka
     depends_on:
       - db
@@ -74,10 +78,12 @@ services:
     volumes:
       - ./backend:/code
     environment:
-      - DATABASE_URL=postgresql+asyncpg://postgres:password123@db:5432/smartcampaign
-      - REDIS_URL=redis://redis:6379/0
-      - ENCRYPTION_KEY=gK-xW32Lkd0w3UuWlkd_98D-Jskd0923Lkd_923Jka8=
-      - TRACKING_BASE_URL=http://localhost:8000
+      - DATABASE_URL=${DATABASE_URL:?DATABASE_URL is required}
+      - REDIS_URL=redis://:${REDIS_PASSWORD:?REDIS_PASSWORD is required}@redis:6379/0
+      - JWT_SECRET=${JWT_SECRET:?JWT_SECRET is required}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY:?ENCRYPTION_KEY is required}
+      - ADMIN_REGISTRATION_SECRET=${ADMIN_REGISTRATION_SECRET:?ADMIN_REGISTRATION_SECRET is required}
+      - TRACKING_BASE_URL=${TRACKING_BASE_URL:?TRACKING_BASE_URL is required}
       - TZ=Asia/Dhaka
     depends_on:
       - db

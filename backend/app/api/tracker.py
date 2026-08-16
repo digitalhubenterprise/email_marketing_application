@@ -1,4 +1,5 @@
 import json
+import html
 from urllib.parse import urlparse
 from fastapi import APIRouter, Query, Request
 from fastapi.responses import Response, RedirectResponse
@@ -132,12 +133,9 @@ async def unsubscribe_contact(
     Supports GET (browser-based unsubscribe confirmation)
     and POST (RFC 8058 One-Click unsubscribe).
     """
-    import hmac
-    import hashlib
-    from app.core.config import settings
+    from app.core.security import verify_unsubscribe_token
 
-    expected_token = hmac.new(settings.JWT_SECRET.encode(), str(contact_id).encode(), hashlib.sha256).hexdigest()
-    if not hmac.compare_digest(token, expected_token):
+    if not verify_unsubscribe_token(token, contact_id):
         return Response(
             content=b"<html><body><h3>Invalid or missing unsubscribe security token.</h3></body></html>",
             media_type="text/html",
@@ -220,7 +218,7 @@ async def unsubscribe_contact(
         <div class="card">
             <h2>Unsubscribed</h2>
             <p>You have been successfully unsubscribed from this list. You will no longer receive any promotional emails from us.</p>
-            <p style="font-size: 14px; color: #868e96;">Email: <strong>{contact.email}</strong></p>
+            <p style="font-size: 14px; color: #868e96;">Email: <strong>{html.escape(contact.email)}</strong></p>
         </div>
     </body>
     </html>

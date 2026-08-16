@@ -13,7 +13,11 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the backend source code
-COPY . .
+RUN useradd --create-home --shell /usr/sbin/nologin appuser
+COPY --chown=appuser:appuser . .
+
+# The application does not need root privileges at runtime.
+USER appuser
 
 # Expose the FastAPI port
 EXPOSE 8000

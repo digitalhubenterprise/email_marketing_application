@@ -139,8 +139,8 @@ export default function AdminApiSettings() {
       if (res.ok) {
         const data = await res.json();
         setUsername(data.api_listener_username || 'dhru_user');
-        setAccessKey(data.api_listener_access_key || 'dhru_key_123456');
-        setEnabled(data.api_listener_enabled !== false);
+        setAccessKey(data.api_listener_access_key || '');
+        setEnabled(data.api_listener_enabled === true);
         setConnectedIp(data.api_listener_connected_ip || '');
       }
     } catch (err) {

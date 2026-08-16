@@ -1,5 +1,11 @@
 import os, sys
 os.environ["TESTING"] = "True"
+os.environ.setdefault("DATABASE_URL", "postgresql+asyncpg://test:test@localhost:5432/test")
+os.environ.setdefault("REDIS_URL", "redis://localhost:6379/15")
+os.environ.setdefault("JWT_SECRET", "test-jwt-secret-that-is-long-enough-for-validation")
+os.environ.setdefault("ENCRYPTION_KEY", "test-encryption-key-that-is-long-enough-for-validation")
+os.environ.setdefault("TRACKING_BASE_URL", "https://testserver.invalid")
+os.environ.setdefault("ADMIN_REGISTRATION_SECRET", "test-admin-secret-that-is-long-enough-for-validation")
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 import asyncio
 import pytest

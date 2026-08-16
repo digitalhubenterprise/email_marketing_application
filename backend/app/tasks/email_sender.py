@@ -309,9 +309,8 @@ async def async_send_campaign(campaign_id: int) -> None:
             message["X-Mailer"] = "SmartCampaign/1.0"
             
             # RFC 8058 One-Click Unsubscribe headers
-            import hmac
-            import hashlib
-            unsubscribe_token = hmac.new(settings.JWT_SECRET.encode(), str(contact.id).encode(), hashlib.sha256).hexdigest()
+            from app.core.security import create_unsubscribe_token
+            unsubscribe_token = create_unsubscribe_token(contact.id, campaign.id)
             unsubscribe_url = f"{settings.TRACKING_BASE_URL}/api/track/unsubscribe/{contact.id}?token={unsubscribe_token}"
             message["List-Unsubscribe"] = f"<{unsubscribe_url}>"
             message["List-Unsubscribe-Post"] = "List-Unsubscribe=One-Click"
@@ -646,4 +645,3 @@ def send_system_email_task(recipient_email: str, subject: str, html_body: str) -
 
 # ─── Late Imports to prevent Circular Imports ─────────────────────────
 from app.tasks.backup_tasks import run_remote_backup_task, run_remote_restore_task, check_scheduled_backups_task
-
