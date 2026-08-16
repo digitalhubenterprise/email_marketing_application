@@ -340,24 +340,26 @@ export default function Campaigns() {
       {/* Header title */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-dark-700/20">
         <div className="flex items-center gap-2">
-          {activeReport && (
-            <button
-              onClick={() => setActiveReport(null)}
-              className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
-              title="Back to campaigns"
-            >
-              <ArrowLeft size={14} />
-            </button>
-          )}
-          <div>
-            <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-              <Send size={18} className="text-brand-400 shrink-0" />
-              <span>{activeReport ? `Live Analytics: ${activeReport.name}` : "Campaigns Workspace"}</span>
-            </h2>
-            <p className="text-[10px] text-dark-400 mt-0.5">
-              {activeReport ? `Category: ${activeReport.category || 'Newsletter'}` : "Design subject split tests, manage hourly dispatches speed, and check live recipient opens."}
-            </p>
-          </div>
+          {activeReport ? (
+            <>
+              <button
+                onClick={() => setActiveReport(null)}
+                className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
+                title="Back to campaigns"
+              >
+                <ArrowLeft size={14} />
+              </button>
+              <div>
+                <h2 className="text-xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                  <Send size={18} className="text-brand-400 shrink-0" />
+                  <span>{`Live Analytics: ${activeReport.name}`}</span>
+                </h2>
+                <p className="text-[10px] text-dark-400 mt-0.5">
+                  {`Category: ${activeReport.category || 'Newsletter'}`}
+                </p>
+              </div>
+            </>
+          ) : null}
         </div>
 
         {!activeReport && (
@@ -594,14 +596,14 @@ export default function Campaigns() {
               </div>
             ) : filteredCampaigns.length > 0 ? (
               <div className="overflow-x-auto pr-1">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[700px]">
                   <thead>
-                    <tr className="border-b border-dark-700/40 pb-2 text-[10px] font-bold text-dark-400 uppercase tracking-wider">
-                      <th className="pb-2">Campaign details</th>
-                      <th className="pb-2">Type / Category</th>
-                      <th className="pb-2">Dispatched Ratio</th>
-                      <th className="pb-2">Status</th>
-                      <th className="pb-2 text-center font-bold">Actions workflow</th>
+                    <tr className="border-b border-dark-750/50 text-[9.5px] font-extrabold text-slate-500 dark:text-dark-400 uppercase tracking-widest bg-dark-950/15">
+                      <th className="py-3 px-3 pl-4">Campaign Name</th>
+                      <th className="py-3 px-3">Type / Category</th>
+                      <th className="py-3 px-3 text-center w-40">Dispatched Ratio</th>
+                      <th className="py-3 px-3 w-32">Status</th>
+                      <th className="py-3 px-3 text-right pr-4 w-40">Actions Workflow</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-dark-750/30">
@@ -609,48 +611,51 @@ export default function Campaigns() {
                       <tr 
                         key={c.id} 
                         onClick={() => openReport(c)}
-                        className="text-[11px] text-dark-200 hover:bg-dark-700/5 transition-colors cursor-pointer"
+                        className="text-xs text-slate-600 dark:text-dark-200 hover:bg-dark-700/10 border-b border-dark-750/30 transition-all cursor-pointer"
                       >
-                        <td className="py-2.5 font-semibold text-white">
-                          <div className="flex items-center gap-1.5">
-                            <span>{c.name}</span>
-                            <ChevronRight size={10} className="text-dark-500 shrink-0" />
+                        <td className="py-3.5 px-3 pl-4 font-semibold text-slate-800 dark:text-white">
+                          <div className="flex items-center gap-2">
+                            <Send size={12} className="text-brand-400 shrink-0" />
+                            <span className="uppercase tracking-wider font-extrabold text-[11px]">{c.name}</span>
+                            <ChevronRight size={10} className="text-dark-500 shrink-0 ml-auto mr-2" />
                           </div>
-                          <span className="text-[9px] text-dark-400 font-medium block truncate max-w-[200px]">{c.subject}</span>
-                          <div className="flex flex-wrap items-center gap-1 mt-1">
-                            <span className="text-[7.5px] bg-dark-950/80 text-brand-400 px-1 py-0.5 rounded border border-dark-800 uppercase font-extrabold tracking-wide">{c.sending_mode || 'auto'} mode</span>
+                          <span className="text-[10px] text-slate-400 dark:text-dark-400 font-medium block truncate max-w-sm mt-0.5">{c.subject}</span>
+                          <div className="flex flex-wrap items-center gap-1 mt-1.5">
+                            <span className="text-[7.5px] bg-dark-800/60 dark:bg-dark-950/80 text-brand-400 px-1.5 py-0.5 rounded border border-dark-700/60 dark:border-dark-800 uppercase font-extrabold tracking-wide">{c.sending_mode || 'auto'} mode</span>
                             {c.throttle_limit !== undefined && c.throttle_limit > 0 && (
-                              <span className="text-[7.5px] bg-dark-950/80 text-emerald-400 px-1 py-0.5 rounded border border-dark-800 font-extrabold">{c.throttle_limit}/hr throttle</span>
+                              <span className="text-[7.5px] bg-dark-800/60 dark:bg-dark-950/80 text-emerald-450 dark:text-emerald-400 px-1.5 py-0.5 rounded border border-dark-700/60 dark:border-dark-800 font-extrabold">{c.throttle_limit}/hr throttle</span>
                             )}
                             {c.scheduled_at && (
-                              <span className="text-[7.5px] bg-dark-950/80 text-amber-400 px-1 py-0.5 rounded border border-dark-800 font-extrabold">Sched: {new Date(c.scheduled_at).toLocaleString()}</span>
+                              <span className="text-[7.5px] bg-dark-800/60 dark:bg-dark-950/80 text-amber-550 dark:text-amber-400 px-1.5 py-0.5 rounded border border-dark-700/60 dark:border-dark-800 font-extrabold">Sched: {new Date(c.scheduled_at).toLocaleString()}</span>
                             )}
                           </div>
                         </td>
-                        <td className="py-2.5 font-bold">
-                          <span className="text-[9px] bg-dark-950 border border-dark-800 text-dark-350 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                        <td className="py-3.5 px-3 font-bold">
+                          <span className="text-[9.5px] bg-dark-800/40 dark:bg-dark-950 border border-dark-700/60 dark:border-dark-800 text-slate-500 dark:text-dark-400 px-2.5 py-0.5 rounded-md uppercase tracking-wider font-extrabold">
                             {c.category || "Newsletter"}
                           </span>
                           {c.subject_b && (
-                            <span className="text-[7.5px] font-extrabold text-amber-400 ml-1.5 border border-amber-500/25 px-1 py-0.5 rounded uppercase bg-amber-500/5">
+                            <span className="text-[7.5px] font-extrabold text-amber-500 bg-amber-500/5 border border-amber-500/25 px-1.5 py-0.5 rounded uppercase ml-1.5">
                               A/B Test
                             </span>
                           )}
                         </td>
-                        <td className="py-2.5 text-brand-400 font-bold font-mono text-[11.5px]">{c.sent_count} / {c.total_recipients}</td>
-                        <td className="py-2.5">
-                          <span className={`px-2 py-0.5 rounded-md text-[8.5px] font-bold uppercase tracking-wider border
-                            ${c.status === 'sent' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : ''}
+                        <td className="py-3.5 px-3 text-center text-brand-500 dark:text-brand-455 font-extrabold font-mono text-xs">
+                          {c.sent_count} / {c.total_recipients}
+                        </td>
+                        <td className="py-3.5 px-3">
+                          <span className={`px-2.5 py-0.5 rounded-full text-[8.5px] font-bold uppercase tracking-wider border
+                            ${c.status === 'sent' ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20' : ''}
                             ${c.status === 'sending' ? 'bg-brand-500/10 text-brand-400 border-brand-500/20 animate-pulse' : ''}
-                            ${c.status === 'paused' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : ''}
-                            ${c.status === 'draft' ? 'bg-dark-800 text-dark-350 border border-dark-700' : ''}
-                            ${c.status === 'failed' ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : ''}
+                            ${c.status === 'paused' ? 'bg-amber-500/10 text-amber-550 dark:text-amber-400 border-amber-500/20' : ''}
+                            ${c.status === 'draft' ? 'bg-dark-800/80 dark:bg-dark-800 text-slate-500 dark:text-dark-350 border border-dark-700/60 dark:border-dark-700' : ''}
+                            ${c.status === 'failed' ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20' : ''}
                           `}>
                             {c.status}
                           </span>
                         </td>
-                        <td className="py-2.5 text-center" onClick={e => e.stopPropagation()}>
-                          <div className="flex gap-1 justify-center">
+                        <td className="py-3.5 px-3 text-right pr-4" onClick={e => e.stopPropagation()}>
+                          <div className="flex gap-1.5 justify-end items-center">
                             {c.status === 'draft' && (
                               <button
                                 onClick={(e) => handleSendCampaign(c.id, e)}
@@ -682,7 +687,7 @@ export default function Campaigns() {
                             )}
                             <button
                               onClick={(e) => handleArchiveCampaign(c.id, e)}
-                              className="p-1 bg-dark-950 text-dark-500 hover:text-white rounded border border-dark-800 hover:border-dark-700 transition-colors"
+                              className="p-1.5 bg-dark-950/80 hover:bg-dark-800 text-dark-400 hover:text-white rounded border border-dark-800 hover:border-dark-750 transition-colors"
                               title="Archive Campaign history"
                             >
                               <Archive size={10} />
