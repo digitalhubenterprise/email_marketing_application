@@ -336,10 +336,10 @@ export default function Campaigns() {
   const bOpenRate = bSent > 0 ? Math.round((bOpens / bSent) * 100) : 0;
 
   return (
-    <div className="space-y-3.5 animate-fadeIn">
+    <div className="animate-fadeIn">
       {/* Header Banner - only renders when viewing Live Analytics report */}
       {activeReport && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-dark-700/20">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 mb-3.5 border-b border-dark-700/20">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setActiveReport(null)}

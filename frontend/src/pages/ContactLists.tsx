@@ -284,10 +284,10 @@ export default function ContactLists() {
   });
 
   return (
-    <div className="space-y-3.5 animate-fadeIn">
+    <div className="animate-fadeIn">
       {/* Dynamic Header */}
       {selectedList && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-dark-700/20 gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 mb-3.5 border-b border-dark-700/20 gap-2">
           <div className="flex items-center gap-2">
             <button
               onClick={() => setSelectedList(null)}

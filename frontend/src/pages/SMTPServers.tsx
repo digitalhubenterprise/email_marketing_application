@@ -157,9 +157,7 @@ export default function SMTPServers() {
   };
 
   return (
-    <div className="space-y-3.5 animate-fadeIn">
-
-
+    <div className="animate-fadeIn">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-3.5 items-start">
         {/* Creation Form Panel */}
         <div className="lg:col-span-2 glass-panel p-3.5 md:p-4 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/20">

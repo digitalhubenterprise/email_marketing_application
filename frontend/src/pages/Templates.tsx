@@ -411,10 +411,10 @@ export default function Templates() {
   );
 
   return (
-    <div className="space-y-6 animate-fadeIn pb-12">
+    <div className="animate-fadeIn pb-12">
       {/* Header Banner - only renders when previewing or editing */}
       {(previewTemplate || showCreator) && (
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-dark-800">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 mb-6 border-b border-dark-800">
           <div className="flex items-center gap-3">
             <button
               onClick={() => {
