@@ -75,9 +75,9 @@ async def create_db_tables() -> None:
     try:
         async with engine.begin() as conn:
             await conn.run_sync(Base.metadata.create_all)
-        print("✅ [INIT] Database schema & tables verified/created successfully!")
+        print(" [SUCCESS] [INIT] Database schema & tables verified/created successfully!")
     except Exception as e:
-        print(f"❌ [INIT ERROR] Failed creating database tables: {e}")
+        print(f" [ERROR] [INIT ERROR] Failed creating database tables: {e}")
 
     # High-value indexes for the multi-tenant list/dashboard queries. These
     # are idempotent and safe for existing restored databases.
