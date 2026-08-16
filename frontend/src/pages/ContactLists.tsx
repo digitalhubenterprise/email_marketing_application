@@ -286,31 +286,27 @@ export default function ContactLists() {
   return (
     <div className="space-y-3.5 animate-fadeIn">
       {/* Dynamic Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-dark-700/20 gap-2">
-        <div className="flex items-center gap-2">
-          {selectedList && (
-            <>
-              <button
-                onClick={() => setSelectedList(null)}
-                className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
-                title="Back to segments list"
-              >
-                <ArrowLeft size={14} />
-              </button>
-              <div>
-                <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                  <Users size={18} className="text-brand-400 shrink-0" />
-                  <span>{selectedList.name}</span>
-                </h2>
-                <p className="text-[10px] text-dark-400 mt-0.5">
-                  Manage leads inside this segment (Showing: {filteredContacts.length} / Total: {contacts.length})
-                </p>
-              </div>
-            </>
-          )}
-        </div>
+      {selectedList && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-2.5 border-b border-dark-700/20 gap-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setSelectedList(null)}
+              className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
+              title="Back to segments list"
+            >
+              <ArrowLeft size={14} />
+            </button>
+            <div>
+              <h2 className="text-lg sm:text-xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                <Users size={18} className="text-brand-400 shrink-0" />
+                <span>{selectedList.name}</span>
+              </h2>
+              <p className="text-[10px] text-dark-400 mt-0.5">
+                Manage leads inside this segment (Showing: {filteredContacts.length} / Total: {contacts.length})
+              </p>
+            </div>
+          </div>
 
-        {selectedList ? (
           <div className="flex items-center gap-2 self-start sm:self-auto">
             <button
               type="button"
@@ -332,31 +328,38 @@ export default function ContactLists() {
                 setUploadError(null);
                 setShowImportCSVModal(true);
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 text-[10px] sm:text-xs font-bold rounded-lg border border-emerald-500/20 transition-all hover:scale-[1.015] active:scale-[0.985]"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-450 dark:text-emerald-400 text-[10px] sm:text-xs font-bold rounded-lg border border-emerald-500/20 transition-all hover:scale-[1.015] active:scale-[0.985]"
             >
               <Upload size={12} className="stroke-[2.5]" />
               <span>Bulk CSV Import</span>
             </button>
           </div>
-        ) : (
-          <button
-            type="button"
-            onClick={() => {
-              setListName("");
-              setListDesc("");
-              setShowCreateModal(true);
-            }}
-            className="flex items-center gap-1.5 px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-md shadow-brand-500/15 hover:scale-[1.015] active:scale-[0.985] transition-all self-start sm:self-auto"
-          >
-            <Plus size={12} className="stroke-[3]" />
-            <span>Create Contact List</span>
-          </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {!selectedList ? (
         /* ================== LIST OVERVIEW ================== */
         <div className="space-y-4 animate-fadeIn">
+          {/* Table Header toolbar when viewing all lists */}
+          <div className="flex justify-between items-center gap-3">
+            <div>
+              <span className="text-[10px] font-bold text-dark-350 uppercase tracking-wider block">Audience Segments</span>
+              <span className="text-[8px] font-bold text-brand-400 bg-brand-500/5 px-2 py-0.5 rounded-full border border-brand-500/10">Manage lead directory lists</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setListName("");
+                setListDesc("");
+                setShowCreateModal(true);
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-md shadow-brand-500/15 hover:scale-[1.015] active:scale-[0.985] transition-all shrink-0"
+            >
+              <Plus size={12} className="stroke-[3]" />
+              <span>Create Contact List</span>
+            </button>
+          </div>
+
           {loadingLists ? (
             <div className="flex justify-center py-20">
               <RefreshCw className="animate-spin text-brand-500" size={20} />
@@ -450,7 +453,7 @@ export default function ContactLists() {
           {/* Contacts Directory Table */}
           <div className="w-full glass-panel p-3.5 md:p-4 rounded-xl border border-dark-700/30 shadow-md shadow-dark-950/20 flex flex-col gap-3">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pb-2 border-b border-dark-700/20">
-              <h3 className="text-xs font-bold text-white flex items-center gap-2 shrink-0">
+              <h3 className="text-xs font-bold text-slate-800 dark:text-white flex items-center gap-2 shrink-0">
                 <Mail size={14} className="text-brand-400 shrink-0" />
                 <span>Contacts Directory</span>
                 <span className="text-[9px] font-extrabold text-brand-500 dark:text-brand-450 bg-brand-500/5 px-2 py-0.5 rounded-md border border-brand-500/15 font-sans">
@@ -470,7 +473,7 @@ export default function ContactLists() {
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     placeholder="Search name or email..."
-                    className="w-full pl-8 pr-2 py-1 bg-dark-950/50 hover:bg-dark-950/80 border border-dark-700/40 rounded-lg text-[10px] focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/10 focus:outline-none text-white transition-all duration-200"
+                    className="w-full pl-8 pr-2 py-1 bg-dark-950/50 hover:bg-dark-950/80 border border-dark-700/40 rounded-lg text-[10px] focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/10 focus:outline-none text-slate-800 dark:text-white transition-all duration-200"
                   />
                 </div>
 
@@ -482,7 +485,7 @@ export default function ContactLists() {
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value)}
-                    className="pl-6 pr-6 py-1 bg-dark-950/50 hover:bg-dark-950/80 border border-dark-700/40 rounded-lg text-[10px] focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/10 focus:outline-none text-white appearance-none cursor-pointer transition-all duration-200"
+                    className="pl-6 pr-6 py-1 bg-dark-950/50 hover:bg-dark-950/80 border border-dark-700/40 rounded-lg text-[10px] focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/10 focus:outline-none text-slate-800 dark:text-white appearance-none cursor-pointer transition-all duration-200"
                   >
                     <option value="all">All Status</option>
                     <option value="active">Active</option>
@@ -501,9 +504,9 @@ export default function ContactLists() {
               </div>
             ) : filteredContacts.length > 0 ? (
               <div className="overflow-x-auto max-h-[460px] pr-1">
-                <table className="w-full text-left border-collapse">
+                <table className="w-full text-left border-collapse min-w-[500px]">
                   <thead>
-                    <tr className="border-b border-dark-750/50 text-[9.5px] font-extrabold text-dark-400 uppercase tracking-widest bg-dark-950/15">
+                    <tr className="border-b border-dark-750/50 text-[9.5px] font-extrabold text-slate-500 dark:text-dark-400 uppercase tracking-widest bg-dark-950/15">
                       <th className="py-3 px-3 pl-4 w-8 font-mono">#</th>
                       <th className="py-3 px-3">Contact</th>
                       <th className="py-3 px-3 hidden sm:table-cell">Email Address</th>
@@ -526,31 +529,31 @@ export default function ContactLists() {
                       const avatarTheme = initialsColorThemes[idx % initialsColorThemes.length];
 
                       return (
-                        <tr key={c.id} className="text-[11.5px] text-dark-200 hover:bg-white/[0.012] transition-colors duration-200">
-                          <td className="py-3.5 px-3 pl-4 font-mono text-[10px] text-dark-500 font-bold">{idx + 1}</td>
+                        <tr key={c.id} className="text-[11.5px] text-slate-650 dark:text-dark-200 hover:bg-dark-700/10 border-b border-dark-750/25 transition-colors duration-200">
+                          <td className="py-3.5 px-3 pl-4 font-mono text-[10px] text-slate-400 dark:text-dark-500 font-bold">{idx + 1}</td>
                           <td className="py-3.5 px-3">
                             <div className="flex items-center gap-3">
                               <div className={`h-8 w-8 rounded-full border flex items-center justify-center text-[10px] font-extrabold tracking-wider shrink-0 shadow-inner ${avatarTheme}`}>
                                 {initials}
                               </div>
                               <div className="min-w-0">
-                                <span className="font-extrabold text-white text-xs block truncate max-w-[120px] sm:max-w-[180px] leading-tight">
+                                <span className="font-extrabold text-slate-800 dark:text-white text-xs block truncate max-w-[120px] sm:max-w-[180px] leading-tight">
                                   {c.name || "—"}
                                 </span>
-                                <span className="text-[9.5px] text-dark-450 font-mono block truncate max-w-[140px] sm:hidden mt-0.5">
+                                <span className="text-[9.5px] text-slate-400 dark:text-dark-450 font-mono block truncate max-w-[140px] sm:hidden mt-0.5">
                                   {c.email}
                                 </span>
                               </div>
                             </div>
                           </td>
-                          <td className="py-3.5 px-3 font-mono text-dark-300 truncate max-w-[160px] md:max-w-none hidden sm:table-cell">
+                          <td className="py-3.5 px-3 font-mono text-slate-500 dark:text-dark-300 truncate max-w-[160px] md:max-w-none hidden sm:table-cell">
                             {c.email}
                           </td>
                           <td className="py-3.5 px-3 text-right">
                             <span className={`px-2.5 py-0.5 rounded-full text-[8px] font-extrabold uppercase tracking-wider border
                               ${c.is_unsubscribed 
-                                ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' 
-                                : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'}
+                                ? 'bg-rose-500/10 text-rose-500 dark:text-rose-400 border-rose-500/20' 
+                                : 'bg-emerald-500/10 text-emerald-555 dark:text-emerald-400 border-emerald-500/20'}
                             `}>
                               {c.is_unsubscribed ? "Unsubscribed" : "Active"}
                             </span>
@@ -607,7 +610,7 @@ export default function ContactLists() {
               <X size={15} />
             </button>
 
-            <h3 className="text-sm font-extrabold text-white mb-1 flex items-center gap-2 mt-1">
+            <h3 className="text-sm font-extrabold text-slate-800 dark:text-white mb-1 flex items-center gap-2 mt-1">
               <UserPlus size={16} className="text-brand-400" />
               <span>Add Single Lead</span>
             </h3>
@@ -625,7 +628,7 @@ export default function ContactLists() {
                     value={conName}
                     onChange={(e) => setConName(e.target.value)}
                     placeholder="Full Name (optional)"
-                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-xl text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-xl text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white placeholder:text-dark-600 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -642,7 +645,7 @@ export default function ContactLists() {
                     value={conEmail}
                     onChange={(e) => setConEmail(e.target.value)}
                     placeholder="Email Address *"
-                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-xl text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white placeholder:text-dark-600 transition-all duration-200"
+                    className="w-full pl-9 pr-3.5 py-2 bg-dark-950/45 hover:bg-dark-950/70 focus:bg-dark-950/90 border border-dark-700/40 rounded-xl text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white placeholder:text-dark-600 transition-all duration-200"
                   />
                 </div>
               </div>
@@ -651,7 +654,7 @@ export default function ContactLists() {
                 <button
                   type="button"
                   onClick={() => setShowAddLeadModal(false)}
-                  className="flex-1 py-2 bg-dark-950 hover:bg-dark-800 text-xs font-bold text-white border border-dark-800 rounded-xl transition-colors"
+                  className="flex-1 py-2 bg-dark-950/20 dark:bg-dark-950 hover:bg-dark-900/10 dark:hover:bg-dark-800 text-xs font-bold text-slate-700 dark:text-white border border-dark-800 rounded-xl transition-colors"
                 >
                   Cancel
                 </button>
