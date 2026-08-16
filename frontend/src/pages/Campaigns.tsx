@@ -337,47 +337,51 @@ export default function Campaigns() {
 
   return (
     <div className="space-y-3.5 animate-fadeIn">
-      {/* Header title */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-dark-700/20">
-        <div className="flex items-center gap-2">
-          {activeReport ? (
-            <>
-              <button
-                onClick={() => setActiveReport(null)}
-                className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
-                title="Back to campaigns"
-              >
-                <ArrowLeft size={14} />
-              </button>
-              <div>
-                <h2 className="text-xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
-                  <Send size={18} className="text-brand-400 shrink-0" />
-                  <span>{`Live Analytics: ${activeReport.name}`}</span>
-                </h2>
-                <p className="text-[10px] text-dark-400 mt-0.5">
-                  {`Category: ${activeReport.category || 'Newsletter'}`}
-                </p>
-              </div>
-            </>
-          ) : null}
+      {/* Header Banner - only renders when viewing Live Analytics report */}
+      {activeReport && (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-1.5 border-b border-dark-700/20">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setActiveReport(null)}
+              className="p-1.5 bg-dark-950 hover:bg-dark-900 text-dark-400 hover:text-white rounded-lg border border-dark-700/50 transition-colors"
+              title="Back to campaigns"
+            >
+              <ArrowLeft size={14} />
+            </button>
+            <div>
+              <h2 className="text-xl font-extrabold text-slate-800 dark:text-white tracking-tight flex items-center gap-2">
+                <Send size={18} className="text-brand-400 shrink-0" />
+                <span>{`Live Analytics: ${activeReport.name}`}</span>
+              </h2>
+              <p className="text-[10px] text-dark-400 mt-0.5">
+                {`Category: ${activeReport.category || 'Newsletter'}`}
+              </p>
+            </div>
+          </div>
         </div>
-
-        {!activeReport && (
-          <button
-            onClick={() => setShowWizard(!showWizard)}
-            className="flex items-center self-start sm:self-center gap-1.5 px-3 py-2 brand-gradient-bg text-white text-xs font-bold rounded-lg shadow-md shadow-brand-500/20 hover:scale-[1.01] active:scale-[0.99] transition-all duration-200"
-          >
-            <Plus size={14} />
-            <span>{showWizard ? "Browse Sent Campaigns" : "New Campaign Creator"}</span>
-          </button>
-        )}
-      </div>
+      )}
 
       {!activeReport ? (
         showWizard ? (
           /* ================== WIZARD CREATION PANELS ================== */
-          <div className="max-w-xl mx-auto glass-panel p-4 rounded-xl border border-dark-700/30 shadow-lg space-y-3">
-            <h3 className="text-sm font-bold text-white mb-2.5 flex items-center gap-2 border-b border-dark-700/10 pb-2">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center gap-3">
+              <div>
+                <span className="text-[10px] font-bold text-dark-350 uppercase tracking-wider block">Campaign Workspace</span>
+                <span className="text-[8px] font-bold text-brand-400 bg-brand-500/5 px-2 py-0.5 rounded-full border border-brand-500/10">Configure and dispatch a marketing wave</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWizard(false)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-dark-950/20 dark:bg-dark-950 hover:bg-dark-900/10 dark:hover:bg-dark-900 text-slate-700 dark:text-white text-[10px] sm:text-xs font-bold rounded-lg border border-dark-700/60 transition-all hover:scale-[1.015] active:scale-[0.985] shrink-0"
+              >
+                <ArrowLeft size={12} className="text-brand-400" />
+                <span>Browse Sent Campaigns</span>
+              </button>
+            </div>
+
+            <div className="max-w-xl mx-auto glass-panel p-4 rounded-xl border border-dark-700/30 shadow-lg space-y-3">
+              <h3 className="text-sm font-bold text-slate-800 dark:text-white mb-2.5 flex items-center gap-2 border-b border-dark-700/10 pb-2">
               <Sliders size={14} className="text-brand-400" />
               <span>Configure Delivery Parameters</span>
             </h3>
@@ -397,14 +401,14 @@ export default function Campaigns() {
                   <input
                     type="text" required value={name} onChange={e => setName(e.target.value)}
                     placeholder="e.g. Promo Launch — June 2026"
-                    className="w-full px-3 py-2 bg-dark-950/45 hover:bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500/80 transition-all duration-200"
+                    className="w-full px-3 py-2 bg-dark-950/45 hover:bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-slate-800 dark:text-white placeholder:text-dark-600 focus:outline-none focus:border-brand-500/80 transition-all duration-200"
                   />
                 </div>
                 <div className="flex flex-col gap-1">
                   <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Campaign Category</label>
                   <select
                     value={category} onChange={e => setCategory(e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500/80 cursor-pointer"
+                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-slate-800 dark:text-white focus:outline-none focus:border-brand-500/80 cursor-pointer"
                   >
                     <option value="Newsletter">Newsletter</option>
                     <option value="Welcome">Welcome Onboarding</option>
@@ -425,7 +429,7 @@ export default function Campaigns() {
                   <input
                     type="text" required value={subject} onChange={e => setSubject(e.target.value)}
                     placeholder="e.g. Hi {{first_name}}, check out our new update!"
-                    className="w-full px-3 py-2 bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500/80 transition-all"
+                    className="w-full px-3 py-2 bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-slate-800 dark:text-white focus:outline-none focus:border-brand-500/80 transition-all"
                   />
                 </div>
 
@@ -438,7 +442,7 @@ export default function Campaigns() {
                     <input
                       type="text" value={subjectB} onChange={e => setSubjectB(e.target.value)}
                       placeholder="e.g. Quick question for {{first_name | 'Subscriber'}}..."
-                      className="w-full px-3 py-2 bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none focus:border-brand-500/80 transition-all"
+                      className="w-full px-3 py-2 bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-slate-800 dark:text-white focus:outline-none focus:border-brand-500/80 transition-all"
                     />
                   </div>
 
@@ -448,7 +452,7 @@ export default function Campaigns() {
                       type="number" min={0} max={100} value={abSplitRatio === 0 ? "" : abSplitRatio}
                       onChange={e => setAbSplitRatio(Number(e.target.value))}
                       placeholder="e.g. 20% group"
-                      className="w-full px-3 py-2 bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none"
+                      className="w-full px-3 py-2 bg-dark-950/70 border border-dark-700/40 rounded-lg text-xs text-slate-800 dark:text-white focus:outline-none"
                     />
                   </div>
                 </div>
@@ -476,7 +480,7 @@ export default function Campaigns() {
                   <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">SMTP Delivery Node</label>
                   <select
                     required value={selectedSmtp} onChange={e => setSelectedSmtp(e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-slate-800 dark:text-white focus:outline-none cursor-pointer"
                   >
                     <option value="">Choose SMTP...</option>
                     {smtps.map(s => <option key={s.id} value={s.id}>{s.name} ({s.reputation_score}% rep)</option>)}
@@ -487,7 +491,7 @@ export default function Campaigns() {
                   <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Target Contacts List</label>
                   <select
                     required value={selectedList} onChange={e => setSelectedList(e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-slate-800 dark:text-white focus:outline-none cursor-pointer"
                   >
                     <option value="">Choose List...</option>
                     {lists.map(l => <option key={l.id} value={l.id}>{l.name} ({l.contacts_count} leads)</option>)}
@@ -498,7 +502,7 @@ export default function Campaigns() {
                   <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Email Template Layout</label>
                   <select
                     required value={selectedTemplate} onChange={e => setSelectedTemplate(e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-white focus:outline-none cursor-pointer"
+                    className="w-full px-3 py-2 bg-dark-950/45 border border-dark-700/40 rounded-lg text-xs text-slate-800 dark:text-white focus:outline-none cursor-pointer"
                   >
                     <option value="">Choose Template...</option>
                     {templates.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
@@ -513,7 +517,7 @@ export default function Campaigns() {
                   <input
                     type="number" value={throttleLimit === 0 ? "" : throttleLimit} onChange={e => setThrottleLimit(Number(e.target.value))}
                     placeholder="e.g. 500/hr"
-                    className="w-full px-3 py-2 bg-dark-950 border border-dark-850 rounded-lg text-xs text-white focus:outline-none"
+                    className="w-full px-3 py-2 bg-dark-950 border border-dark-850 rounded-lg text-xs text-slate-800 dark:text-white focus:outline-none"
                   />
                 </div>
 
@@ -521,7 +525,7 @@ export default function Campaigns() {
                   <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Schedule Release</label>
                   <input
                     type="datetime-local" value={scheduledAt} onChange={e => setScheduledAt(e.target.value)}
-                    className="w-full px-2 py-2 bg-dark-950 border border-dark-850 rounded-lg text-xs text-white cursor-pointer"
+                    className="w-full px-2 py-2 bg-dark-950 border border-dark-850 rounded-lg text-xs text-slate-800 dark:text-white cursor-pointer"
                   />
                 </div>
 
@@ -530,7 +534,7 @@ export default function Campaigns() {
                   <input
                     type="number" value={autoResendHours === 0 ? "" : autoResendHours} onChange={e => setAutoResendHours(Number(e.target.value))}
                     placeholder="e.g. 48 hours"
-                    className="w-full px-3 py-2 bg-dark-950 border border-dark-850 rounded-lg text-xs text-white"
+                    className="w-full px-3 py-2 bg-dark-950 border border-dark-850 rounded-lg text-xs text-slate-800 dark:text-white"
                   />
                 </div>
 
@@ -538,7 +542,7 @@ export default function Campaigns() {
                   <label className="block text-[9px] font-bold text-dark-400 uppercase tracking-wider">Execution Pipeline</label>
                   <select
                     value={sendingMode} onChange={e => setSendingMode(e.target.value)}
-                    className="w-full px-3 py-2 bg-dark-950 border border-dark-850 rounded-lg text-xs text-white cursor-pointer"
+                    className="w-full px-3 py-2 bg-dark-950 border border-dark-850 rounded-lg text-xs text-slate-800 dark:text-white cursor-pointer"
                   >
                     <option value="auto">Auto Celery Queue</option>
                     <option value="manual">Manual trigger check</option>
@@ -555,12 +559,29 @@ export default function Campaigns() {
               </button>
             </form>
           </div>
-        ) : (
+        </div>
+      ) : (
           /* ================== DISPLAY SAVED LIST ================== */
-          <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 shadow-md space-y-3.5">
-            
-            {/* Search and Category Filter Toolbar */}
-            <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-dark-950/40 p-2.5 border border-dark-850 rounded-xl">
+          <div className="space-y-4 animate-fadeIn">
+            <div className="flex justify-between items-center gap-3">
+              <div>
+                <span className="text-[10px] font-bold text-dark-350 uppercase tracking-wider block">Sent Campaigns</span>
+                <span className="text-[8px] font-bold text-brand-400 bg-brand-500/5 px-2 py-0.5 rounded-full border border-brand-500/10">Track sent newsletter analytics</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowWizard(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 brand-gradient-bg hover:opacity-95 text-white text-[10px] sm:text-xs font-bold rounded-lg shadow-md shadow-brand-500/15 hover:scale-[1.015] active:scale-[0.985] transition-all shrink-0"
+              >
+                <Plus size={12} className="stroke-[3]" />
+                <span>New Campaign Creator</span>
+              </button>
+            </div>
+
+            <div className="glass-panel p-3.5 rounded-xl border border-dark-700/30 shadow-md space-y-3.5">
+
+              {/* Search and Category Filter Toolbar */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-dark-950/40 p-2.5 border border-dark-850 rounded-xl">
               <div className="relative w-full sm:max-w-xs">
                 <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-dark-500" />
                 <input
@@ -568,7 +589,7 @@ export default function Campaigns() {
                   placeholder="Search campaigns..."
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3.5 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-white placeholder:text-dark-500 focus:outline-none"
+                  className="w-full pl-9 pr-3.5 py-1.5 bg-dark-950 border border-dark-800 rounded-lg text-xs text-slate-800 dark:text-white placeholder:text-dark-500 focus:outline-none"
                 />
               </div>
 
@@ -578,7 +599,7 @@ export default function Campaigns() {
                 <select
                   value={categoryFilter}
                   onChange={e => setCategoryFilter(e.target.value)}
-                  className="bg-dark-950 border border-dark-800 px-2 py-1 rounded text-[10.5px] font-bold text-white cursor-pointer"
+                  className="bg-dark-950 border border-dark-800 px-2 py-1 rounded text-[10.5px] font-bold text-slate-800 dark:text-white cursor-pointer"
                 >
                   <option value="All">All Categories</option>
                   <option value="Newsletter">Newsletter</option>
@@ -707,8 +728,9 @@ export default function Campaigns() {
               </div>
             )}
           </div>
-        )
-      ) : (
+        </div>
+      )
+    ) : (
         /* ================== DISPLAY ANALYTICS REPORT ================== */
         <div className="space-y-3.5">
           {/* Status Metrics Cards */}
