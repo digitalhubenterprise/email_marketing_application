@@ -28,14 +28,20 @@ IS_PRODUCTION = os.getenv("ENVIRONMENT", "development").lower() == "production"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    """Runs DB table creation on startup."""
+    """Perform only fast web-process initialization.
+
+    Production migrations run once in the dedicated ``migrate`` Compose service.
+    Running schema DDL in every Uvicorn worker delays health checks and can
+    deadlock concurrent deployments against the same database.
+    """
     from urllib.parse import urlsplit
     try:
         parsed = urlsplit(settings.DATABASE_URL)
         print(f"🚀 [INIT] Active Database Host: {parsed.hostname}")
     except Exception:
         pass
-    await create_db_tables()
+    if not IS_PRODUCTION:
+        await create_db_tables()
     await bootstrap_master_admin()
     yield
 
