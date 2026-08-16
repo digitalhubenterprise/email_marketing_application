@@ -222,14 +222,7 @@ export default function Wallet() {
 
   return (
     <div className="space-y-3.5 animate-fadeIn">
-      {/* Title */}
-      <div className="pb-1.5 border-b border-dark-700/20">
-        <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-          <WalletIcon size={18} className="text-brand-400 shrink-0" />
-          <span>Wallet & Credits</span>
-        </h2>
-        <p className="text-[10px] text-dark-400 mt-0.5">Fund your Uvicorn worker queues and route direct SMTP email deliveries smoothly</p>
-      </div>
+
 
       {/* Top Row: Recharge Wallet (Left) & Available SaaS Balance (Right) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
@@ -244,7 +237,7 @@ export default function Wallet() {
               <select
                 value={gateway}
                 onChange={(e) => setGateway(e.target.value)}
-                className="w-full px-2.5 py-1.5 bg-dark-950/50 hover:bg-dark-950/80 focus:bg-dark-950/95 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white transition-all duration-200 cursor-pointer font-semibold"
+                className="w-full px-2.5 py-1.5 bg-dark-950 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white transition-all duration-200 cursor-pointer font-semibold"
               >
                 {(appConfig?.payment_gateway_merchant_enabled ?? true) && (
                   <option value="binance">Binance Pay</option>
@@ -267,7 +260,7 @@ export default function Wallet() {
                 value={topUpAmount}
                 onChange={(e) => setTopUpAmount(e.target.value)}
                 placeholder="Enter amount..."
-                className="flex-1 px-3 py-1.5 bg-dark-950/50 hover:bg-dark-950/80 focus:bg-dark-950/95 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-white font-mono placeholder:text-dark-600 transition-all duration-200"
+                className="flex-1 px-3 py-1.5 bg-dark-950/50 hover:bg-dark-950/80 focus:bg-dark-950/95 border border-dark-700/40 rounded-lg text-xs focus:border-brand-500/80 focus:ring-1 focus:ring-brand-500/20 focus:outline-none text-slate-800 dark:text-white font-mono placeholder:text-dark-600 transition-all duration-200"
               />
               <button
                 onClick={() => setShowSimModal(true)}
@@ -409,43 +402,47 @@ export default function Wallet() {
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                   placeholder="Search TXID or amount..."
-                  className="w-full px-2.5 py-1 bg-dark-950/60 hover:bg-dark-950/90 focus:bg-dark-950 border border-dark-700/40 rounded-lg text-[10px] text-white focus:outline-none focus:border-brand-500/80 transition-all placeholder:text-dark-600"
+                  className="w-full px-2.5 py-1 bg-dark-950/60 hover:bg-dark-950/90 focus:bg-dark-950 border border-dark-700/40 rounded-lg text-[10px] text-slate-800 dark:text-white focus:outline-none focus:border-brand-500/80 transition-all placeholder:text-dark-600"
                 />
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse min-w-[600px]">
                 <thead>
-                  <tr className="border-b border-dark-700/40 bg-dark-950/50 text-[9px] font-bold text-dark-400 uppercase tracking-wider">
-                    <th className="py-2 px-3">Transaction ID</th>
-                    <th className="py-2 px-3">Description</th>
-                    <th className="py-2 px-3">Amount</th>
-                    <th className="py-2 px-3">Date</th>
-                    <th className="py-2 px-3 text-right">Status</th>
+                  <tr className="border-b border-dark-750/50 text-[9.5px] font-extrabold text-slate-500 dark:text-dark-400 uppercase tracking-widest bg-dark-950/15">
+                    <th className="py-3 px-3 pl-4">Transaction ID</th>
+                    <th className="py-3 px-3">Description</th>
+                    <th className="py-3 px-3 text-center w-28">Amount</th>
+                    <th className="py-3 px-3 text-center w-36">Date</th>
+                    <th className="py-3 px-3 text-right pr-4 w-32">Status</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-dark-800/20 text-xs">
+                <tbody className="divide-y divide-dark-750/30">
                   {paginatedTransactions.length > 0 ? (
                     paginatedTransactions.map((txn) => (
-                      <tr key={txn.id} className="hover:bg-dark-900/20 transition-colors">
-                        <td className="py-2 px-3 font-mono font-bold text-white tracking-wide text-[10.5px]" title={txn.id}>
-                          <span className="hidden sm:inline">{txn.id}</span>
-                          <span className="inline sm:hidden">{formatTxHash(txn.id)}</span>
+                      <tr key={txn.id} className="text-xs text-slate-600 dark:text-dark-200 hover:bg-dark-700/10 border-b border-dark-750/30 transition-all">
+                        <td className="py-3.5 px-3 pl-4 font-mono font-bold text-slate-800 dark:text-white tracking-wide text-[10.5px]" title={txn.id}>
+                          <span className="hidden sm:inline bg-dark-800/60 dark:bg-dark-950 px-1.5 py-0.5 rounded border border-dark-700/60 dark:border-dark-800">{txn.id}</span>
+                          <span className="inline sm:hidden bg-dark-800/60 dark:bg-dark-950 px-1.5 py-0.5 rounded border border-dark-700/60 dark:border-dark-800">{formatTxHash(txn.id)}</span>
                         </td>
-                        <td className="py-2 px-3 text-dark-300">
+                        <td className="py-3.5 px-3 text-slate-500 dark:text-dark-300 font-medium">
                           {txn.desc}
                         </td>
-                        <td className={`py-2 px-3 font-mono font-bold ${
-                          txn.type === "credit" ? "text-emerald-400" : "text-rose-400"
+                        <td className={`py-3.5 px-3 text-center font-mono font-bold text-xs ${
+                          txn.type === "credit" ? "text-emerald-550 dark:text-emerald-400" : "text-rose-550 dark:text-rose-400"
                         }`}>
                           {txn.type === "credit" ? "+" : ""}${Math.abs(txn.amount).toFixed(2)}
                         </td>
-                        <td className="py-2 px-3 text-dark-400 font-medium text-[10.5px]">
+                        <td className="py-3.5 px-3 text-center text-slate-400 dark:text-dark-400 font-medium font-mono text-[10.5px]">
                           {txn.date}
                         </td>
-                        <td className="py-2 px-3 text-right">
-                          <span className="inline-flex items-center px-2 py-0.5 text-[8.5px] font-bold rounded-md bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                        <td className="py-3.5 px-3 text-right pr-4">
+                          <span className={`inline-flex items-center px-2.5 py-0.5 text-[8.5px] font-bold rounded-full border ${
+                            txn.status === 'Completed' ? 'bg-emerald-500/10 text-emerald-500 dark:text-emerald-400 border-emerald-500/20' :
+                            txn.status === 'Pending' ? 'bg-amber-500/10 text-amber-550 dark:text-amber-400 border-amber-500/20' :
+                            'bg-rose-500/10 text-rose-500 dark:text-rose-455 border-rose-500/20'
+                          }`}>
                             {txn.status}
                           </span>
                         </td>
@@ -453,7 +450,7 @@ export default function Wallet() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="py-4 text-center text-dark-500 text-xs font-semibold">
+                      <td colSpan={5} className="py-4 text-center text-slate-450 dark:text-dark-500 text-xs font-semibold">
                         No transactions match your search query.
                       </td>
                     </tr>
