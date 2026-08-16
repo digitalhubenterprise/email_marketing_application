@@ -76,7 +76,7 @@ services:
       dockerfile: Dockerfile
     container_name: smartcampaign_beat
     restart: always
-    command: celery -A app.tasks.email_sender.celery beat --loglevel=info
+    command: celery -A app.tasks.email_sender.celery beat --loglevel=info --schedule=/tmp/celerybeat-schedule
     volumes:
       - ./backend:/app
       - .:/project_root:ro
