@@ -229,8 +229,16 @@ export default function LandingPage() {
             // ignore JSON error
           }
         }
-        const errData = await response.json();
-        setError(errData.detail || "Invalid email or password.");
+        let errorMsg = "Invalid email or password.";
+        try {
+          const errData = await response.json();
+          if (errData && errData.detail) {
+            errorMsg = typeof errData.detail === "string" ? errData.detail : JSON.stringify(errData.detail);
+          }
+        } catch (e) {
+          errorMsg = `Server error (${response.status}). Please verify database connection.`;
+        }
+        setError(errorMsg);
       }
     } catch (err) {
       setError("Network connection failed. Please try again.");
