@@ -41,8 +41,14 @@ async def lifespan(app: FastAPI):
     except Exception:
         pass
     if not IS_PRODUCTION:
-        await create_db_tables()
-    await bootstrap_master_admin()
+        try:
+            await create_db_tables()
+        except Exception as e:
+            print(f"⚠️ [INIT] Non-fatal create_db_tables error: {e}")
+    try:
+        await bootstrap_master_admin()
+    except Exception as e:
+        print(f"⚠️ [INIT] Non-fatal admin bootstrap error: {e}")
     yield
 
 
