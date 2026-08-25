@@ -22,6 +22,18 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error inside React tree:", error, errorInfo);
+    const errStr = error ? error.toString() : "";
+    if (
+      errStr.includes("Failed to fetch dynamically imported module") ||
+      errStr.includes("Importing a module script failed") ||
+      errStr.includes("dynamically imported module")
+    ) {
+      const reloaded = sessionStorage.getItem("chunk_reload_attempt");
+      if (!reloaded) {
+        sessionStorage.setItem("chunk_reload_attempt", "true");
+        window.location.reload();
+      }
+    }
   }
 
   private handleReload = () => {

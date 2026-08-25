@@ -220,8 +220,24 @@ export default function App() {
     };
     initApp();
 
+    const handleChunkError = (e: ErrorEvent) => {
+      const msg = e?.message || "";
+      if (
+        msg.includes("Failed to fetch dynamically imported module") ||
+        msg.includes("Importing a module script failed")
+      ) {
+        const reloaded = sessionStorage.getItem("chunk_reload_attempt");
+        if (!reloaded) {
+          sessionStorage.setItem("chunk_reload_attempt", "true");
+          window.location.reload();
+        }
+      }
+    };
+    window.addEventListener("error", handleChunkError);
+
     return () => {
       window.fetch = originalFetch;
+      window.removeEventListener("error", handleChunkError);
     };
   }, []);
 
